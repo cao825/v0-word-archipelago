@@ -4,7 +4,7 @@ const objectiveTypes = [
   {
     type: "length",
     description: "Find a word with {parameter} letters",
-    generateParameter: (seed: () => number, islands: Island[]) => {
+    generateParameter: (seed: () => number, islands: Island[]): number => {
       // Generate a length between 3-6 letters, but no longer than the number of islands
       const maxLength = Math.min(6, islands.length)
       return Math.floor(seed() * (maxLength - 2)) + 3 // 3 to maxLength letter words
@@ -92,7 +92,8 @@ export function checkObjectives(word: string, objectives: Objective[], completed
 
     switch (objective.type) {
       case "length":
-        completed = word.length === Number(objective.parameter)
+        // Ensure we're comparing numbers to handle both string and number parameter types
+        completed = word.length === Number.parseInt(objective.parameter.toString(), 10)
         break
       case "startsWith":
         completed = word.toUpperCase().startsWith(objective.parameter.toString())
