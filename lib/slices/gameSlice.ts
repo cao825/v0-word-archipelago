@@ -20,6 +20,9 @@ export interface Objective {
   completed: boolean
 }
 
+export type GameTheme = "tropical" | "sunset" | "stormy"
+export type GameDuration = 120 | 300 | 600 // 2, 5, or 10 minutes
+
 interface GameState {
   islands: Island[]
   selectedIslands: string[]
@@ -31,6 +34,14 @@ interface GameState {
   completedObjectives: string[]
   message: string
   gameDate: string
+  // New properties
+  comboCount: number
+  lastWordTime: number
+  comboTimeWindow: number
+  invalidSubmission: boolean
+  successfulSubmission: boolean
+  theme: GameTheme
+  gameDuration: GameDuration
 }
 
 const today = new Date().toISOString().split("T")[0]
@@ -44,12 +55,20 @@ const initialState: GameState = {
   selectedIslands: [],
   foundWords: [],
   score: 0,
-  timeLeft: 120, // 2 minutes
+  timeLeft: 120, // 2 minutes default
   gameActive: false,
   objectives: generateObjectives(seed, initialIslands),
   completedObjectives: [],
   message: "Select islands to form words!",
   gameDate: today,
+  // New properties
+  comboCount: 0,
+  lastWordTime: 0,
+  comboTimeWindow: 15000, // 15 seconds for combo
+  invalidSubmission: false,
+  successfulSubmission: false,
+  theme: "tropical",
+  gameDuration: 120,
 }
 
 export const gameSlice = createSlice({
@@ -109,8 +128,13 @@ export const gameSlice = createSlice({
     },
 
     submitWord: (state) => {
+      // Reset visual feedback states
+      state.invalidSubmission = false
+      state.successfulSubmission = false
+
       if (state.selectedIslands.length < 2) {
         state.message = "Words must be at least 2 letters long!"
+        state.invalidSubmission = true
         return
       }
 
@@ -125,16 +149,39 @@ export const gameSlice = createSlice({
       if (state.foundWords.includes(word)) {
         state.message = "You've already found this word!"
         state.selectedIslands = []
+        state.invalidSubmission = true
         return
       }
 
       const isValid = validateWord(word)
 
       if (isValid) {
-        // Add points for the word
-        const wordScore = word.length * 10
+        // Check for combo
+        const now = Date.now()
+        const timeSinceLastWord = now - state.lastWordTime
+
+        // Update combo count if within time window
+        if (state.lastWordTime > 0 && timeSinceLastWord < state.comboTimeWindow) {
+          state.comboCount += 1
+        } else {
+          state.comboCount = 1
+        }
+
+        state.lastWordTime = now
+
+        // Calculate word score with combo multiplier
+        let wordScore = word.length * 10
+        let comboBonus = 0
+
+        // Apply combo bonus for 3+ words in a row
+        if (state.comboCount >= 3) {
+          comboBonus = wordScore * (state.comboCount - 2) * 0.5 // 50% bonus per combo level above 2
+          wordScore += comboBonus
+        }
+
         state.score += wordScore
         state.foundWords.push(word)
+        state.successfulSubmission = true
 
         // Check if any objectives were completed
         const newCompletedObjectives = checkObjectives(word, state.objectives, state.completedObjectives)
@@ -147,9 +194,17 @@ export const gameSlice = createSlice({
             }
           })
 
-          state.message = `Word found! +${wordScore} points and objective completed!`
+          if (state.comboCount >= 3) {
+            state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus) and objective completed!`
+          } else {
+            state.message = `Word found! +${wordScore} points and objective completed!`
+          }
         } else {
-          state.message = `Word found! +${wordScore} points`
+          if (state.comboCount >= 3) {
+            state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus)`
+          } else {
+            state.message = `Word found! +${wordScore} points`
+          }
         }
 
         // Update objectives completion status
@@ -157,8 +212,22 @@ export const gameSlice = createSlice({
           ...obj,
           completed: state.completedObjectives.includes(obj.id),
         }))
+
+        // Check if all objectives are completed and generate new ones if needed
+        const allCompleted = state.objectives.every((obj) => obj.completed)
+        if (allCompleted && state.gameActive) {
+          // Generate new objectives
+          const newSeed = () => Math.random() // Simple random for new objectives
+          const newObjectives = generateObjectives(newSeed, state.islands)
+
+          // Add new objectives to the list
+          state.objectives = [...state.objectives, ...newObjectives]
+
+          state.message += " New objectives added!"
+        }
       } else {
         state.message = "Not a valid word!"
+        state.invalidSubmission = true
       }
 
       state.selectedIslands = []
@@ -194,11 +263,15 @@ export const gameSlice = createSlice({
         state.score = 0
       }
 
-      state.timeLeft = 120
+      state.timeLeft = state.gameDuration
       state.gameActive = true
       state.selectedIslands = []
       state.completedObjectives = []
       state.message = "Game started! Find words by connecting islands."
+      state.comboCount = 0
+      state.lastWordTime = 0
+      state.invalidSubmission = false
+      state.successfulSubmission = false
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -212,10 +285,14 @@ export const gameSlice = createSlice({
       state.selectedIslands = []
       state.foundWords = []
       state.score = 0
-      state.timeLeft = 120
+      state.timeLeft = state.gameDuration
       state.gameActive = false
       state.completedObjectives = []
       state.message = "Game reset! Press Start to play again."
+      state.comboCount = 0
+      state.lastWordTime = 0
+      state.invalidSubmission = false
+      state.successfulSubmission = false
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -223,9 +300,27 @@ export const gameSlice = createSlice({
         completed: false,
       }))
     },
+
+    setGameDuration: (state, action: PayloadAction<GameDuration>) => {
+      state.gameDuration = action.payload
+      state.timeLeft = action.payload
+    },
+
+    setGameTheme: (state, action: PayloadAction<GameTheme>) => {
+      state.theme = action.payload
+    },
   },
 })
 
-export const { selectIsland, submitWord, resetSelection, tickTimer, startGame, resetGame } = gameSlice.actions
+export const {
+  selectIsland,
+  submitWord,
+  resetSelection,
+  tickTimer,
+  startGame,
+  resetGame,
+  setGameDuration,
+  setGameTheme,
+} = gameSlice.actions
 
 export default gameSlice.reducer
