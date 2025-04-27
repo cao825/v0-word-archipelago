@@ -7,76 +7,142 @@ export interface LeaderboardEntry {
   wordsFound: number
 }
 
-// Get leaderboard entries from localStorage
+// Maximum number of entries to store
+const MAX_ENTRIES = 1000
+
+// Get leaderboard entries from localStorage with error handling
 export function getLeaderboardEntries(): LeaderboardEntry[] {
   if (typeof window === "undefined") return []
 
-  const entries = localStorage.getItem("wordArchipelago_leaderboard")
-  return entries ? JSON.parse(entries) : []
+  try {
+    const entries = localStorage.getItem("wordArchipelago_leaderboard")
+    return entries ? JSON.parse(entries) : []
+  } catch (error) {
+    console.error("Error retrieving leaderboard entries:", error)
+    return []
+  }
 }
 
 // Format initials to be exactly 3 uppercase letters
 export function formatInitials(input: string): string {
-  // Convert to uppercase
-  const upperCase = input.toUpperCase()
+  if (!input) return "AAA"
 
-  // Remove any non-letter characters
-  const lettersOnly = upperCase.replace(/[^A-Z]/g, "")
+  // Sanitize input - only allow letters
+  const sanitized = input.replace(/[^A-Za-z]/g, "")
+
+  // Convert to uppercase
+  const upperCase = sanitized.toUpperCase()
 
   // Pad with 'A's if less than 3 characters
-  if (lettersOnly.length < 3) {
-    return lettersOnly.padEnd(3, "A")
+  if (upperCase.length < 3) {
+    return upperCase.padEnd(3, "A")
   }
 
   // Truncate to 3 characters if longer
-  return lettersOnly.substring(0, 3)
+  return upperCase.substring(0, 3)
 }
 
-// Add a new entry to the leaderboard
-export function addLeaderboardEntry(entry: LeaderboardEntry): void {
-  if (typeof window === "undefined") return
+// Add a new entry to the leaderboard with rate limiting and validation
+export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
+  if (typeof window === "undefined") return false
 
-  // Ensure initials are formatted correctly
-  entry.playerInitials = formatInitials(entry.playerInitials)
+  try {
+    // Validate entry
+    if (!entry || typeof entry.score !== "number" || entry.score < 0) {
+      console.error("Invalid leaderboard entry")
+      return false
+    }
 
-  const entries = getLeaderboardEntries()
-  entries.push(entry)
-  localStorage.setItem("wordArchipelago_leaderboard", JSON.stringify(entries))
+    // Rate limiting - only allow one submission every 10 seconds
+    const lastSubmission = localStorage.getItem("wordArchipelago_lastSubmission")
+    const now = Date.now()
+
+    if (lastSubmission) {
+      const lastTime = Number.parseInt(lastSubmission, 10)
+      if (now - lastTime < 10000) {
+        // 10 seconds
+        console.warn("Rate limit exceeded for leaderboard submission")
+        return false
+      }
+    }
+
+    // Update last submission time
+    localStorage.setItem("wordArchipelago_lastSubmission", now.toString())
+
+    // Ensure initials are formatted correctly
+    entry.playerInitials = formatInitials(entry.playerInitials)
+
+    // Get existing entries
+    const entries = getLeaderboardEntries()
+
+    // Add new entry
+    entries.push(entry)
+
+    // Sort by score (highest first) and limit to MAX_ENTRIES
+    const sortedEntries = entries.sort((a, b) => b.score - a.score).slice(0, MAX_ENTRIES)
+
+    // Save back to localStorage
+    localStorage.setItem("wordArchipelago_leaderboard", JSON.stringify(sortedEntries))
+
+    return true
+  } catch (error) {
+    console.error("Error adding leaderboard entry:", error)
+    return false
+  }
 }
 
 // Get hourly leaderboard (top scores from the last hour)
 export function getHourlyLeaderboard(): LeaderboardEntry[] {
-  const entries = getLeaderboardEntries()
-  const now = Date.now()
-  const hourAgo = now - 60 * 60 * 1000
+  try {
+    const entries = getLeaderboardEntries()
+    const now = Date.now()
+    const hourAgo = now - 60 * 60 * 1000
 
-  return entries
-    .filter((entry) => entry.timestamp >= hourAgo)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10)
+    return entries
+      .filter((entry) => entry.timestamp >= hourAgo)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+  } catch (error) {
+    console.error("Error getting hourly leaderboard:", error)
+    return []
+  }
 }
 
 // Get daily leaderboard (top scores from the last 24 hours)
 export function getDailyLeaderboard(): LeaderboardEntry[] {
-  const entries = getLeaderboardEntries()
-  const now = Date.now()
-  const dayAgo = now - 24 * 60 * 60 * 1000
+  try {
+    const entries = getLeaderboardEntries()
+    const now = Date.now()
+    const dayAgo = now - 24 * 60 * 60 * 1000
 
-  return entries
-    .filter((entry) => entry.timestamp >= dayAgo)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10)
+    return entries
+      .filter((entry) => entry.timestamp >= dayAgo)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+  } catch (error) {
+    console.error("Error getting daily leaderboard:", error)
+    return []
+  }
 }
 
 // Get all-time leaderboard (top 10 scores)
 export function getAllTimeLeaderboard(): LeaderboardEntry[] {
-  const entries = getLeaderboardEntries()
-
-  return entries.sort((a, b) => b.score - a.score).slice(0, 10)
+  try {
+    const entries = getLeaderboardEntries()
+    return entries.sort((a, b) => b.score - a.score).slice(0, 10)
+  } catch (error) {
+    console.error("Error getting all-time leaderboard:", error)
+    return []
+  }
 }
 
 // Format timestamp to readable date/time
 export function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp)
-  return date.toLocaleString()
+  try {
+    const date = new Date(timestamp)
+    return date.toLocaleString()
+  } catch (error) {
+    console.error("Error formatting timestamp:", error)
+    return "Unknown date"
+  }
 }

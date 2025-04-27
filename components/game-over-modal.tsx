@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { addLeaderboardEntry, formatInitials, type LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
 import LeaderboardDisplay from "./leaderboard-display"
+import { toast } from "@/components/ui/use-toast"
 
 interface GameOverModalProps {
   score: number
@@ -23,6 +24,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
   const [formattedInitials, setFormattedInitials] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [activeTab, setActiveTab] = useState("summary")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const completedObjectives = objectives.filter((obj) => obj.completed)
   const objectiveBonus = completedObjectives.length * 50 // 50 points per objective
@@ -34,7 +36,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
   }, [playerInitials])
 
   // Handle input change - convert to uppercase as user types
-  const handleInitialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInitialsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     // Convert to uppercase immediately
     const input = e.target.value.toUpperCase()
 
@@ -45,23 +47,45 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
     const limited = lettersOnly.substring(0, 3)
 
     setPlayerInitials(limited)
-  }
+  }, [])
 
-  const handleSubmitScore = () => {
-    if (!playerInitials.trim()) return
+  const handleSubmitScore = useCallback(() => {
+    if (!playerInitials.trim() || isSubmitting) return
 
-    const entry: LeaderboardEntry = {
-      playerInitials: formattedInitials,
-      score,
-      timestamp: Date.now(),
-      objectivesCompleted: completedObjectives.length,
-      wordsFound: foundWords.length,
+    setIsSubmitting(true)
+
+    try {
+      const entry: LeaderboardEntry = {
+        playerInitials: formattedInitials,
+        score,
+        timestamp: Date.now(),
+        objectivesCompleted: completedObjectives.length,
+        wordsFound: foundWords.length,
+      }
+
+      const success = addLeaderboardEntry(entry)
+
+      if (success) {
+        setSubmitted(true)
+        setActiveTab("leaderboard")
+      } else {
+        toast({
+          title: "Submission Error",
+          description: "Please wait a moment before submitting again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error submitting score:", error)
+      toast({
+        title: "Submission Error",
+        description: "There was a problem submitting your score. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    addLeaderboardEntry(entry)
-    setSubmitted(true)
-    setActiveTab("leaderboard")
-  }
+  }, [playerInitials, isSubmitting, formattedInitials, score, completedObjectives.length, foundWords.length])
 
   return (
     <div className="fixed inset-0 bg-sky-950/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -148,15 +172,16 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                         onChange={handleInitialsChange}
                         maxLength={3}
                         className="bg-sky-900 border-sky-700 text-white text-center text-xl font-bold tracking-widest uppercase"
+                        aria-label="Enter your initials (3 letters)"
                       />
                       <p className="text-xs text-sky-300 mt-1 text-center">Enter 3 letters</p>
                     </div>
                     <Button
                       onClick={handleSubmitScore}
                       className="bg-amber-500 hover:bg-amber-600 whitespace-nowrap"
-                      disabled={!playerInitials.trim()}
+                      disabled={!playerInitials.trim() || isSubmitting}
                     >
-                      Submit
+                      {isSubmitting ? "Submitting..." : "Submit"}
                     </Button>
                   </div>
                 </div>
