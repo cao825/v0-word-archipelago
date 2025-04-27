@@ -1,0 +1,182 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { Objective } from "@/lib/slices/gameSlice"
+import { addLeaderboardEntry, formatInitials, type LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
+import LeaderboardDisplay from "./leaderboard-display"
+
+interface GameOverModalProps {
+  score: number
+  foundWords: string[]
+  objectives: Objective[]
+  onResetGame: () => void
+}
+
+export default function GameOverModal({ score, foundWords, objectives, onResetGame }: GameOverModalProps) {
+  const [playerInitials, setPlayerInitials] = useState("")
+  const [formattedInitials, setFormattedInitials] = useState("")
+  const [submitted, setSubmitted] = useState(false)
+  const [activeTab, setActiveTab] = useState("summary")
+
+  const completedObjectives = objectives.filter((obj) => obj.completed)
+  const objectiveBonus = completedObjectives.length * 50 // 50 points per objective
+  const wordPoints = score - objectiveBonus
+
+  // Update formatted initials whenever input changes
+  useEffect(() => {
+    setFormattedInitials(formatInitials(playerInitials))
+  }, [playerInitials])
+
+  // Handle input change - convert to uppercase as user types
+  const handleInitialsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Convert to uppercase immediately
+    const input = e.target.value.toUpperCase()
+
+    // Only allow letters
+    const lettersOnly = input.replace(/[^A-Z]/g, "")
+
+    // Limit to 3 characters
+    const limited = lettersOnly.substring(0, 3)
+
+    setPlayerInitials(limited)
+  }
+
+  const handleSubmitScore = () => {
+    if (!playerInitials.trim()) return
+
+    const entry: LeaderboardEntry = {
+      playerInitials: formattedInitials,
+      score,
+      timestamp: Date.now(),
+      objectivesCompleted: completedObjectives.length,
+      wordsFound: foundWords.length,
+    }
+
+    addLeaderboardEntry(entry)
+    setSubmitted(true)
+    setActiveTab("leaderboard")
+  }
+
+  return (
+    <div className="fixed inset-0 bg-sky-950/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md border-sky-700 bg-gradient-to-b from-sky-800 to-sky-900 text-white shadow-xl">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-3xl font-bold tracking-tight text-white">
+            GAME <span className="font-bold text-amber-400">OVER</span>
+          </CardTitle>
+        </CardHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 bg-sky-900 mx-4">
+            <TabsTrigger value="summary" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+              Summary
+            </TabsTrigger>
+            <TabsTrigger
+              value="leaderboard"
+              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"
+            >
+              Leaderboard
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="summary" className="mt-0">
+            <CardContent className="space-y-5">
+              <div className="text-center">
+                <h3 className="text-lg font-light tracking-wide text-sky-100 mb-1">FINAL SCORE</h3>
+                <p className="text-4xl font-bold text-amber-400">{score}</p>
+                <div className="mt-2 text-sm bg-sky-900 rounded-md p-2 flex justify-between">
+                  <span>Words: {wordPoints} pts</span>
+                  <span className="text-amber-400">Objectives: +{objectiveBonus} pts</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">OBJECTIVES COMPLETED</h3>
+                <div className="bg-sky-900 rounded-md p-3 border border-sky-700">
+                  {completedObjectives.length === 0 ? (
+                    <p className="text-sky-400 text-center">No objectives completed</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {completedObjectives.map((obj) => (
+                        <li key={obj.id} className="text-white flex items-start gap-2">
+                          <span className="text-amber-400">✓</span> {obj.description}
+                          <span className="ml-auto text-amber-400">+50 pts</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">
+                  WORDS FOUND ({foundWords.length})
+                </h3>
+                <div className="bg-sky-900 rounded-md p-3 max-h-40 overflow-y-auto border border-sky-700">
+                  {foundWords.length === 0 ? (
+                    <p className="text-sky-400 text-center">No words found</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {foundWords.map((word, index) => (
+                        <span
+                          key={index}
+                          className="bg-sky-950 text-amber-300 px-2 py-1 rounded-md text-xs border border-sky-800"
+                        >
+                          {word}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {!submitted && (
+                <div>
+                  <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">ENTER YOUR INITIALS</h3>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        placeholder="AAA"
+                        value={playerInitials}
+                        onChange={handleInitialsChange}
+                        maxLength={3}
+                        className="bg-sky-900 border-sky-700 text-white text-center text-xl font-bold tracking-widest uppercase"
+                      />
+                      <p className="text-xs text-sky-300 mt-1 text-center">Enter 3 letters</p>
+                    </div>
+                    <Button
+                      onClick={handleSubmitScore}
+                      className="bg-amber-500 hover:bg-amber-600 whitespace-nowrap"
+                      disabled={!playerInitials.trim()}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="mt-0">
+            <CardContent>
+              <LeaderboardDisplay />
+            </CardContent>
+          </TabsContent>
+        </Tabs>
+
+        <CardFooter className="pt-2">
+          <Button onClick={onResetGame} className="w-full bg-amber-500 hover:bg-amber-600 text-white py-6 text-lg">
+            Play Again
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  )
+}
