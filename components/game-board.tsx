@@ -24,7 +24,7 @@ import PointsAnimation from "./points-animation"
 import NextPuzzleCountdown from "./next-puzzle-countdown"
 import MobileSettingsSheet from "./mobile-settings-sheet"
 import CompactTopBar from "./compact-top-bar"
-import CollapsiblePanel from "./collapsible-panel"
+import PillButton from "./pill-button"
 import FloatingGameControls from "./floating-game-controls"
 
 export default function GameBoard() {
@@ -212,7 +212,7 @@ export default function GameBoard() {
   }, [gameActive])
 
   return (
-    <div className="flex flex-col gap-2" ref={gameAreaRef}>
+    <div className="flex flex-col gap-1" ref={gameAreaRef}>
       {/* Audio Manager */}
       <AudioManager />
 
@@ -226,6 +226,7 @@ export default function GameBoard() {
           timeLeft={timeLeft}
           comboCount={comboCount}
           onOpenSettings={handleToggleSettings}
+          onResetGame={handleResetGame}
           gameActive={gameActive}
           theme={theme}
         />
@@ -242,7 +243,7 @@ export default function GameBoard() {
       )}
 
       {/* Main game area with fixed height container */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         {/* Island Map */}
         <div className="aspect-square w-full max-w-xl mx-auto">
           <IslandMap
@@ -267,41 +268,34 @@ export default function GameBoard() {
           />
         )}
 
-        {/* Collapsible Panels for Objectives and Found Words - Fixed height container */}
+        {/* Pill Buttons for Objectives and Found Words */}
         {gameActive && (
-          <div className="space-y-2 mt-1 overflow-hidden">
-            <CollapsiblePanel
-              title="OBJECTIVES"
-              badge={completedObjectivesCount > 0 ? `${completedObjectivesCount}/${objectives.length}` : undefined}
-              defaultOpen={false}
-            >
-              <div className="max-h-40 overflow-y-auto">
-                <ObjectivesList objectives={objectives} />
-              </div>
-            </CollapsiblePanel>
+          <div className="flex justify-center gap-2 mt-1">
+            <PillButton label="Objectives" count={completedObjectivesCount} defaultOpen={false}>
+              <ObjectivesList objectives={objectives} />
+            </PillButton>
 
-            <CollapsiblePanel
-              title="FOUND WORDS"
-              badge={foundWords.length > 0 ? foundWords.length : undefined}
-              defaultOpen={false}
-            >
-              <div className="max-h-40 overflow-y-auto">
-                <FoundWordsList foundWords={foundWords} />
-              </div>
-            </CollapsiblePanel>
+            <PillButton label="Words" count={foundWords.length} defaultOpen={false}>
+              <FoundWordsList foundWords={foundWords} />
+            </PillButton>
           </div>
         )}
 
         {/* Next Puzzle Countdown - only show when game is not active */}
         {!gameActive && timeLeft !== 0 && (
-          <div className="mt-2">
+          <div className="mt-1">
             <NextPuzzleCountdown />
           </div>
         )}
       </div>
 
       {/* Floating Game Controls */}
-      <FloatingGameControls onStartGame={handleStartGame} onResetGame={handleResetGame} gameActive={gameActive} />
+      <FloatingGameControls
+        onStartGame={handleStartGame}
+        onResetGame={handleResetGame}
+        onOpenSettings={handleToggleSettings}
+        gameActive={gameActive}
+      />
 
       {/* Game Over Modal */}
       {!gameActive && timeLeft === 0 && (

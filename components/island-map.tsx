@@ -72,10 +72,10 @@ export default function IslandMap({
   const shakeAnimation = useSpring({
     x: invalidSubmission && !hasShaken ? 1 : 0,
     config: {
-      mass: 1,
-      tension: 300,
-      friction: 10,
-      duration: 300,
+      mass: 0.8,
+      tension: 400, // Higher tension for snappier animation
+      friction: 8, // Lower friction for faster movement
+      duration: 200, // Shorter duration
     },
     onRest: () => {
       if (invalidSubmission && !hasShaken) {
@@ -86,8 +86,8 @@ export default function IslandMap({
 
   // Handle pulse animation for successful submission
   const pulseAnimation = useSpring({
-    scale: successfulSubmission ? 1.03 : 1,
-    config: { tension: 300, friction: 10 },
+    scale: successfulSubmission ? 1.02 : 1, // Smaller scale for subtler effect
+    config: { tension: 400, friction: 8 }, // Snappier animation
   })
 
   // Animation timer for water movement - optimized with requestAnimationFrame
@@ -628,7 +628,7 @@ export default function IslandMap({
 
       // Add a subtle pop animation for selected islands
       if (isSelected) {
-        const bounceOffset = Math.sin(time / 2) * 2
+        const bounceOffset = Math.sin(time / 1.5) * 1.5 // Faster animation
         ctx.fillText(island.letter, island.position.x, island.position.y + bounceOffset)
       } else {
         ctx.fillText(island.letter, island.position.x, island.position.y)
@@ -688,7 +688,7 @@ export default function IslandMap({
           // Clear the animation after a short delay
           setTimeout(() => {
             setLastClickedIsland(null)
-          }, 150) // Shorter flash duration for better responsiveness
+          }, 100) // Shorter flash duration for better responsiveness
 
           // Handle double tap
           const now = Date.now()

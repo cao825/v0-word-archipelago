@@ -70,20 +70,20 @@ export default function LiveWordDisplay({
   }
 
   return (
-    <div className="bg-sky-900/80 backdrop-blur-sm border-b border-sky-700 py-2 sticky top-12 z-20 h-12 flex items-center justify-center">
+    <div className="bg-sky-900/80 backdrop-blur-sm border-b border-sky-700 py-1 sticky top-10 z-20 h-8 flex items-center justify-center">
       <div className="flex flex-col items-center justify-center h-full relative">
-        <div className="h-6 flex items-center justify-center min-h-[24px]">
+        <div className="h-5 flex items-center justify-center min-h-[20px]">
           {currentWord ? (
             <div className="flex items-center justify-center">
               <AnimatePresence mode="wait">
                 {letters.map((letter, index) => (
                   <motion.span
                     key={`${index}-${letter}`}
-                    initial={{ opacity: 0, y: -5, scale: 0.9 }}
+                    initial={{ opacity: 0, y: -3, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 5, scale: 0.9 }}
-                    transition={{ duration: 0.15, delay: index * 0.05 }}
-                    className={`text-xl font-bold tracking-wider ${getTextColor()}`}
+                    exit={{ opacity: 0, y: 3, scale: 0.9 }}
+                    transition={{ duration: 0.1, delay: index * 0.03 }}
+                    className={`text-base font-bold tracking-wider ${getTextColor()}`}
                   >
                     {letter}
                   </motion.span>
@@ -91,18 +91,19 @@ export default function LiveWordDisplay({
               </AnimatePresence>
             </div>
           ) : (
-            <div className="h-6 w-8 opacity-0">A</div> // Invisible placeholder to maintain height
+            <div className="h-5 w-8 opacity-0">A</div> // Invisible placeholder to maintain height
           )}
         </div>
 
         {/* Message container with fixed height */}
-        <div className="h-4 min-h-[16px] flex items-center justify-center">
+        <div className="h-3 min-h-[12px] flex items-center justify-center">
           <AnimatePresence>
             {showInvalidMessage && (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
+                initial={{ opacity: 0, y: 3 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
+                exit={{ opacity: 0, y: -3 }}
+                transition={{ duration: 0.2 }}
                 className="text-red-300 text-xs"
               >
                 {duplicateSubmission ? "Already found!" : "Not a valid word!"}

@@ -39,13 +39,13 @@ export default function NextPuzzleCountdown() {
   }, [])
 
   return (
-    <Card className="border-sky-700 bg-sky-800/80 shadow-lg">
-      <CardContent className="p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock size={16} className="text-amber-400" />
+    <Card className="border-sky-700 bg-sky-800/80 shadow-sm">
+      <CardContent className="p-2 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <Clock size={14} className="text-amber-400" />
           <span className="text-xs uppercase font-light tracking-wider text-amber-200">Next Puzzle</span>
         </div>
-        <span className="text-lg font-mono font-bold text-amber-100">
+        <span className="text-sm font-mono font-medium text-amber-100">
           {timeRemaining.minutes}:{timeRemaining.seconds}
         </span>
       </CardContent>

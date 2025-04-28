@@ -13,7 +13,7 @@ export default function PointsAnimation() {
     if (pointsAnimation.isVisible) {
       const timer = setTimeout(() => {
         dispatch(hidePointsAnimation())
-      }, 1500)
+      }, 1000) // Reduced from 1500ms
 
       return () => clearTimeout(timer)
     }
@@ -25,21 +25,21 @@ export default function PointsAnimation() {
         <motion.div
           className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
           initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1, y: -50 }}
-          exit={{ scale: 1.5, opacity: 0 }}
-          transition={{ duration: 0.6, type: "spring", damping: 12 }}
+          animate={{ scale: 1, opacity: 1, y: -30 }} // Reduced y-offset
+          exit={{ scale: 1.2, opacity: 0 }}
+          transition={{ duration: 0.4, type: "spring", damping: 15 }} // Faster animation
         >
           <div className="text-center">
-            <div className="text-4xl font-bold text-amber-400 drop-shadow-lg">+{pointsAnimation.points}</div>
+            <div className="text-3xl font-bold text-amber-400 drop-shadow-lg">+{pointsAnimation.points}</div>
             {comboCount >= 3 && (
               <motion.div
-                className="text-xl font-bold text-white mt-2 bg-amber-600/80 px-3 py-1 rounded-md"
+                className="text-base font-bold text-white mt-1 bg-amber-600/80 px-2 py-0.5 rounded-md"
                 initial={{ scale: 0.8 }}
-                animate={{ scale: 1.1 }}
+                animate={{ scale: 1.05 }}
                 transition={{
-                  repeat: 2,
+                  repeat: 1, // Reduced from 2
                   repeatType: "reverse",
-                  duration: 0.3,
+                  duration: 0.2, // Faster animation
                 }}
               >
                 COMBO x{comboCount}!

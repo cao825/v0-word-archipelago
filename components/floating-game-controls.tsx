@@ -8,10 +8,16 @@ import { motion, AnimatePresence } from "framer-motion"
 interface FloatingGameControlsProps {
   onStartGame: () => void
   onResetGame: () => void
+  onOpenSettings: () => void
   gameActive: boolean
 }
 
-export default function FloatingGameControls({ onStartGame, onResetGame, gameActive }: FloatingGameControlsProps) {
+export default function FloatingGameControls({
+  onStartGame,
+  onResetGame,
+  onOpenSettings,
+  gameActive,
+}: FloatingGameControlsProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handleStartGame = () => {
@@ -24,9 +30,9 @@ export default function FloatingGameControls({ onStartGame, onResetGame, gameAct
     setIsExpanded(false)
   }
 
-  // If game is active, don't show the controls
+  // If game is active, show a minimal FAB
   if (gameActive) {
-    return null
+    return null // We're now handling this in the top bar
   }
 
   return (
@@ -37,36 +43,36 @@ export default function FloatingGameControls({ onStartGame, onResetGame, gameAct
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="bg-sky-800 border border-sky-700 rounded-lg shadow-lg p-3 flex flex-col gap-2"
+            className="bg-sky-800 border border-sky-700 rounded-lg shadow-lg p-2 flex flex-col gap-2"
           >
             <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-white">Game Controls</span>
+              <span className="text-xs font-medium text-white">Game Controls</span>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 text-sky-300 hover:bg-sky-700"
+                className="h-5 w-5 text-sky-300 hover:bg-sky-700"
                 onClick={() => setIsExpanded(false)}
               >
-                <X size={14} />
+                <X size={12} />
               </Button>
             </div>
 
             <Button
               onClick={handleStartGame}
-              className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-2"
+              className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 h-8 text-xs"
               size="sm"
             >
-              <Play size={14} />
+              <Play size={12} />
               Start 2-Minute Game
             </Button>
 
             <Button
               onClick={handleResetGame}
               variant="outline"
-              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 flex items-center gap-2"
+              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 flex items-center gap-1 h-8 text-xs"
               size="sm"
             >
-              <RefreshCw size={14} />
+              <RefreshCw size={12} />
               Reset Game
             </Button>
           </motion.div>
@@ -78,9 +84,9 @@ export default function FloatingGameControls({ onStartGame, onResetGame, gameAct
           >
             <Button
               onClick={() => setIsExpanded(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-white h-12 w-12 rounded-full shadow-lg"
+              className="bg-amber-500 hover:bg-amber-600 text-white h-10 w-10 rounded-full shadow-lg"
             >
-              <Play size={20} />
+              <Play size={18} />
             </Button>
           </motion.div>
         )}
