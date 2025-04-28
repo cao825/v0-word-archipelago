@@ -55,7 +55,7 @@ export async function GET() {
               textAlign: "center",
             }}
           >
-            <span style={{ color: "#fbbf24" }}>WORD</span> ARCHIPELAGO
+            <span style={{ color: "#fbbf24" }}>WORD</span> ISLANDS
           </h1>
           <p
             style={{
@@ -85,7 +85,7 @@ export async function GET() {
                 margin: 0,
               }}
             >
-              Play the daily puzzle at word-archipelago.vercel.app
+              Play the daily puzzle at word-islands.vercel.app
             </p>
           </div>
         </div>

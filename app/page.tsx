@@ -35,7 +35,7 @@ const AppContent = memo(function AppContent() {
     <main className={`min-h-screen ${bgGradient} text-white pb-6 font-sans`}>
       <header className="pt-4 px-4 text-center">
         <h1 className="text-2xl font-light tracking-tight text-white">
-          <span className="font-bold text-amber-400">WORD</span> ARCHIPELAGO
+          <span className="font-bold text-amber-400">WORD</span> ISLANDS
         </h1>
       </header>
       <div className="px-3 max-w-6xl mx-auto">

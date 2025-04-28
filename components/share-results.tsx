@@ -61,7 +61,7 @@ export default function ShareResults({
   })()
 
   // Generate share text
-  const shareText = `🏝️ Word Archipelago: ${formattedDate}\n\n🏆 Score: ${score}\n📚 Words: ${foundWordsCount}\n🎯 Objectives: ${actualCompletedObjectives}/${totalObjectives}\n\nPlay now at word-archipelago.vercel.app`
+  const shareText = `🏝️ Word Islands: ${formattedDate}\n\n🏆 Score: ${score}\n📚 Words: ${foundWordsCount}\n🎯 Objectives: ${actualCompletedObjectives}/${totalObjectives}\n\nPlay now at word-islands.vercel.app`
 
   // Generate share image
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function ShareResults({
   // Copy game link to clipboard
   const copyLinkToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText("https://word-archipelago.vercel.app")
+      await navigator.clipboard.writeText("https://word-islands.vercel.app")
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
@@ -115,7 +115,7 @@ export default function ShareResults({
         <div className="flex flex-col items-center">
           <div className="text-center mb-4">
             <h3 className="text-xl font-bold text-white">
-              <span className="font-bold text-amber-400">WORD</span> ARCHIPELAGO
+              <span className="font-bold text-amber-400">WORD</span> ISLANDS
             </h3>
             <p className="text-sky-300">{formattedDate}</p>
           </div>
@@ -165,7 +165,7 @@ export default function ShareResults({
             <p className="text-sm text-slate-400 mb-2">You can also download and share this image:</p>
             <a
               href={imageBlob}
-              download={`word-archipelago-${formattedDate}.png`}
+              download={`word-islands-${formattedDate}.png`}
               className="block bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 rounded-lg font-medium text-center transition-colors"
             >
               Download Image

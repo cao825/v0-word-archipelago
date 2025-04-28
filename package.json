@@ -65,8 +65,8 @@
     "@jest/globals": "latest",
     "framer-motion": "latest",
     "react-spring": "latest",
-    "html2canvas": "latest",
-    "@supabase/supabase-js": "latest"
+    "@supabase/supabase-js": "latest",
+    "html2canvas": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
