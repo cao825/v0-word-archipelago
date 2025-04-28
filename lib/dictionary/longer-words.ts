@@ -219,6 +219,7 @@ export const longerWords = [
   "mayor",
   "meant",
   "media",
+  "meaner",
   "metal",
   "might",
   "minor",

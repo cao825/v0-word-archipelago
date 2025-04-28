@@ -18,6 +18,7 @@ import { colorWords } from "./categories/colors"
 import { emotionWords } from "./categories/emotions"
 import { bodyWords } from "./categories/body"
 import { timeWords } from "./categories/time"
+import { comparativeWords } from "./categories/comparatives"
 
 // Combine all word lists into a single dictionary
 export const dictionary = [
@@ -40,6 +41,7 @@ export const dictionary = [
   ...emotionWords,
   ...bodyWords,
   ...timeWords,
+  ...comparativeWords,
 ]
 
 // Export individual categories for potential use in themed games
@@ -63,4 +65,5 @@ export {
   emotionWords,
   bodyWords,
   timeWords,
+  comparativeWords,
 }

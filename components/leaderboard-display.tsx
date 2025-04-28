@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import type React from "react"
+
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   getHourlyLeaderboard,
@@ -35,6 +37,11 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState<number>(0)
   const maxRetries = 3
+
+  // Add refs for each leaderboard container
+  const hourlyContainerRef = useRef<HTMLDivElement>(null)
+  const dailyContainerRef = useRef<HTMLDivElement>(null)
+  const allTimeContainerRef = useRef<HTMLDivElement>(null)
 
   // Function to refresh leaderboard data with retry logic
   const refreshLeaderboards = useCallback(async () => {
@@ -139,6 +146,22 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   // Export the refresh function so it can be called from elsewhere
   ;(window as any).refreshLeaderboardDisplay = refreshLeaderboards
 
+  // Reset scroll position when changing tabs
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value)
+
+    // Reset scroll position to top when changing tabs
+    setTimeout(() => {
+      if (value === "hourly" && hourlyContainerRef.current) {
+        hourlyContainerRef.current.scrollTop = 0
+      } else if (value === "daily" && dailyContainerRef.current) {
+        dailyContainerRef.current.scrollTop = 0
+      } else if (value === "alltime" && allTimeContainerRef.current) {
+        allTimeContainerRef.current.scrollTop = 0
+      }
+    }, 50) // Small delay to ensure the tab content is rendered
+  }, [])
+
   useEffect(() => {
     // Load leaderboards initially
     refreshLeaderboards()
@@ -193,7 +216,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
   // Memoize the renderLeaderboard function to avoid recreating it on every render
   const renderLeaderboard = useCallback(
-    (entries: LeaderboardEntry[], isLoadingState: boolean) => {
+    (entries: LeaderboardEntry[], isLoadingState: boolean, containerRef: React.RefObject<HTMLDivElement>) => {
       if (fetchError) {
         return (
           <div className="flex items-center justify-center py-8 text-red-400">
@@ -216,7 +239,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       }
 
       return (
-        <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
+        <div ref={containerRef} className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container">
           {entries.map((entry, index) => {
             // Check if this entry should be highlighted
             const isHighlighted = highlightInitials && entry.playerInitials === highlightInitials
@@ -271,7 +294,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   )
 
   return (
-    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid grid-cols-3 bg-sky-900">
         <TabsTrigger value="hourly" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
           Hourly
@@ -295,7 +318,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(hourlyLeaderboard, hourlyLoading)}
+        {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef)}
       </TabsContent>
       <TabsContent value="daily" className="mt-2">
         <div className="flex justify-between items-center mb-2">
@@ -309,7 +332,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(dailyLeaderboard, dailyLoading)}
+        {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef)}
       </TabsContent>
       <TabsContent value="alltime" className="mt-2">
         <div className="flex justify-between items-center mb-2">
@@ -323,7 +346,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(allTimeLeaderboard, allTimeLoading)}
+        {renderLeaderboard(allTimeLeaderboard, allTimeLoading, allTimeContainerRef)}
       </TabsContent>
     </Tabs>
   )

@@ -598,6 +598,14 @@ export function validateWord(word: string): boolean {
     "cooks",
     "bake",
     "bakes",
+    "mere",
+    "meaner",
+    "mean",
+    "means",
+    "meant",
+    "meaning",
+    "meaningful",
+    "meaningless",
   ]
   if (specialCaseWords.includes(lowerWord)) {
     // Add these to the dictionary if they're missing
