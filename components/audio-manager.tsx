@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from "react"
 import { useAppSelector } from "@/lib/hooks/hooks"
 
 export default function AudioManager() {
-  const { successfulSubmission, invalidSubmission, completedObjectives } = useAppSelector((state) => state.game)
+  const { successfulSubmission, invalidSubmission, completedObjectives, selectedIslands } = useAppSelector(
+    (state) => state.game,
+  )
   const [audioEnabled, setAudioEnabled] = useState(false)
+  const prevSelectedLength = useRef(0)
 
   // Audio refs
   const successSoundRef = useRef<HTMLAudioElement | null>(null)
@@ -46,6 +49,11 @@ export default function AudioManager() {
         ambientSoundRef.current.volume = 0.2
         ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
       }
+
+      // Configure select sound to be quieter and shorter
+      if (selectSoundRef.current) {
+        selectSoundRef.current.volume = 0.3
+      }
     }
 
     return () => {
@@ -84,6 +92,20 @@ export default function AudioManager() {
       objectiveSoundRef.current.play().catch((e) => console.log("Objective audio playback prevented:", e))
     }
   }, [completedObjectives.length, audioEnabled])
+
+  // Play a sound when an island is selected
+  useEffect(() => {
+    if (!audioEnabled || !selectSoundRef.current) return
+
+    // Only play sound when a new island is selected (length increases)
+    if (selectedIslands.length > prevSelectedLength.current) {
+      selectSoundRef.current.currentTime = 0
+      selectSoundRef.current.play().catch((e) => console.log("Select audio playback prevented:", e))
+    }
+
+    // Update the previous length reference
+    prevSelectedLength.current = selectedIslands.length
+  }, [selectedIslands.length, audioEnabled])
 
   return null // This component doesn't render anything
 }

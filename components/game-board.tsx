@@ -9,10 +9,7 @@ import {
   tickTimer,
   startGame,
   resetGame,
-  setGameDuration,
   setGameTheme,
-  setRequireAdjacent,
-  type GameDuration,
   type GameTheme,
 } from "@/lib/slices/gameSlice"
 import GameControls from "./game-controls"
@@ -40,15 +37,13 @@ export default function GameBoard() {
     objectives,
     message,
     theme,
-    gameDuration,
     invalidSubmission,
+    duplicateSubmission,
     successfulSubmission,
     comboCount,
-    requireAdjacent,
   } = useAppSelector((state) => state.game)
 
   const [showSettings, setShowSettings] = useState(false)
-
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Handle timer with useCallback for better performance
@@ -114,23 +109,9 @@ export default function GameBoard() {
     dispatch(resetGame())
   }, [dispatch])
 
-  const handleSetGameDuration = useCallback(
-    (duration: GameDuration) => {
-      dispatch(setGameDuration(duration))
-    },
-    [dispatch],
-  )
-
   const handleSetGameTheme = useCallback(
     (theme: GameTheme) => {
       dispatch(setGameTheme(theme))
-    },
-    [dispatch],
-  )
-
-  const handleSetRequireAdjacent = useCallback(
-    (require: boolean) => {
-      dispatch(setRequireAdjacent(require))
     },
     [dispatch],
   )
@@ -178,7 +159,7 @@ export default function GameBoard() {
               variant="outline"
               size="sm"
               onClick={handleToggleSettings}
-              className="border-sky-600 text-sky-100 hover:bg-sky-700"
+              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 hover:text-white"
             >
               Settings
             </Button>
@@ -186,15 +167,7 @@ export default function GameBoard() {
         </div>
 
         {showSettings && !gameActive && (
-          <GameSettings
-            currentTheme={theme}
-            currentDuration={gameDuration}
-            requireAdjacent={requireAdjacent}
-            onSetTheme={handleSetGameTheme}
-            onSetDuration={handleSetGameDuration}
-            onSetRequireAdjacent={handleSetRequireAdjacent}
-            onClose={handleToggleSettings}
-          />
+          <GameSettings currentTheme={theme} onSetTheme={handleSetGameTheme} onClose={handleToggleSettings} />
         )}
       </div>
 
@@ -204,7 +177,12 @@ export default function GameBoard() {
           <div className="flex flex-col gap-4">
             {/* Live Word Display */}
             {gameActive && (
-              <LiveWordDisplay currentWord={currentWord} isValid={isWordValid} invalidSubmission={invalidSubmission} />
+              <LiveWordDisplay
+                currentWord={currentWord}
+                isValid={isWordValid}
+                invalidSubmission={invalidSubmission}
+                duplicateSubmission={duplicateSubmission}
+              />
             )}
 
             {/* Island Map */}
@@ -228,7 +206,7 @@ export default function GameBoard() {
                 onResetSelection={handleResetSelection}
               />
             ) : (
-              <GameControls onStartGame={handleStartGame} onResetGame={handleResetGame} gameDuration={gameDuration} />
+              <GameControls onStartGame={handleStartGame} onResetGame={handleResetGame} />
             )}
           </div>
         </div>

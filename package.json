@@ -62,8 +62,8 @@
     "redux": "latest",
     "@emotion/is-prop-valid": "latest",
     "@reduxjs/toolkit": "latest",
-    "react-spring": "latest",
-    "framer-motion": "latest"
+    "framer-motion": "latest",
+    "react-spring": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

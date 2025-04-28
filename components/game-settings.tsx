@@ -4,29 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { X } from "lucide-react"
-import type { GameTheme, GameDuration } from "@/lib/slices/gameSlice"
+import type { GameTheme } from "@/lib/slices/gameSlice"
 
 interface GameSettingsProps {
   currentTheme: GameTheme
-  currentDuration: GameDuration
-  requireAdjacent: boolean
   onSetTheme: (theme: GameTheme) => void
-  onSetDuration: (duration: GameDuration) => void
-  onSetRequireAdjacent: (require: boolean) => void
   onClose: () => void
 }
 
-export default function GameSettings({
-  currentTheme,
-  currentDuration,
-  requireAdjacent,
-  onSetTheme,
-  onSetDuration,
-  onSetRequireAdjacent,
-  onClose,
-}: GameSettingsProps) {
+export default function GameSettings({ currentTheme, onSetTheme, onClose }: GameSettingsProps) {
   return (
     <Card className="border-sky-700 bg-sky-800/80 shadow-lg">
       <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between">
@@ -36,34 +23,6 @@ export default function GameSettings({
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <h3 className="text-sm font-medium text-sky-100 mb-3">Game Duration</h3>
-          <RadioGroup
-            defaultValue={currentDuration.toString()}
-            onValueChange={(value) => onSetDuration(Number.parseInt(value) as GameDuration)}
-            className="flex space-x-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="120" id="duration-120" />
-              <Label htmlFor="duration-120" className="text-white">
-                2 Minutes
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="300" id="duration-300" />
-              <Label htmlFor="duration-300" className="text-white">
-                5 Minutes
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="600" id="duration-600" />
-              <Label htmlFor="duration-600" className="text-white">
-                10 Minutes
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-
         <div>
           <h3 className="text-sm font-medium text-sky-100 mb-3">Visual Theme</h3>
           <RadioGroup
@@ -96,19 +55,6 @@ export default function GameSettings({
               </Label>
             </div>
           </RadioGroup>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-medium text-sky-100 mb-3">Gameplay Options</h3>
-          <div className="flex items-center space-x-2">
-            <Switch id="adjacent-mode" checked={requireAdjacent} onCheckedChange={onSetRequireAdjacent} />
-            <Label htmlFor="adjacent-mode" className="text-white">
-              Require Adjacent Islands
-            </Label>
-          </div>
-          <p className="text-xs text-sky-300 mt-1 ml-7">
-            When enabled, you can only select islands that are directly connected
-          </p>
         </div>
       </CardContent>
     </Card>

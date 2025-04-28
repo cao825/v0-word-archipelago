@@ -31,7 +31,9 @@ export default function GameStatus({ score, timeLeft, message, gameActive, combo
         >
           <CardContent className="p-3 flex flex-col items-center">
             <span className="text-xs uppercase font-light tracking-wider text-sky-200">Time</span>
-            <span className={`text-2xl font-bold ${timeLeft < 30 ? "text-red-400" : "text-white"}`}>
+            <span
+              className={`text-2xl font-bold font-mono w-[4.5rem] text-center ${timeLeft < 30 ? "text-red-400" : "text-white"}`}
+            >
               {formattedTime}
             </span>
           </CardContent>

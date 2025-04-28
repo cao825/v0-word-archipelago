@@ -33,26 +33,40 @@ export default function IslandMap({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
-  const [debug, setDebug] = useState(false)
   const [time, setTime] = useState(0)
   const animationFrameRef = useRef<number | null>(null)
   const [lastClickedIsland, setLastClickedIsland] = useState<string | null>(null)
-  const [rippleEffect, setRippleEffect] = useState<{ id: string; x: number; y: number; time: number } | null>(null)
 
-  // Animation for invalid submission (shake effect)
-  const invalidAnimation = useSpring({
-    transform: invalidSubmission
-      ? "translate3d(-10px, 0, 0) translate3d(20px, 0, 0) translate3d(-10px, 0, 0)"
-      : "translate3d(0, 0, 0)",
-    config: { tension: 300, friction: 10 },
-    immediate: !invalidSubmission,
+  // Track if we've already animated for this invalid submission
+  const [hasShaken, setHasShaken] = useState(false)
+
+  // Reset the hasShaken state when invalidSubmission changes to false
+  useEffect(() => {
+    if (!invalidSubmission) {
+      setHasShaken(false)
+    }
+  }, [invalidSubmission])
+
+  // Handle shake animation for invalid submission
+  const shakeAnimation = useSpring({
+    x: invalidSubmission && !hasShaken ? 1 : 0,
+    config: {
+      mass: 1,
+      tension: 300,
+      friction: 10,
+      duration: 300,
+    },
+    onRest: () => {
+      if (invalidSubmission && !hasShaken) {
+        setHasShaken(true)
+      }
+    },
   })
 
-  // Animation for successful submission (pulse effect)
-  const successAnimation = useSpring({
-    transform: successfulSubmission ? "scale(1.03)" : "scale(1)",
+  // Handle pulse animation for successful submission
+  const pulseAnimation = useSpring({
+    scale: successfulSubmission ? 1.03 : 1,
     config: { tension: 300, friction: 10 },
-    immediate: !successfulSubmission,
   })
 
   // Animation timer for water movement - optimized with requestAnimationFrame
@@ -365,37 +379,10 @@ export default function IslandMap({
             ctx.stroke()
             ctx.setLineDash([]) // Reset line dash
             ctx.shadowBlur = 0
-
-            // In debug mode, show connection IDs
-            if (debug) {
-              const midX = (island.position.x + connectedIsland.position.x) / 2
-              const midY = (island.position.y + connectedIsland.position.y) / 2
-              ctx.font = "10px 'Inter', sans-serif"
-              ctx.fillStyle = "white"
-              ctx.fillText(`${connectionKey}`, midX, midY)
-            }
           }
         }
       })
     })
-
-    // Draw ripple effect if active
-    if (rippleEffect) {
-      const rippleAge = time - rippleEffect.time
-      if (rippleAge < 20) {
-        // Ripple lasts for 20 time units
-        const rippleSize = rippleEffect.time + rippleAge * 2
-        const opacity = 1 - rippleAge / 20
-
-        ctx.beginPath()
-        ctx.arc(rippleEffect.x, rippleEffect.y, rippleSize, 0, Math.PI * 2)
-        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`
-        ctx.lineWidth = 2
-        ctx.stroke()
-      } else {
-        setRippleEffect(null)
-      }
-    }
 
     // Draw islands - optimized to reduce calculations
     islands.forEach((island) => {
@@ -622,46 +609,34 @@ export default function IslandMap({
         ctx.fillText(island.letter, island.position.x, island.position.y)
       }
 
-      // Draw a glow effect for just-clicked islands
+      // Draw a quick flash effect for just-clicked islands
       if (isJustClicked) {
         ctx.save()
         ctx.beginPath()
-        ctx.arc(island.position.x, island.position.y, island.size * 0.8, 0, Math.PI * 2)
+        ctx.arc(island.position.x, island.position.y, island.size * 0.6, 0, Math.PI * 2)
 
-        // Create radial gradient for glow
-        const glowGradient = ctx.createRadialGradient(
+        // Create radial gradient for flash
+        const flashGradient = ctx.createRadialGradient(
           island.position.x,
           island.position.y,
-          island.size * 0.4,
+          0,
           island.position.x,
           island.position.y,
-          island.size * 1.2,
+          island.size * 0.6,
         )
 
-        glowGradient.addColorStop(0, "rgba(255, 255, 255, 0.4)")
-        glowGradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+        flashGradient.addColorStop(0, "rgba(255, 255, 255, 0.6)")
+        flashGradient.addColorStop(1, "rgba(255, 255, 255, 0)")
 
-        ctx.fillStyle = glowGradient
+        ctx.fillStyle = flashGradient
         ctx.fill()
         ctx.restore()
       }
 
       // Reset shadow
       ctx.shadowBlur = 0
-
-      // Debug: Show island ID and connections
-      if (debug) {
-        ctx.font = "10px 'Inter', sans-serif"
-        ctx.fillStyle = "white"
-        ctx.fillText(island.id, island.position.x, island.position.y + island.size + 15)
-        ctx.fillText(
-          `Connections: ${island.connections.length}`,
-          island.position.x,
-          island.position.y + island.size + 30,
-        )
-      }
     })
-  }, [islands, selectedIslands, debug, islandShapes, time, themeColors, lastClickedIsland, rippleEffect])
+  }, [islands, selectedIslands, islandShapes, time, themeColors, lastClickedIsland])
 
   // Handle click on islands - optimized with useCallback
   const handleCanvasClick = useCallback(
@@ -682,50 +657,50 @@ export default function IslandMap({
           // Set the last clicked island for animation
           setLastClickedIsland(island.id)
 
-          // Create ripple effect
-          setRippleEffect({
-            id: island.id,
-            x: island.position.x,
-            y: island.position.y,
-            time: time,
-          })
-
           // Clear the animation after a short delay
           setTimeout(() => {
             setLastClickedIsland(null)
-          }, 300)
+          }, 150) // Shorter flash duration for better responsiveness
 
           onIslandClick(island.id)
           break
         }
       }
     },
-    [islands, scale, onIslandClick, time],
+    [islands, scale, onIslandClick],
   )
 
-  // Toggle debug mode with double click
-  const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    e.preventDefault()
-    setDebug((prev) => !prev)
-  }, [])
+  // Create a CSS transform string for the shake effect
+  const shakeTransform = shakeAnimation.x.to((x) => {
+    if (x === 0) return "translateX(0px)"
+    // Create a shake effect using a dampened sine wave
+    const dampening = 1 - x
+    return `translateX(${Math.sin(x * Math.PI * 10) * 5 * dampening}px)`
+  })
+
+  // Create a CSS transform string for the pulse effect
+  const pulseTransform = pulseAnimation.scale.to((s) => `scale(${s})`)
 
   return (
-    <animated.div
-      style={{
-        ...invalidAnimation,
-        ...successAnimation,
-      }}
+    <div
       ref={containerRef}
       className="w-full h-full rounded-xl overflow-hidden shadow-lg border border-sky-900 bg-sky-950"
     >
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={600}
-        onClick={handleCanvasClick}
-        onDoubleClick={handleDoubleClick}
-        className="w-full h-full cursor-pointer"
-      />
-    </animated.div>
+      <animated.div
+        style={{
+          width: "100%",
+          height: "100%",
+          transform: invalidSubmission ? shakeTransform : pulseTransform,
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={600}
+          onClick={handleCanvasClick}
+          className="w-full h-full cursor-pointer"
+        />
+      </animated.div>
+    </div>
   )
 }

@@ -182,5 +182,28 @@ export function generateIslands(seed: () => number): Island[] {
     island.connections = Array.from(uniqueConnections)
   }
 
+  // Ensure Q islands have at least one U neighbor
+  islands.forEach((island) => {
+    if (island.letter === "Q") {
+      // Check if this Q already has a U neighbor
+      const hasUNeighbor = island.connections.some((connId) => {
+        const connectedIsland = islands.find((i) => i.id === connId)
+        return connectedIsland && connectedIsland.letter === "U"
+      })
+
+      // If no U neighbor, convert one of the connected islands to U
+      if (!hasUNeighbor && island.connections.length > 0) {
+        // Pick a random connected island to convert to U
+        const randomConnectionIndex = Math.floor(seed() * island.connections.length)
+        const targetId = island.connections[randomConnectionIndex]
+        const targetIsland = islands.find((i) => i.id === targetId)
+
+        if (targetIsland) {
+          targetIsland.letter = "U"
+        }
+      }
+    }
+  })
+
   return islands
 }

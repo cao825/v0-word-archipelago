@@ -2,18 +2,13 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import type { GameDuration } from "@/lib/slices/gameSlice"
 
 interface GameControlsProps {
   onStartGame: () => void
   onResetGame: () => void
-  gameDuration: GameDuration
 }
 
-export default function GameControls({ onStartGame, onResetGame, gameDuration }: GameControlsProps) {
-  // Format duration for display
-  const durationMinutes = gameDuration / 60
-
+export default function GameControls({ onStartGame, onResetGame }: GameControlsProps) {
   return (
     <Card className="border-sky-700 bg-sky-800/80 shadow-lg">
       <CardContent className="p-4">
@@ -22,12 +17,12 @@ export default function GameControls({ onStartGame, onResetGame, gameDuration }:
             onClick={onStartGame}
             className="flex-1 bg-amber-500 hover:bg-amber-600 text-white shadow-md py-6 text-lg"
           >
-            Start {durationMinutes}-Minute Game
+            Start 2-Minute Game
           </Button>
           <Button
             onClick={onResetGame}
             variant="outline"
-            className="flex-1 border-sky-600 text-sky-100 hover:bg-sky-700"
+            className="flex-1 border-sky-300 bg-sky-700 text-white hover:bg-sky-600"
           >
             Reset Game
           </Button>

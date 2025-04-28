@@ -36,7 +36,7 @@ export default function WordControls({
               onClick={onResetSelection}
               variant="outline"
               disabled={selectedIslands.length === 0}
-              className="border-sky-600 text-sky-100 hover:bg-sky-700"
+              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600"
             >
               Clear
             </Button>

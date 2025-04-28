@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 import { generateIslands } from "../utils/islandGenerator"
-import { validateWord } from "../utils/wordValidator"
+import { validateWord } from "../services/dictionaryService"
 import { generateObjectives, checkObjectives } from "../utils/objectiveGenerator"
 import { seedRandom } from "../utils/seedRandom"
 
@@ -21,7 +21,6 @@ export interface Objective {
 }
 
 export type GameTheme = "tropical" | "sunset" | "stormy" | "volcanic"
-export type GameDuration = 120 | 300 | 600 // 2, 5, or 10 minutes
 
 interface GameState {
   islands: Island[]
@@ -39,15 +38,14 @@ interface GameState {
   lastWordTime: number
   comboTimeWindow: number
   invalidSubmission: boolean
+  duplicateSubmission: boolean
   successfulSubmission: boolean
   theme: GameTheme
-  gameDuration: GameDuration
   // New properties
   pointsAnimation: {
     points: number
     isVisible: boolean
   }
-  requireAdjacent: boolean
   showWordDefinition: boolean
   wordDefinition: string
 }
@@ -63,7 +61,7 @@ const initialState: GameState = {
   selectedIslands: [],
   foundWords: [],
   score: 0,
-  timeLeft: 120, // 2 minutes default
+  timeLeft: 120, // Always 2 minutes
   gameActive: false,
   objectives: generateObjectives(seed, initialIslands),
   completedObjectives: [],
@@ -74,15 +72,14 @@ const initialState: GameState = {
   lastWordTime: 0,
   comboTimeWindow: 15000, // 15 seconds for combo
   invalidSubmission: false,
+  duplicateSubmission: false,
   successfulSubmission: false,
   theme: "tropical",
-  gameDuration: 120,
   // New properties
   pointsAnimation: {
     points: 0,
     isVisible: false,
   },
-  requireAdjacent: false,
   showWordDefinition: false,
   wordDefinition: "",
 }
@@ -125,30 +122,16 @@ export const gameSlice = createSlice({
 
         state.selectedIslands.push(islandId)
         state.message = "Island selected!"
-      } else if (state.requireAdjacent) {
-        // If adjacent mode is on, enforce connection
-        state.message = "Islands must be connected!"
       } else {
-        // Double-check connection in both directions
-        const targetIsland = state.islands.find((island) => island.id === islandId)
-        if (targetIsland && targetIsland.connections.includes(lastSelectedId)) {
-          // Connection exists in the other direction, so allow it
-          if (state.selectedIslands.includes(islandId)) {
-            state.message = "You've already selected this island!"
-            return
-          }
-
-          state.selectedIslands.push(islandId)
-          state.message = "Island selected!"
-        } else {
-          state.message = "Islands must be connected!"
-        }
+        // Islands must be connected - always enforce this rule
+        state.message = "Islands must be connected!"
       }
     },
 
     submitWord: (state) => {
       // Reset visual feedback states
       state.invalidSubmission = false
+      state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
 
@@ -169,7 +152,7 @@ export const gameSlice = createSlice({
       if (state.foundWords.includes(word)) {
         state.message = "You've already found this word!"
         state.selectedIslands = []
-        state.invalidSubmission = true
+        state.duplicateSubmission = true
         return
       }
 
@@ -294,7 +277,7 @@ export const gameSlice = createSlice({
         state.score = 0
       }
 
-      state.timeLeft = state.gameDuration
+      state.timeLeft = 120 // Always 2 minutes
       state.gameActive = true
       state.selectedIslands = []
       state.completedObjectives = []
@@ -302,6 +285,7 @@ export const gameSlice = createSlice({
       state.comboCount = 0
       state.lastWordTime = 0
       state.invalidSubmission = false
+      state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
 
@@ -317,13 +301,14 @@ export const gameSlice = createSlice({
       state.selectedIslands = []
       state.foundWords = []
       state.score = 0
-      state.timeLeft = state.gameDuration
+      state.timeLeft = 120 // Always 2 minutes
       state.gameActive = false
       state.completedObjectives = []
       state.message = "Game reset! Press Start to play again."
       state.comboCount = 0
       state.lastWordTime = 0
       state.invalidSubmission = false
+      state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
 
@@ -334,17 +319,8 @@ export const gameSlice = createSlice({
       }))
     },
 
-    setGameDuration: (state, action: PayloadAction<GameDuration>) => {
-      state.gameDuration = action.payload
-      state.timeLeft = action.payload
-    },
-
     setGameTheme: (state, action: PayloadAction<GameTheme>) => {
       state.theme = action.payload
-    },
-
-    setRequireAdjacent: (state, action: PayloadAction<boolean>) => {
-      state.requireAdjacent = action.payload
     },
 
     hidePointsAnimation: (state) => {
@@ -360,9 +336,7 @@ export const {
   tickTimer,
   startGame,
   resetGame,
-  setGameDuration,
   setGameTheme,
-  setRequireAdjacent,
   hidePointsAnimation,
 } = gameSlice.actions
 
