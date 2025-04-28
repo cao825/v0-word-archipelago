@@ -20,7 +20,7 @@ export interface Objective {
   completed: boolean
 }
 
-export type GameTheme = "tropical" | "sunset" | "stormy"
+export type GameTheme = "tropical" | "sunset" | "stormy" | "volcanic"
 export type GameDuration = 120 | 300 | 600 // 2, 5, or 10 minutes
 
 interface GameState {
@@ -34,7 +34,7 @@ interface GameState {
   completedObjectives: string[]
   message: string
   gameDate: string
-  // New properties
+  // Properties
   comboCount: number
   lastWordTime: number
   comboTimeWindow: number
@@ -42,6 +42,14 @@ interface GameState {
   successfulSubmission: boolean
   theme: GameTheme
   gameDuration: GameDuration
+  // New properties
+  pointsAnimation: {
+    points: number
+    isVisible: boolean
+  }
+  requireAdjacent: boolean
+  showWordDefinition: boolean
+  wordDefinition: string
 }
 
 const today = new Date().toISOString().split("T")[0]
@@ -61,7 +69,7 @@ const initialState: GameState = {
   completedObjectives: [],
   message: "Select islands to form words!",
   gameDate: today,
-  // New properties
+  // Properties
   comboCount: 0,
   lastWordTime: 0,
   comboTimeWindow: 15000, // 15 seconds for combo
@@ -69,6 +77,14 @@ const initialState: GameState = {
   successfulSubmission: false,
   theme: "tropical",
   gameDuration: 120,
+  // New properties
+  pointsAnimation: {
+    points: 0,
+    isVisible: false,
+  },
+  requireAdjacent: false,
+  showWordDefinition: false,
+  wordDefinition: "",
 }
 
 export const gameSlice = createSlice({
@@ -109,6 +125,9 @@ export const gameSlice = createSlice({
 
         state.selectedIslands.push(islandId)
         state.message = "Island selected!"
+      } else if (state.requireAdjacent) {
+        // If adjacent mode is on, enforce connection
+        state.message = "Islands must be connected!"
       } else {
         // Double-check connection in both directions
         const targetIsland = state.islands.find((island) => island.id === islandId)
@@ -131,6 +150,7 @@ export const gameSlice = createSlice({
       // Reset visual feedback states
       state.invalidSubmission = false
       state.successfulSubmission = false
+      state.pointsAnimation.isVisible = false
 
       if (state.selectedIslands.length < 2) {
         state.message = "Words must be at least 2 letters long!"
@@ -183,6 +203,12 @@ export const gameSlice = createSlice({
         state.foundWords.push(word)
         state.successfulSubmission = true
 
+        // Set points animation
+        state.pointsAnimation = {
+          points: wordScore,
+          isVisible: true,
+        }
+
         // Check if any objectives were completed
         const newCompletedObjectives = checkObjectives(word, state.objectives, state.completedObjectives)
 
@@ -213,17 +239,22 @@ export const gameSlice = createSlice({
           completed: state.completedObjectives.includes(obj.id),
         }))
 
-        // Check if all objectives are completed and generate new ones if needed
-        const allCompleted = state.objectives.every((obj) => obj.completed)
-        if (allCompleted && state.gameActive) {
-          // Generate new objectives
+        // Replace completed objectives with new ones
+        const completedObjectiveIndices = state.objectives
+          .map((obj, index) => (obj.completed ? index : -1))
+          .filter((index) => index !== -1)
+
+        if (completedObjectiveIndices.length > 0) {
+          // Generate new objectives to replace completed ones
           const newSeed = () => Math.random() // Simple random for new objectives
           const newObjectives = generateObjectives(newSeed, state.islands)
 
-          // Add new objectives to the list
-          state.objectives = [...state.objectives, ...newObjectives]
-
-          state.message += " New objectives added!"
+          // Replace completed objectives with new ones
+          completedObjectiveIndices.forEach((index, i) => {
+            if (i < newObjectives.length) {
+              state.objectives[index] = newObjectives[i]
+            }
+          })
         }
       } else {
         state.message = "Not a valid word!"
@@ -272,6 +303,7 @@ export const gameSlice = createSlice({
       state.lastWordTime = 0
       state.invalidSubmission = false
       state.successfulSubmission = false
+      state.pointsAnimation.isVisible = false
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -293,6 +325,7 @@ export const gameSlice = createSlice({
       state.lastWordTime = 0
       state.invalidSubmission = false
       state.successfulSubmission = false
+      state.pointsAnimation.isVisible = false
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -309,6 +342,14 @@ export const gameSlice = createSlice({
     setGameTheme: (state, action: PayloadAction<GameTheme>) => {
       state.theme = action.payload
     },
+
+    setRequireAdjacent: (state, action: PayloadAction<boolean>) => {
+      state.requireAdjacent = action.payload
+    },
+
+    hidePointsAnimation: (state) => {
+      state.pointsAnimation.isVisible = false
+    },
   },
 })
 
@@ -321,6 +362,8 @@ export const {
   resetGame,
   setGameDuration,
   setGameTheme,
+  setRequireAdjacent,
+  hidePointsAnimation,
 } = gameSlice.actions
 
 export default gameSlice.reducer

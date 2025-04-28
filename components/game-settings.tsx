@@ -4,22 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { X } from "lucide-react"
 import type { GameTheme, GameDuration } from "@/lib/slices/gameSlice"
 
 interface GameSettingsProps {
   currentTheme: GameTheme
   currentDuration: GameDuration
+  requireAdjacent: boolean
   onSetTheme: (theme: GameTheme) => void
   onSetDuration: (duration: GameDuration) => void
+  onSetRequireAdjacent: (require: boolean) => void
   onClose: () => void
 }
 
 export default function GameSettings({
   currentTheme,
   currentDuration,
+  requireAdjacent,
   onSetTheme,
   onSetDuration,
+  onSetRequireAdjacent,
   onClose,
 }: GameSettingsProps) {
   return (
@@ -64,7 +69,7 @@ export default function GameSettings({
           <RadioGroup
             defaultValue={currentTheme}
             onValueChange={(value) => onSetTheme(value as GameTheme)}
-            className="flex space-x-4"
+            className="flex flex-wrap gap-4"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="tropical" id="theme-tropical" />
@@ -84,7 +89,26 @@ export default function GameSettings({
                 Stormy
               </Label>
             </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="volcanic" id="theme-volcanic" />
+              <Label htmlFor="theme-volcanic" className="text-white">
+                Volcanic
+              </Label>
+            </div>
           </RadioGroup>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-sky-100 mb-3">Gameplay Options</h3>
+          <div className="flex items-center space-x-2">
+            <Switch id="adjacent-mode" checked={requireAdjacent} onCheckedChange={onSetRequireAdjacent} />
+            <Label htmlFor="adjacent-mode" className="text-white">
+              Require Adjacent Islands
+            </Label>
+          </div>
+          <p className="text-xs text-sky-300 mt-1 ml-7">
+            When enabled, you can only select islands that are directly connected
+          </p>
         </div>
       </CardContent>
     </Card>

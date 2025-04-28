@@ -11,6 +11,7 @@ import {
   resetGame,
   setGameDuration,
   setGameTheme,
+  setRequireAdjacent,
   type GameDuration,
   type GameTheme,
 } from "@/lib/slices/gameSlice"
@@ -23,6 +24,8 @@ import GameOverModal from "./game-over-modal"
 import WordControls from "./word-controls"
 import LiveWordDisplay from "./live-word-display"
 import GameSettings from "./game-settings"
+import PointsAnimation from "./points-animation"
+import AudioManager from "./audio-manager"
 import { Button } from "./ui/button"
 
 export default function GameBoard() {
@@ -41,6 +44,7 @@ export default function GameBoard() {
     invalidSubmission,
     successfulSubmission,
     comboCount,
+    requireAdjacent,
   } = useAppSelector((state) => state.game)
 
   const [showSettings, setShowSettings] = useState(false)
@@ -124,6 +128,13 @@ export default function GameBoard() {
     [dispatch],
   )
 
+  const handleSetRequireAdjacent = useCallback(
+    (require: boolean) => {
+      dispatch(setRequireAdjacent(require))
+    },
+    [dispatch],
+  )
+
   const handleToggleSettings = useCallback(() => {
     setShowSettings((prev) => !prev)
   }, [])
@@ -145,6 +156,12 @@ export default function GameBoard() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Audio Manager */}
+      <AudioManager />
+
+      {/* Points Animation */}
+      <PointsAnimation />
+
       {/* Game Status */}
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
@@ -172,8 +189,10 @@ export default function GameBoard() {
           <GameSettings
             currentTheme={theme}
             currentDuration={gameDuration}
+            requireAdjacent={requireAdjacent}
             onSetTheme={handleSetGameTheme}
             onSetDuration={handleSetGameDuration}
+            onSetRequireAdjacent={handleSetRequireAdjacent}
             onClose={handleToggleSettings}
           />
         )}
@@ -184,7 +203,9 @@ export default function GameBoard() {
         <div className="md:col-span-2">
           <div className="flex flex-col gap-4">
             {/* Live Word Display */}
-            {gameActive && <LiveWordDisplay currentWord={currentWord} isValid={isWordValid} />}
+            {gameActive && (
+              <LiveWordDisplay currentWord={currentWord} isValid={isWordValid} invalidSubmission={invalidSubmission} />
+            )}
 
             {/* Island Map */}
             <div className="aspect-square w-full max-w-xl mx-auto">

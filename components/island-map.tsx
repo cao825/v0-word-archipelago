@@ -36,6 +36,8 @@ export default function IslandMap({
   const [debug, setDebug] = useState(false)
   const [time, setTime] = useState(0)
   const animationFrameRef = useRef<number | null>(null)
+  const [lastClickedIsland, setLastClickedIsland] = useState<string | null>(null)
+  const [rippleEffect, setRippleEffect] = useState<{ id: string; x: number; y: number; time: number } | null>(null)
 
   // Animation for invalid submission (shake effect)
   const invalidAnimation = useSpring({
@@ -249,6 +251,27 @@ export default function IslandMap({
         start: "#fcd34d", // Amber-300
         end: "#d97706", // Amber-600
       }
+    } else if (theme === "volcanic") {
+      oceanColors = {
+        start: "#7f1d1d", // Red-900
+        mid: "#991b1b", // Red-800
+        end: "#450a0a", // Red-950
+      }
+
+      skyColors = {
+        horizon: "rgba(254, 202, 202, 0.2)", // Red-200 with transparency
+        waves: "rgba(254, 202, 202, 0.15)",
+      }
+
+      islandColors.vegetation = {
+        start: "#4d7c0f", // Lime-700
+        end: "#365314", // Lime-900
+      }
+
+      islandColors.beach = {
+        start: "#737373", // Neutral-500
+        end: "#404040", // Neutral-700
+      }
     }
 
     return { oceanColors, skyColors, islandColors }
@@ -356,10 +379,29 @@ export default function IslandMap({
       })
     })
 
+    // Draw ripple effect if active
+    if (rippleEffect) {
+      const rippleAge = time - rippleEffect.time
+      if (rippleAge < 20) {
+        // Ripple lasts for 20 time units
+        const rippleSize = rippleEffect.time + rippleAge * 2
+        const opacity = 1 - rippleAge / 20
+
+        ctx.beginPath()
+        ctx.arc(rippleEffect.x, rippleEffect.y, rippleSize, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`
+        ctx.lineWidth = 2
+        ctx.stroke()
+      } else {
+        setRippleEffect(null)
+      }
+    }
+
     // Draw islands - optimized to reduce calculations
     islands.forEach((island) => {
       const isSelected = selectedIslands.includes(island.id)
       const isLastSelected = selectedIslands.length > 0 && selectedIslands[selectedIslands.length - 1] === island.id
+      const isJustClicked = lastClickedIsland === island.id
       const shape = islandShapes[island.id]
 
       if (!shape) return
@@ -580,6 +622,30 @@ export default function IslandMap({
         ctx.fillText(island.letter, island.position.x, island.position.y)
       }
 
+      // Draw a glow effect for just-clicked islands
+      if (isJustClicked) {
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(island.position.x, island.position.y, island.size * 0.8, 0, Math.PI * 2)
+
+        // Create radial gradient for glow
+        const glowGradient = ctx.createRadialGradient(
+          island.position.x,
+          island.position.y,
+          island.size * 0.4,
+          island.position.x,
+          island.position.y,
+          island.size * 1.2,
+        )
+
+        glowGradient.addColorStop(0, "rgba(255, 255, 255, 0.4)")
+        glowGradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+
+        ctx.fillStyle = glowGradient
+        ctx.fill()
+        ctx.restore()
+      }
+
       // Reset shadow
       ctx.shadowBlur = 0
 
@@ -595,7 +661,7 @@ export default function IslandMap({
         )
       }
     })
-  }, [islands, selectedIslands, debug, islandShapes, time, themeColors])
+  }, [islands, selectedIslands, debug, islandShapes, time, themeColors, lastClickedIsland, rippleEffect])
 
   // Handle click on islands - optimized with useCallback
   const handleCanvasClick = useCallback(
@@ -613,12 +679,28 @@ export default function IslandMap({
         const distance = Math.sqrt(Math.pow(x - island.position.x, 2) + Math.pow(y - island.position.y, 2))
 
         if (distance <= island.size) {
+          // Set the last clicked island for animation
+          setLastClickedIsland(island.id)
+
+          // Create ripple effect
+          setRippleEffect({
+            id: island.id,
+            x: island.position.x,
+            y: island.position.y,
+            time: time,
+          })
+
+          // Clear the animation after a short delay
+          setTimeout(() => {
+            setLastClickedIsland(null)
+          }, 300)
+
           onIslandClick(island.id)
           break
         }
       }
     },
-    [islands, scale, onIslandClick],
+    [islands, scale, onIslandClick, time],
   )
 
   // Toggle debug mode with double click
