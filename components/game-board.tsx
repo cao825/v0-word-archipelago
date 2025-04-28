@@ -302,21 +302,11 @@ export default function GameBoard() {
     return objectives.filter((obj) => obj.completed).length
   }, [objectives])
 
-  // Calculate available height for the game area
+  // Calculate available height for the game area - ensure consistent layout
   const calculateGameAreaHeight = useCallback(() => {
-    if (!gameActive) return "auto"
-
-    // Top bar height (12) + progress bar (1) + word display (10) + word controls (12) + margins/padding (4)
-    const uiElementsHeight = 39
-
-    // Calculate remaining height in viewport units
-    const remainingHeight = viewportHeight - uiElementsHeight * 16 // Convert rem to px (assuming 1rem = 16px)
-
-    return remainingHeight > 300 ? remainingHeight : 300 // Minimum height of 300px
-  }, [gameActive, viewportHeight])
-
-  // Calculate game area height
-  const gameAreaHeight = useMemo(() => calculateGameAreaHeight(), [calculateGameAreaHeight])
+    // Use a fixed minimum height to prevent layout collapse
+    return "min-h-[600px]"
+  }, [])
 
   // Add a function to show mini achievements
   const showMiniAchievement = useCallback((title: string) => {
@@ -353,7 +343,7 @@ export default function GameBoard() {
   }, [successfulSubmission, foundWords, comboCount, objectives, showMiniAchievement])
 
   return (
-    <div className="flex flex-col" ref={gameAreaRef}>
+    <div className="flex flex-col transition-all duration-300" ref={gameAreaRef}>
       {/* Audio Manager */}
       <AudioManager />
 
@@ -404,6 +394,7 @@ export default function GameBoard() {
           onShowFoundWords={handleShowFoundWords}
           onShowShareModal={handleShowShareModal}
           onResetGame={handleResetGame}
+          isMobile={isMobile}
         />
       )}
 
@@ -417,7 +408,7 @@ export default function GameBoard() {
         />
       )}
 
-      {/* Main game area with consistent height */}
+      {/* Main game area with consistent height - prevent layout collapse */}
       <div className="flex flex-col transition-all duration-300">
         {/* Next Puzzle Countdown - only show when game is not active */}
         {!gameActive && timeLeft !== 0 && (
@@ -426,13 +417,13 @@ export default function GameBoard() {
           </div>
         )}
 
-        {/* Island Map with consistent sizing */}
+        {/* Island Map with consistent sizing - prevent layout collapse */}
         <div
           className="w-full mx-auto transition-all duration-300"
           style={{
             aspectRatio: "1/1", // Always maintain square aspect ratio
             maxWidth: "600px",
-            minHeight: "300px", // Ensure minimum height to prevent layout shifts
+            minHeight: "400px", // Ensure minimum height to prevent layout shifts
           }}
         >
           <IslandMap

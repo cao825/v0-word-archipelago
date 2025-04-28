@@ -6,19 +6,19 @@ import ModalOverlay from "./modal-overlay"
 import LeaderboardDisplay from "./leaderboard-display"
 
 export default function LeaderboardButton() {
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <>
       <button
-        onClick={() => setShowLeaderboard(true)}
-        className="fixed bottom-20 left-4 z-40 bg-amber-500 hover:bg-amber-600 text-white h-10 w-10 rounded-full shadow-lg flex items-center justify-center transition-all duration-300"
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-20 right-4 z-10 bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center"
         aria-label="View Leaderboard"
       >
-        <Trophy size={18} />
+        <Trophy className="h-5 w-5" />
       </button>
 
-      <ModalOverlay isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} title="Leaderboard">
+      <ModalOverlay isOpen={isOpen} onClose={() => setIsOpen(false)} title="Leaderboard">
         <LeaderboardDisplay />
       </ModalOverlay>
     </>

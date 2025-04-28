@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Check, Copy, Linkedin, Twitter } from "lucide-react"
+import { Check, Copy, Link } from "lucide-react"
 import html2canvas from "html2canvas"
 
 interface ShareResultsProps {
@@ -64,18 +64,15 @@ export default function ShareResults({
     }
   }
 
-  // Share to Twitter
-  const shareToTwitter = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`
-    window.open(twitterUrl, "_blank")
-  }
-
-  // Share to LinkedIn
-  const shareToLinkedIn = () => {
-    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-      "https://word-archipelago.vercel.app",
-    )}`
-    window.open(linkedinUrl, "_blank")
+  // Copy game link to clipboard
+  const copyLinkToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText("https://word-archipelago.vercel.app")
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error("Failed to copy link:", error)
+    }
   }
 
   return (
@@ -125,23 +122,13 @@ export default function ShareResults({
           {copied ? "Copied!" : "Copy Results"}
         </button>
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={shareToTwitter}
-            className="flex items-center justify-center gap-2 bg-[#1DA1F2] hover:bg-[#1a94df] text-white py-3 px-4 rounded-lg font-medium transition-colors"
-          >
-            <Twitter size={18} />
-            Twitter
-          </button>
-
-          <button
-            onClick={shareToLinkedIn}
-            className="flex items-center justify-center gap-2 bg-[#0077B5] hover:bg-[#006699] text-white py-3 px-4 rounded-lg font-medium transition-colors"
-          >
-            <Linkedin size={18} />
-            LinkedIn
-          </button>
-        </div>
+        <button
+          onClick={copyLinkToClipboard}
+          className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+        >
+          <Link size={18} />
+          Copy Game Link
+        </button>
 
         {imageBlob && (
           <div className="mt-4">

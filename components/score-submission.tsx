@@ -1,8 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Trophy } from "lucide-react"
 
 interface ScoreSubmissionProps {
   score: number
@@ -25,7 +26,9 @@ export default function ScoreSubmission({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
-  const handleSubmit = () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
     if (!initials.trim()) {
       setError("Please enter your initials")
       return
@@ -33,70 +36,70 @@ export default function ScoreSubmission({
 
     setIsSubmitting(true)
 
-    // Use the globally exposed function to submit the score
-    if (window.submitLeaderboardScore) {
-      window.submitLeaderboardScore(initials, score, wordsFound, objectivesCompleted)
-      setIsSubmitting(false)
+    try {
+      // Submit to leaderboard using the global function
+      if (typeof window !== "undefined" && window.submitLeaderboardScore) {
+        window.submitLeaderboardScore(initials, score, wordsFound, objectivesCompleted)
+      }
+
+      // Call the onSubmit callback
       onSubmit()
-    } else {
-      console.error("submitLeaderboardScore function not found")
+    } catch (error) {
+      console.error("Error submitting score:", error)
+      setError("Failed to submit score. Please try again.")
+    } finally {
       setIsSubmitting(false)
-      setError("Something went wrong. Please try again.")
     }
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-sky-800/50 p-4 rounded-lg">
-        <div className="text-center mb-4">
-          <h3 className="text-xl font-bold text-white">Submit Your Score</h3>
-          <p className="text-sky-200 text-sm">Your score qualifies for the leaderboard!</p>
+    <div className="text-center">
+      <div className="flex justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+          <Trophy className="w-8 h-8 text-amber-400" />
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-sky-700/50 p-2 rounded-lg text-center">
-            <div className="text-xl font-bold text-amber-400">{score}</div>
-            <div className="text-sky-300 text-xs">Score</div>
-          </div>
-          <div className="bg-sky-700/50 p-2 rounded-lg text-center">
-            <div className="text-xl font-bold text-white">
-              {objectivesCompleted}/{totalObjectives}
-            </div>
-            <div className="text-sky-300 text-xs">Objectives</div>
-          </div>
-        </div>
+      <h2 className="text-xl font-bold text-white mb-1">New High Score!</h2>
+      <p className="text-slate-300 mb-4">
+        Your score of <span className="text-amber-400 font-bold">{score}</span> qualifies for the leaderboard
+      </p>
 
-        <div className="mb-4">
-          <label htmlFor="initials" className="block text-sm font-medium text-sky-200 mb-1">
-            Enter your initials (3 letters):
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="initials" className="block text-sm font-medium text-slate-300 mb-1">
+            Enter your initials (3 letters)
           </label>
-          <Input
+          <input
+            type="text"
             id="initials"
-            value={initials}
-            onChange={(e) => {
-              setInitials(e.target.value.slice(0, 3).toUpperCase())
-              setError("")
-            }}
             maxLength={3}
-            className="bg-sky-900/50 border-sky-600 text-white uppercase"
-            placeholder="AAA"
+            value={initials}
+            onChange={(e) => setInitials(e.target.value.toUpperCase())}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-md text-center text-xl font-bold text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 uppercase"
+            autoFocus
           />
-          {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+          {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
         </div>
 
         <div className="flex gap-2">
-          <Button
-            onClick={handleSubmit}
+          <button
+            type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
+            className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             {isSubmitting ? "Submitting..." : "Submit Score"}
-          </Button>
-          <Button onClick={onSkip} variant="outline" className="border-sky-600 text-sky-200 hover:bg-sky-700/50">
+          </button>
+
+          <button
+            type="button"
+            onClick={onSkip}
+            className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg font-medium transition-colors"
+          >
             Skip
-          </Button>
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   )
 }
