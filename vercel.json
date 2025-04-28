@@ -1,6 +1,6 @@
 {
-  "installCommand": "yarn install --frozen-lockfile",
-  "buildCommand": "yarn build",
+  "installCommand": "npx pnpm install --no-frozen-lockfile",
+  "buildCommand": "npx pnpm run build",
   "outputDirectory": ".next",
   "regions": ["sfo1"],
   "github": {
