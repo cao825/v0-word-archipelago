@@ -30,8 +30,6 @@ export default function LeaderboardDisplay() {
   }, [])
 
   // Add a function to handle submitting a new score
-  // Add this after the refreshLeaderboards function
-
   const submitScore = useCallback(
     (playerInitials: string, score: number, wordsFound: number, objectivesCompleted: number) => {
       const entry: LeaderboardEntry = {
