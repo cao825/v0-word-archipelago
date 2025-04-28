@@ -56,6 +56,7 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="fixed inset-x-4 top-1/4 z-50 max-w-md mx-auto"
+            style={{ maxHeight: "60vh" }}
           >
             <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg overflow-hidden">
               <div className="flex items-center justify-between p-3 border-b border-sky-700">

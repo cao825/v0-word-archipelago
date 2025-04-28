@@ -8,6 +8,8 @@ import {
   getAllTimeLeaderboard,
   formatTimestamp,
   type LeaderboardEntry,
+  addLeaderboardEntry,
+  formatInitials,
 } from "@/lib/utils/leaderboardUtils"
 import { getCurrentHourTimestamp } from "@/lib/slices/gameSlice"
 
@@ -26,6 +28,32 @@ export default function LeaderboardDisplay() {
     setLastRefreshed(new Date())
     setCurrentHour(getCurrentHourTimestamp())
   }, [])
+
+  // Add a function to handle submitting a new score
+  // Add this after the refreshLeaderboards function
+
+  const submitScore = useCallback(
+    (playerInitials: string, score: number, wordsFound: number, objectivesCompleted: number) => {
+      const entry: LeaderboardEntry = {
+        playerInitials: formatInitials(playerInitials),
+        score,
+        timestamp: Date.now(),
+        objectivesCompleted,
+        wordsFound,
+      }
+
+      const added = addLeaderboardEntry(entry)
+      if (added) {
+        refreshLeaderboards()
+        return true
+      }
+      return false
+    },
+    [refreshLeaderboards],
+  )
+
+  // Export the submitScore function so it can be used by other components
+  ;(window as any).submitLeaderboardScore = submitScore
 
   useEffect(() => {
     // Load leaderboards initially

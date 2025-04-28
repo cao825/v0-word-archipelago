@@ -20,7 +20,7 @@ export default function WordControls({
   const hasSelection = selectedIslands.length > 0
 
   return (
-    <div className="flex justify-center gap-4 h-12">
+    <div className="flex justify-center gap-4 h-10 transition-all duration-300">
       <button
         onClick={onSubmitWord}
         disabled={!hasSelection}

@@ -1,165 +1,136 @@
 "use client"
 
-import { useState, memo } from "react"
-import { Trophy, Clock, Target, BookOpen, Menu } from "lucide-react"
-import type { GameTheme } from "@/lib/slices/gameSlice"
-import { motion } from "framer-motion"
+import { useState } from "react"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/store"
+import { Target, BookOpen, Settings, RotateCcw, Share2 } from "lucide-react"
+import GameStatus from "./game-status"
 
 interface CompactTopBarProps {
-  score: number
-  timeLeft: number
-  comboCount: number
+  score?: number
+  timeLeft?: number
+  comboCount?: number
   onOpenSettings: () => void
   gameActive: boolean
-  theme: GameTheme
-  objectivesCompleted: number
-  totalObjectives: number
-  foundWordsCount: number
+  theme?: string
+  objectivesCompleted?: number
+  totalObjectives?: number
+  foundWordsCount?: number
   onShowObjectives: () => void
   onShowFoundWords: () => void
   onShowShareModal: () => void
+  onResetGame: () => void
+  isMobile?: boolean
 }
 
-export default memo(function CompactTopBar({
-  score,
-  timeLeft,
-  comboCount,
+export default function CompactTopBar({
+  score = 0,
+  timeLeft = 120,
+  comboCount = 0,
   onOpenSettings,
   gameActive,
-  theme,
-  objectivesCompleted,
-  totalObjectives,
-  foundWordsCount,
+  theme = "tropical",
+  objectivesCompleted = 0,
+  totalObjectives = 3,
+  foundWordsCount = 0,
   onShowObjectives,
   onShowFoundWords,
+  onShowShareModal,
+  onResetGame,
+  isMobile = false,
 }: CompactTopBarProps) {
-  const [showMenu, setShowMenu] = useState(false)
+  const [showObjectives, setShowObjectives] = useState(false)
+  const [showFoundWords, setShowFoundWords] = useState(false)
+  const message = useSelector((state: RootState) => state.game.message)
 
-  // Format time as MM:SS
-  const minutes = Math.floor(timeLeft / 60)
-  const seconds = timeLeft % 60
-  const formattedTime = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
-
-  // Calculate time percentage for progress bar
-  const timePercentage = (timeLeft / 120) * 100
-
-  // Determine color for time indicator
-  const getTimeColor = () => {
-    if (timeLeft < 10) return "bg-red-500"
-    if (timeLeft < 30) return "bg-amber-500"
-    return "bg-emerald-500"
-  }
-
-  // Determine background color based on theme
-  let bgColor = "bg-sky-900/90"
-  let progressBgColor = "bg-sky-800"
-  if (theme === "sunset") {
-    bgColor = "bg-orange-900/90"
-    progressBgColor = "bg-orange-800"
-  } else if (theme === "stormy") {
-    bgColor = "bg-slate-800/90"
-    progressBgColor = "bg-slate-700"
-  } else if (theme === "volcanic") {
-    bgColor = "bg-red-900/90"
-    progressBgColor = "bg-red-800"
-  }
-
-  // Reduce the height and font sizes in the CompactTopBar component
   return (
-    <div className="sticky top-0 z-30">
-      {/* Main top bar - reduced height from h-12 to h-10 */}
-      <div className={`${bgColor} backdrop-blur-sm shadow-md h-10 flex items-center justify-between px-3`}>
-        {/* Left: Score - reduced icon size */}
-        <div className="flex items-center gap-1.5">
-          <Trophy size={14} className="text-amber-400" /> {/* Reduced from 16 to 14 */}
-          <span className="font-bold text-amber-400 text-sm">{score}</span> {/* Added text-sm */}
-        </div>
-
-        {/* Center: Time - reduced font size */}
-        <div className="flex items-center gap-1.5">
-          <Clock size={14} className={timeLeft < 30 ? "text-red-400" : "text-white"} /> {/* Reduced from 16 to 14 */}
-          <span className="font-mono font-medium text-sm">{formattedTime}</span> {/* Added text-sm */}
-        </div>
-
-        {/* Right: Counters and Menu - reduced sizes */}
-        <div className="flex items-center gap-3">
-          {/* Objectives counter */}
+    <div className="relative w-full">
+      <div className="flex items-center justify-between gap-2 p-2 bg-sky-900/80 backdrop-blur-sm border-b border-sky-700 text-white">
+        <div className="flex items-center gap-2">
           <button
             onClick={onShowObjectives}
-            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-sky-800 transition-colors"
             aria-label="Show objectives"
           >
-            <Target size={12} className="text-sky-200" /> {/* Reduced from 14 to 12 */}
-            <span className="text-xs font-medium">
+            <Target className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-medium">
               {objectivesCompleted}/{totalObjectives}
             </span>
           </button>
+        </div>
 
-          {/* Words counter */}
+        <GameStatus
+          score={score}
+          timeLeft={timeLeft}
+          message={message}
+          gameActive={gameActive}
+          comboCount={comboCount}
+          isMobile={isMobile}
+        />
+
+        <div className="flex items-center gap-2">
           <button
             onClick={onShowFoundWords}
-            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-sky-800 transition-colors"
             aria-label="Show found words"
           >
-            <BookOpen size={12} className="text-sky-200" /> {/* Reduced from 14 to 12 */}
-            <span className="text-xs font-medium">{foundWordsCount}</span>
+            <BookOpen className="h-4 w-4 text-sky-300" />
+            <span className="text-sm font-medium">{foundWordsCount}</span>
           </button>
 
-          {/* Menu button */}
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="hover:bg-white/10 rounded p-1 transition-colors relative"
-            aria-label="Menu"
-          >
-            <Menu size={16} /> {/* Reduced from 18 to 16 */}
-            {/* Dropdown menu */}
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-slate-800 rounded-md shadow-lg py-1 w-36 z-50">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowMenu(false)
-                    onOpenSettings()
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-700 text-sm"
-                >
-                  Settings
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowMenu(false)
-                    onShowObjectives()
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-700 text-sm"
-                >
-                  Objectives
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowMenu(false)
-                    onShowFoundWords()
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-700 text-sm"
-                >
-                  Found Words
-                </button>
-              </div>
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onOpenSettings}
+              className="p-1 rounded hover:bg-sky-800 transition-colors"
+              aria-label="Settings"
+            >
+              <Settings className="h-4 w-4 text-sky-300" />
+            </button>
+
+            <button
+              onClick={onResetGame}
+              className="p-1 rounded hover:bg-sky-800 transition-colors"
+              aria-label="Reset game"
+            >
+              <RotateCcw className="h-4 w-4 text-sky-300" />
+            </button>
+
+            <button
+              onClick={onShowShareModal}
+              className="p-1 rounded hover:bg-sky-800 transition-colors"
+              aria-label="Share results"
+            >
+              <Share2 className="h-4 w-4 text-sky-300" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Progress bar for time - reduced height from h-1 to h-0.5 */}
-      <div className={`h-0.5 ${progressBgColor} w-full`}>
-        <motion.div
-          className={`h-full ${getTimeColor()}`}
-          initial={{ width: "100%" }}
-          animate={{ width: `${timePercentage}%` }}
-          transition={{ duration: 0.5, ease: "linear" }}
-        ></motion.div>
-      </div>
+      {/* Objectives Panel */}
+      {showObjectives && (
+        <div
+          id="objectives-panel"
+          className="absolute top-full left-0 w-full z-10 bg-sky-900/95 backdrop-blur-sm border-b border-sky-700 shadow-lg"
+        >
+          <div className="p-3 max-h-60 overflow-y-auto">
+            {/* Objectives content would go here */}
+            <p className="text-sky-200">Objectives panel content</p>
+          </div>
+        </div>
+      )}
+
+      {/* Found Words Panel */}
+      {showFoundWords && (
+        <div
+          id="found-words-panel"
+          className="absolute top-full left-0 w-full z-10 bg-sky-900/95 backdrop-blur-sm border-b border-sky-700 shadow-lg"
+        >
+          <div className="p-3 max-h-60 overflow-y-auto">
+            {/* Found words content would go here */}
+            <p className="text-sky-200">Found words panel content</p>
+          </div>
+        </div>
+      )}
     </div>
   )
-})
+}

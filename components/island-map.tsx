@@ -48,12 +48,25 @@ export default function IslandMap({
   const [hasShaken, setHasShaken] = useState(false)
   const renderedRef = useRef(false)
 
+  // Add a new state to track incorrect island selections
+  const [incorrectIsland, setIncorrectIsland] = useState<string | null>(null)
+
   // Reset the hasShaken state when invalidSubmission changes
   useEffect(() => {
     // When invalidSubmission becomes true, we want to trigger the animation
     // When it becomes false, we want to reset the state
     setHasShaken(false)
   }, [invalidSubmission])
+
+  // Add this effect to reset the incorrect island state after a short delay
+  useEffect(() => {
+    if (incorrectIsland) {
+      const timer = setTimeout(() => {
+        setIncorrectIsland(null)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [incorrectIsland])
 
   // Detect mobile devices
   useEffect(() => {
@@ -423,9 +436,30 @@ export default function IslandMap({
       const isSelected = selectedIslands.includes(island.id)
       const isLastSelected = selectedIslands.length > 0 && selectedIslands[selectedIslands.length - 1] === island.id
       const isJustClicked = lastClickedIsland === island.id
+      const isIncorrect = incorrectIsland === island.id
       const shape = islandShapes[island.id]
 
       if (!shape) return
+
+      // Add visual feedback for incorrect selection
+      if (isIncorrect) {
+        ctx.save()
+        // Create a clipping region slightly larger than the island
+        ctx.beginPath()
+        const clipRadius = island.size * 1.8
+        ctx.arc(island.position.x, island.position.y, clipRadius, 0, Math.PI * 2)
+        ctx.clip()
+
+        // Draw red pulsing ring
+        ctx.beginPath()
+        const ringRadius = island.size * 1.3
+        ctx.arc(island.position.x, island.position.y, ringRadius, 0, Math.PI * 2)
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.7)" // Red with transparency
+        ctx.lineWidth = 3
+        ctx.stroke()
+
+        ctx.restore()
+      }
 
       // Draw water ripple/surf effect around selected islands
       if (isSelected) {
@@ -698,7 +732,7 @@ export default function IslandMap({
       // Reset shadow
       ctx.shadowBlur = 0
     })
-  }, [islands, selectedIslands, islandShapes, time, themeColors, lastClickedIsland])
+  }, [islands, selectedIslands, islandShapes, time, themeColors, lastClickedIsland, incorrectIsland])
 
   // Handle click on islands - optimized with useCallback
   const handleCanvasClick = useCallback(
@@ -743,7 +777,23 @@ export default function IslandMap({
             // Double tap detected
             onIslandDoubleTap(island.id)
           } else {
-            // Single tap
+            // Single tap - check if this would be a valid selection
+            const lastSelectedId = selectedIslands.length > 0 ? selectedIslands[selectedIslands.length - 1] : null
+            const lastSelected = lastSelectedId ? islands.find((i) => i.id === lastSelectedId) : null
+
+            // Check if this would be an invalid selection (not connected to last island)
+            if (
+              selectedIslands.length > 0 &&
+              lastSelected &&
+              !lastSelected.connections.includes(island.id) &&
+              island.id !== lastSelectedId &&
+              island.id !== (selectedIslands.length > 1 ? selectedIslands[selectedIslands.length - 2] : null)
+            ) {
+              // Mark as incorrect selection for visual feedback
+              setIncorrectIsland(island.id)
+            }
+
+            // Call the click handler regardless
             onIslandClick(island.id)
           }
 
@@ -769,7 +819,7 @@ export default function IslandMap({
       lastTapTime,
       lastTapIsland,
       isMobile,
-      selectedIslands.length,
+      selectedIslands,
     ],
   )
 

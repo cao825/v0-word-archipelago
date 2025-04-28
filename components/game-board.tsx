@@ -32,6 +32,7 @@ import GameNotification from "./game-notification"
 import ObjectiveCompleteNotification from "./objective-complete-notification"
 import ShareResults from "./share-results"
 import MiniAchievement from "./mini-achievement"
+import LeaderboardButton from "./leaderboard-button"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -384,6 +385,9 @@ export default function GameBoard() {
         onClose={handleCloseMiniAchievement}
       />
 
+      {/* Leaderboard Button - always visible */}
+      <LeaderboardButton />
+
       {/* Compact Top Bar - Only show during active gameplay */}
       {gameActive && (
         <CompactTopBar
@@ -413,8 +417,8 @@ export default function GameBoard() {
         />
       )}
 
-      {/* Main game area with dynamic height */}
-      <div className="flex flex-col">
+      {/* Main game area with consistent height */}
+      <div className="flex flex-col transition-all duration-300">
         {/* Next Puzzle Countdown - only show when game is not active */}
         {!gameActive && timeLeft !== 0 && (
           <div className="mb-4">
@@ -424,10 +428,11 @@ export default function GameBoard() {
 
         {/* Island Map with consistent sizing */}
         <div
-          className="w-full mx-auto"
+          className="w-full mx-auto transition-all duration-300"
           style={{
             aspectRatio: "1/1", // Always maintain square aspect ratio
             maxWidth: "600px",
+            minHeight: "300px", // Ensure minimum height to prevent layout shifts
           }}
         >
           <IslandMap
