@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 import { generateIslands } from "../utils/islandGenerator"
 import { validateWord } from "../services/dictionaryService"
-import { generateObjectives, checkObjectives } from "../utils/objectiveGenerator"
+import { generateObjectives, checkObjectives, type Objective } from "../utils/objectiveGenerator"
 import { seedRandom } from "../utils/seedRandom"
 
 export interface Island {
@@ -13,13 +13,8 @@ export interface Island {
   multiplier?: number // Add optional multiplier property
 }
 
-export interface Objective {
-  id: string
-  type: string
-  description: string
-  parameter: string | number
-  completed: boolean
-}
+// Re-export the Objective type
+export type { Objective }
 
 export type GameTheme = "tropical" | "sunset" | "stormy" | "volcanic"
 
@@ -74,14 +69,17 @@ const seed = seedRandom(hourlyTimestamp)
 // Generate islands first
 const initialIslands = generateIslands(seed)
 
+// Make sure initialIslands is an array before passing to generateObjectives
+const initialObjectives = Array.isArray(initialIslands) ? generateObjectives(seed, initialIslands) : []
+
 const initialState: GameState = {
-  islands: initialIslands,
+  islands: initialIslands || [],
   selectedIslands: [],
   foundWords: [],
   score: 0,
   timeLeft: 120, // Always 2 minutes
   gameActive: false,
-  objectives: generateObjectives(seed, initialIslands),
+  objectives: initialObjectives,
   completedObjectives: [],
   message: "Select islands to form words!",
   gameTimestamp: hourlyTimestamp,
@@ -361,8 +359,17 @@ export const gameSlice = createSlice({
       if (currentHourTimestamp !== state.gameTimestamp) {
         // It's a new hour, reset everything with new seed
         const newSeed = seedRandom(currentHourTimestamp)
-        state.islands = generateIslands(newSeed)
-        state.objectives = generateObjectives(newSeed, state.islands)
+        const newIslands = generateIslands(newSeed)
+        state.islands = newIslands || []
+
+        // Make sure islands is an array before generating objectives
+        if (Array.isArray(newIslands)) {
+          state.objectives = generateObjectives(newSeed, newIslands)
+        } else {
+          state.objectives = []
+          console.error("Failed to generate islands for new game")
+        }
+
         state.gameTimestamp = currentHourTimestamp
         state.foundWords = []
         state.score = 0
@@ -432,8 +439,17 @@ export const gameSlice = createSlice({
       if (currentHourTimestamp !== state.gameTimestamp) {
         // It's a new hour, reset everything with new seed
         const newSeed = seedRandom(currentHourTimestamp)
-        state.islands = generateIslands(newSeed)
-        state.objectives = generateObjectives(newSeed, state.islands)
+        const newIslands = generateIslands(newSeed)
+        state.islands = newIslands || []
+
+        // Make sure islands is an array before generating objectives
+        if (Array.isArray(newIslands)) {
+          state.objectives = generateObjectives(newSeed, newIslands)
+        } else {
+          state.objectives = []
+          console.error("Failed to generate islands for new puzzle")
+        }
+
         state.gameTimestamp = currentHourTimestamp
 
         // Only reset game progress if the game is not active

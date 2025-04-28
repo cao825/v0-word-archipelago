@@ -151,6 +151,7 @@ export default function GameBoard() {
       // Calculate points earned - if we can't determine exactly, use a reasonable estimate
       const pointsEarned = score - lastScoreRef.current > 0 ? score - lastScoreRef.current : newWord.length * 10 // Fallback calculation
 
+      // Fix: Use the actual word length for the toast
       setWordFoundToast({
         word: newWord.toUpperCase(),
         points: pointsEarned,

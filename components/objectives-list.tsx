@@ -4,7 +4,7 @@ import React from "react"
 import { useSelector } from "react-redux"
 import type { RootState } from "../lib/store"
 import { CheckCircle2, Circle } from "lucide-react"
-import type { Objective } from "../lib/slices/gameSlice"
+import type { Objective } from "../lib/utils/objectiveGenerator"
 
 interface ObjectivesListProps {
   objectives: Objective[]

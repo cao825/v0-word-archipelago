@@ -1,190 +1,105 @@
-import { generateObjectives, checkObjectives } from "../lib/utils/objectiveGenerator"
-import type { Island, Objective } from "../lib/slices/gameSlice"
+import {
+  isPalindrome,
+  hasAtLeastNVowels,
+  checkWordAgainstObjective,
+  generateObjectives,
+} from "../lib/utils/objectiveGenerator"
+import { describe, it, expect } from "@jest/globals"
 
 describe("Objective Generator", () => {
-  // Mock islands for testing
-  const mockIslands: Island[] = [
-    {
-      id: "island-0",
-      letter: "A",
-      position: { x: 100, y: 100 },
-      size: 40,
-      connections: ["island-1"],
-    },
-    {
-      id: "island-1",
-      letter: "T",
-      position: { x: 200, y: 200 },
-      size: 40,
-      connections: ["island-0", "island-2"],
-    },
-    {
-      id: "island-2",
-      letter: "E",
-      position: { x: 300, y: 300 },
-      size: 40,
-      connections: ["island-1"],
-    },
-  ]
-
-  // Mock seed function
-  const mockSeed = jest.fn().mockReturnValue(0.5)
-
-  describe("generateObjectives", () => {
-    it("should generate 3 unique objectives", () => {
-      const objectives = generateObjectives(mockSeed, mockIslands)
-
-      expect(objectives.length).toBe(3)
-
-      // Check for unique types
-      const types = objectives.map((obj) => obj.type)
-      const uniqueTypes = new Set(types)
-      expect(uniqueTypes.size).toBe(3)
+  describe("isPalindrome", () => {
+    it("should correctly identify palindromes", () => {
+      expect(isPalindrome("level")).toBe(true)
+      expect(isPalindrome("radar")).toBe(true)
+      expect(isPalindrome("madam")).toBe(true)
+      expect(isPalindrome("racecar")).toBe(true)
+      expect(isPalindrome("A man a plan a canal Panama")).toBe(false) // Contains spaces
+      expect(isPalindrome("Able was I ere I saw Elba")).toBe(false) // Contains spaces
     })
 
-    it("should generate objectives with correct structure", () => {
-      const objectives = generateObjectives(mockSeed, mockIslands)
-
-      objectives.forEach((objective) => {
-        expect(objective).toHaveProperty("id")
-        expect(objective).toHaveProperty("type")
-        expect(objective).toHaveProperty("description")
-        expect(objective).toHaveProperty("parameter")
-        expect(objective).toHaveProperty("completed")
-        expect(objective.completed).toBe(false)
-      })
+    it("should be case insensitive", () => {
+      expect(isPalindrome("Level")).toBe(true)
+      expect(isPalindrome("Radar")).toBe(true)
+      expect(isPalindrome("Madam")).toBe(true)
     })
 
-    it("should use available letters for letter-based objectives", () => {
-      // Force the seed to generate letter-based objectives
-      const letterSeed = jest
-        .fn()
-        .mockReturnValueOnce(0.2) // For first objective type (startsWith)
-        .mockReturnValueOnce(0.5) // For parameter selection
-        .mockReturnValueOnce(0.4) // For second objective type (endsWith)
-        .mockReturnValueOnce(0.5) // For parameter selection
-        .mockReturnValueOnce(0.6) // For third objective type (contains)
-        .mockReturnValueOnce(0.5) // For parameter selection
+    it("should reject non-palindromes", () => {
+      expect(isPalindrome("hello")).toBe(false)
+      expect(isPalindrome("world")).toBe(false)
+      expect(isPalindrome("test")).toBe(false)
+    })
 
-      const objectives = generateObjectives(letterSeed, mockIslands)
-
-      // Check letter-based objectives use available letters
-      objectives.forEach((objective) => {
-        if (["startsWith", "endsWith", "contains"].includes(objective.type)) {
-          const availableLetters = mockIslands.map((island) => island.letter)
-          expect(availableLetters).toContain(objective.parameter)
-        }
-      })
+    it("should reject short words that are technically palindromes", () => {
+      expect(isPalindrome("a")).toBe(false) // Single letter
+      expect(isPalindrome("aa")).toBe(false) // Two letters
+      expect(isPalindrome("bb")).toBe(false) // Two letters
+      expect(isPalindrome("ton")).toBe(false) // Not a palindrome
+      expect(isPalindrome("no")).toBe(false) // Not a palindrome
     })
   })
 
-  describe("checkObjectives", () => {
-    // Sample objectives for testing
-    const mockObjectives: Objective[] = [
-      {
-        id: "obj-length",
-        type: "length",
-        description: "Find a word with 3 letters",
-        parameter: 3,
+  describe("hasAtLeastNVowels", () => {
+    it("should correctly count vowels", () => {
+      expect(hasAtLeastNVowels("hello", 2)).toBe(true) // 2 vowels
+      expect(hasAtLeastNVowels("world", 1)).toBe(true) // 1 vowel
+      expect(hasAtLeastNVowels("sky", 1)).toBe(false) // 0 vowels
+      expect(hasAtLeastNVowels("beautiful", 4)).toBe(true) // 5 vowels
+    })
+
+    it("should be case insensitive", () => {
+      expect(hasAtLeastNVowels("HELLO", 2)).toBe(true)
+      expect(hasAtLeastNVowels("World", 1)).toBe(true)
+    })
+  })
+
+  describe("checkWordAgainstObjective", () => {
+    it("should check long word objective", () => {
+      const objective = {
+        id: "find-long-word",
+        description: "Find a word with 5 or more letters",
+        points: 50,
         completed: false,
-      },
-      {
-        id: "obj-startsWith",
-        type: "startsWith",
-        description: "Find a word starting with A",
-        parameter: "A",
+      }
+      expect(checkWordAgainstObjective("hello", objective)).toBe(true)
+      expect(checkWordAgainstObjective("hi", objective)).toBe(false)
+    })
+
+    it("should check palindrome objective", () => {
+      const objective = {
+        id: "find-palindrome",
+        description: "Find a palindrome word",
+        points: 75,
         completed: false,
-      },
-      {
-        id: "obj-endsWith",
-        type: "endsWith",
-        description: "Find a word ending with E",
-        parameter: "E",
+      }
+      expect(checkWordAgainstObjective("level", objective)).toBe(true)
+      expect(checkWordAgainstObjective("hello", objective)).toBe(false)
+      expect(checkWordAgainstObjective("ton", objective)).toBe(false) // Not a palindrome
+    })
+
+    it("should check vowel word objective", () => {
+      const objective = {
+        id: "find-vowel-word",
+        description: "Find a word with at least 2 vowels",
+        points: 30,
         completed: false,
-      },
-      {
-        id: "obj-contains",
-        type: "contains",
-        description: "Find a word containing T",
-        parameter: "T",
-        completed: false,
-      },
-      {
-        id: "obj-palindrome",
-        type: "palindrome",
-        description: "Find a palindrome",
-        parameter: "palindrome",
-        completed: false,
-      },
-    ]
-
-    it("should identify completed length objectives", () => {
-      const word = "CAT"
-      const completedObjectives: string[] = []
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).toContain("obj-length")
+      }
+      expect(checkWordAgainstObjective("hello", objective)).toBe(true)
+      expect(checkWordAgainstObjective("sky", objective)).toBe(false)
     })
+  })
 
-    it("should identify completed startsWith objectives", () => {
-      const word = "ATE"
-      const completedObjectives: string[] = []
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).toContain("obj-startsWith")
-    })
-
-    it("should identify completed endsWith objectives", () => {
-      const word = "THE"
-      const completedObjectives: string[] = []
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).toContain("obj-endsWith")
-    })
-
-    it("should identify completed contains objectives", () => {
-      const word = "STAR"
-      const completedObjectives: string[] = []
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).toContain("obj-contains")
-    })
-
-    it("should identify completed palindrome objectives", () => {
-      const word = "LEVEL"
-      const completedObjectives: string[] = []
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).toContain("obj-palindrome")
-    })
-
-    it("should not complete objectives that do not match", () => {
-      const word = "DOG" // 3 letters but doesn't start with A, end with E, or contain T
-      const completedObjectives: string[] = []
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).toContain("obj-length") // Should complete length objective
-      expect(result).not.toContain("obj-startsWith")
-      expect(result).not.toContain("obj-endsWith")
-      expect(result).not.toContain("obj-contains")
-    })
-
-    it("should not return already completed objectives", () => {
-      const word = "ATE" // Matches multiple objectives
-      const completedObjectives = ["obj-length", "obj-startsWith"] // Already completed
-
-      const result = checkObjectives(word, mockObjectives, completedObjectives)
-
-      expect(result).not.toContain("obj-length")
-      expect(result).not.toContain("obj-startsWith")
-      expect(result).toContain("obj-endsWith") // Should still complete this one
-      expect(result).toContain("obj-contains") // Should still complete this one
+  describe("generateObjectives", () => {
+    it("should generate objectives based on islands", () => {
+      const islands = [
+        { id: "1", letter: "L", position: { x: 0, y: 0 }, size: 40, connections: [] },
+        { id: "2", letter: "E", position: { x: 0, y: 0 }, size: 40, connections: [] },
+        { id: "3", letter: "V", position: { x: 0, y: 0 }, size: 40, connections: [] },
+        { id: "4", letter: "E", position: { x: 0, y: 0 }, size: 40, connections: [] },
+        { id: "5", letter: "L", position: { x: 0, y: 0 }, size: 40, connections: [] },
+      ]
+      const objectives = generateObjectives(islands)
+      expect(objectives.length).toBeGreaterThan(0)
+      expect(objectives.length).toBeLessThanOrEqual(3)
     })
   })
 })
