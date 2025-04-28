@@ -6,11 +6,13 @@ import type { Island } from "../lib/slices/gameSlice"
 import type { GameTheme } from "../lib/slices/gameSlice"
 import { useSpring, animated } from "react-spring"
 
+// Add a new prop for handling pre-game clicks
 interface IslandMapProps {
   islands: Island[]
   selectedIslands: string[]
   onIslandClick: (id: string) => void
   onIslandDoubleTap?: (id: string) => void
+  onPreGameClick?: () => void // Add this new prop
   theme?: GameTheme
   invalidSubmission?: boolean
   successfulSubmission?: boolean
@@ -23,11 +25,13 @@ interface IslandShape {
   palmTrees: { x: number; y: number; size: number; lean: number }[]
 }
 
+// Update the function signature to include the new prop
 export default function IslandMap({
   islands,
   selectedIslands,
   onIslandClick,
   onIslandDoubleTap,
+  onPreGameClick, // Add this new prop
   theme = "tropical",
   invalidSubmission = false,
   successfulSubmission = false,
@@ -695,6 +699,12 @@ export default function IslandMap({
             setLastClickedIsland(null)
           }, 100) // Shorter flash duration for better responsiveness
 
+          // If onPreGameClick is provided and we're not in a game, call it
+          if (onPreGameClick && selectedIslands.length === 0) {
+            onPreGameClick()
+            return
+          }
+
           // Handle double tap
           const now = Date.now()
           if (onIslandDoubleTap && lastTapIsland === island.id && now - lastTapTime < 300) {
@@ -713,7 +723,17 @@ export default function IslandMap({
         }
       }
     },
-    [islands, scale, onIslandClick, onIslandDoubleTap, lastTapTime, lastTapIsland, isMobile],
+    [
+      islands,
+      scale,
+      onIslandClick,
+      onIslandDoubleTap,
+      onPreGameClick,
+      lastTapTime,
+      lastTapIsland,
+      isMobile,
+      selectedIslands.length,
+    ],
   )
 
   // Create a CSS transform string for the shake effect

@@ -28,6 +28,8 @@ import CompactTopBar from "./compact-top-bar"
 import FloatingGameControls from "./floating-game-controls"
 import ModalOverlay from "./modal-overlay"
 import WordFoundToast from "./word-found-toast"
+// Add the import for the new component
+import GameNotification from "./game-notification"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -51,6 +53,8 @@ export default function GameBoard() {
   const [showFoundWordsModal, setShowFoundWordsModal] = useState(false)
   const [wordFoundToast, setWordFoundToast] = useState({ word: "", points: 0, visible: false })
   const [isMobile, setIsMobile] = useState(false)
+  // Add state for the notification
+  const [showGameNotification, setShowGameNotification] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
   const gameAreaRef = useRef<HTMLDivElement>(null)
@@ -247,6 +251,16 @@ export default function GameBoard() {
     setWordFoundToast((prev) => ({ ...prev, visible: false }))
   }, [])
 
+  // Add a handler for pre-game clicks
+  const handlePreGameClick = useCallback(() => {
+    setShowGameNotification(true)
+  }, [])
+
+  // Add the handler for closing the notification
+  const handleCloseGameNotification = useCallback(() => {
+    setShowGameNotification(false)
+  }, [])
+
   // Memoize the current word to avoid recalculating on every render
   const currentWord = useMemo(() => {
     return selectedIslands
@@ -296,6 +310,13 @@ export default function GameBoard() {
       {/* Points Animation */}
       <PointsAnimation />
 
+      {/* Game Notification */}
+      <GameNotification
+        isVisible={showGameNotification}
+        onClose={handleCloseGameNotification}
+        message="Tap the Play button to start a game!"
+      />
+
       {/* Word Found Toast */}
       <WordFoundToast
         word={wordFoundToast.word}
@@ -341,6 +362,7 @@ export default function GameBoard() {
             selectedIslands={selectedIslands}
             onIslandClick={handleIslandClick}
             onIslandDoubleTap={handleIslandDoubleTap}
+            onPreGameClick={handlePreGameClick}
             theme={theme}
             invalidSubmission={invalidSubmission}
             successfulSubmission={successfulSubmission}
@@ -396,6 +418,9 @@ export default function GameBoard() {
       <ModalOverlay isOpen={showFoundWordsModal} onClose={() => setShowFoundWordsModal(false)} title="Found Words">
         <FoundWordsList foundWords={foundWords} />
       </ModalOverlay>
+
+      {/* Game Notification */}
+      <GameNotification isOpen={showGameNotification} onClose={handleCloseGameNotification} />
     </div>
   )
 }
