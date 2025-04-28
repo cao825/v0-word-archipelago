@@ -30,21 +30,20 @@ import WordFoundToast from "./word-found-toast"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
-  const {
-    islands,
-    selectedIslands,
-    foundWords,
-    score,
-    timeLeft,
-    gameActive,
-    objectives,
-    message,
-    theme,
-    invalidSubmission,
-    duplicateSubmission,
-    successfulSubmission,
-    comboCount,
-  } = useAppSelector((state) => state.game)
+
+  // Use selective state extraction to prevent unnecessary re-renders
+  const islands = useAppSelector((state) => state.game.islands)
+  const selectedIslands = useAppSelector((state) => state.game.selectedIslands)
+  const foundWords = useAppSelector((state) => state.game.foundWords)
+  const score = useAppSelector((state) => state.game.score)
+  const timeLeft = useAppSelector((state) => state.game.timeLeft)
+  const gameActive = useAppSelector((state) => state.game.gameActive)
+  const objectives = useAppSelector((state) => state.game.objectives)
+  const theme = useAppSelector((state) => state.game.theme)
+  const invalidSubmission = useAppSelector((state) => state.game.invalidSubmission)
+  const duplicateSubmission = useAppSelector((state) => state.game.duplicateSubmission)
+  const successfulSubmission = useAppSelector((state) => state.game.successfulSubmission)
+  const comboCount = useAppSelector((state) => state.game.comboCount)
 
   const [showSettings, setShowSettings] = useState(false)
   const [showObjectivesModal, setShowObjectivesModal] = useState(false)
@@ -227,7 +226,9 @@ export default function GameBoard() {
   }, [currentWord, foundWords])
 
   // Count completed objectives
-  const completedObjectivesCount = objectives.filter((obj) => obj.completed).length
+  const completedObjectivesCount = useMemo(() => {
+    return objectives.filter((obj) => obj.completed).length
+  }, [objectives])
 
   // Maintain a fixed height for the game area to prevent layout shifts
   useEffect(() => {

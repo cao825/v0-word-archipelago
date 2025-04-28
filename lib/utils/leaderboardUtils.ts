@@ -9,6 +9,7 @@ export interface LeaderboardEntry {
 
 // Maximum number of entries to store
 const MAX_ENTRIES = 1000
+const LEADERBOARD_STORAGE_KEY = "wordArchipelago_leaderboard"
 
 // Generate realistic leaderboard data if none exists
 function generateInitialLeaderboardData(): LeaderboardEntry[] {
@@ -34,9 +35,9 @@ function generateInitialLeaderboardData(): LeaderboardEntry[] {
   // Generate 20 realistic entries
   for (let i = 0; i < 20; i++) {
     const nameIndex = Math.floor(Math.random() * names.length)
-    const score = Math.floor(Math.random() * 500) + 200 // Scores between 200-700
-    const wordsFound = Math.floor(Math.random() * 20) + 5 // 5-25 words
-    const objectivesCompleted = Math.floor(Math.random() * 5) + 1 // 1-5 objectives
+    const score = Math.floor(Math.random() * 300) + 100 // Scores between 100-400
+    const wordsFound = Math.floor(Math.random() * 15) + 3 // 3-18 words
+    const objectivesCompleted = Math.min(3, Math.floor(Math.random() * 4)) // 0-3 objectives (max 3)
 
     // Create timestamps within the last week
     const daysAgo = Math.floor(Math.random() * 7)
@@ -56,22 +57,31 @@ function generateInitialLeaderboardData(): LeaderboardEntry[] {
   return entries.sort((a, b) => b.score - a.score)
 }
 
-// Modify the getLeaderboardEntries function to initialize with data if empty
+// Get leaderboard entries with improved error handling and persistence
 export function getLeaderboardEntries(): LeaderboardEntry[] {
   if (typeof window === "undefined") return []
 
   try {
-    const entries = localStorage.getItem("wordArchipelago_leaderboard")
+    const entries = localStorage.getItem(LEADERBOARD_STORAGE_KEY)
     const parsedEntries = entries ? JSON.parse(entries) : []
 
     // If no entries exist, generate initial data
     if (parsedEntries.length === 0) {
       const initialData = generateInitialLeaderboardData()
-      localStorage.setItem("wordArchipelago_leaderboard", JSON.stringify(initialData))
+      localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(initialData))
       return initialData
     }
 
-    return parsedEntries
+    // Validate and fix any corrupted entries
+    const validatedEntries = parsedEntries.map((entry: any) => ({
+      playerInitials: typeof entry.playerInitials === "string" ? entry.playerInitials : "AAA",
+      score: typeof entry.score === "number" ? entry.score : 0,
+      timestamp: typeof entry.timestamp === "number" ? entry.timestamp : Date.now(),
+      objectivesCompleted: typeof entry.objectivesCompleted === "number" ? Math.min(3, entry.objectivesCompleted) : 0, // Ensure max 3 objectives
+      wordsFound: typeof entry.wordsFound === "number" ? entry.wordsFound : 0,
+    }))
+
+    return validatedEntries
   } catch (error) {
     console.error("Error retrieving leaderboard entries:", error)
     return []
@@ -108,14 +118,17 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
       return false
     }
 
-    // Rate limiting - only allow one submission every 10 seconds
+    // Ensure objectives count is valid (max 3)
+    entry.objectivesCompleted = Math.min(3, entry.objectivesCompleted)
+
+    // Rate limiting - only allow one submission every 5 seconds
     const lastSubmission = localStorage.getItem("wordArchipelago_lastSubmission")
     const now = Date.now()
 
     if (lastSubmission) {
       const lastTime = Number.parseInt(lastSubmission, 10)
-      if (now - lastTime < 10000) {
-        // 10 seconds
+      if (now - lastTime < 5000) {
+        // 5 seconds
         console.warn("Rate limit exceeded for leaderboard submission")
         return false
       }
@@ -137,7 +150,7 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
     const sortedEntries = entries.sort((a, b) => b.score - a.score).slice(0, MAX_ENTRIES)
 
     // Save back to localStorage
-    localStorage.setItem("wordArchipelago_leaderboard", JSON.stringify(sortedEntries))
+    localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(sortedEntries))
 
     return true
   } catch (error) {

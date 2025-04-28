@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   getHourlyLeaderboard,
@@ -31,13 +31,24 @@ export default function LeaderboardDisplay() {
     // Load leaderboards initially
     refreshLeaderboards()
 
-    // Refresh leaderboards every 30 seconds to simulate real-time updates
-    const refreshInterval = setInterval(refreshLeaderboards, 30000)
+    // Refresh leaderboards every 60 seconds
+    const refreshInterval = setInterval(refreshLeaderboards, 60000)
 
     return () => clearInterval(refreshInterval)
   }, [refreshLeaderboards])
 
-  const renderLeaderboard = (entries: LeaderboardEntry[]) => {
+  // Memoize the formatted hour display to avoid recalculating on every render
+  const formattedHourDisplay = useMemo(() => {
+    const parts = currentHour.split("-")
+    if (parts.length >= 4) {
+      const hour = Number.parseInt(parts[3])
+      return `${hour}:00 - ${(hour + 1) % 24}:00`
+    }
+    return "Current Hour"
+  }, [currentHour])
+
+  // Memoize the renderLeaderboard function to avoid recreating it on every render
+  const renderLeaderboard = useCallback((entries: LeaderboardEntry[]) => {
     if (entries.length === 0) {
       return <p className="text-center text-sky-400 py-4 text-sm">No entries yet</p>
     }
@@ -65,17 +76,7 @@ export default function LeaderboardDisplay() {
         ))}
       </div>
     )
-  }
-
-  // Format the current hour for display
-  const formatHourDisplay = () => {
-    const parts = currentHour.split("-")
-    if (parts.length >= 4) {
-      const hour = Number.parseInt(parts[3])
-      return `${hour}:00 - ${(hour + 1) % 24}:00`
-    }
-    return "Current Hour"
-  }
+  }, [])
 
   return (
     <Tabs defaultValue="hourly" className="w-full">
@@ -92,7 +93,7 @@ export default function LeaderboardDisplay() {
       </TabsList>
       <TabsContent value="hourly" className="mt-2">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-light tracking-wide text-sky-100">{formatHourDisplay()}</h3>
+          <h3 className="text-sm font-light tracking-wide text-sky-100">{formattedHourDisplay}</h3>
           <button
             onClick={refreshLeaderboards}
             className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"

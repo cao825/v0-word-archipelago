@@ -41,9 +41,8 @@ export default function IslandMap({
   const [lastTapTime, setLastTapTime] = useState(0)
   const [lastTapIsland, setLastTapIsland] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
-
-  // Track if we've already animated for this invalid submission
   const [hasShaken, setHasShaken] = useState(false)
+  const renderedRef = useRef(false)
 
   // Reset the hasShaken state when invalidSubmission changes to false
   useEffect(() => {
@@ -96,7 +95,7 @@ export default function IslandMap({
       let lastTime = 0
       const animate = (timestamp: number) => {
         if (timestamp - lastTime > 100) {
-          // Only update every 100ms
+          // Only update every 100ms for better performance
           setTime((prev) => (prev + 1) % 1000)
           lastTime = timestamp
         }
@@ -323,6 +322,12 @@ export default function IslandMap({
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
+
+    // Skip first render to avoid unnecessary work
+    if (!renderedRef.current) {
+      renderedRef.current = true
+      return
+    }
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
