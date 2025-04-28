@@ -1,12 +1,27 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useEffect } from "react"
 import GameBoard from "@/components/game-board"
 import { Providers } from "@/components/providers"
 import { useAppSelector } from "@/lib/hooks/hooks"
 import ErrorBoundary from "@/components/error-boundary"
 
 export default function Home() {
+  // Add error handling for the entire app
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("Caught global error:", event.error)
+      // Prevent the error from bubbling up further
+      event.preventDefault()
+    }
+
+    window.addEventListener("error", handleError)
+
+    return () => {
+      window.removeEventListener("error", handleError)
+    }
+  }, [])
+
   return (
     <ErrorBoundary>
       <Providers>
@@ -21,7 +36,7 @@ const AppContent = memo(function AppContent() {
   const { theme } = useAppSelector((state) => state.game)
 
   // Set background gradient based on theme
-  let bgGradient = 'bg-gradient-to-b from-sky-900 via-sky-800 to-sky-950"a-sky-800 to-sky-950'
+  let bgGradient = "bg-gradient-to-b from-sky-900 via-sky-800 to-sky-950"
 
   if (theme === "sunset") {
     bgGradient = "bg-gradient-to-b from-blue-900 via-orange-900 to-blue-950"

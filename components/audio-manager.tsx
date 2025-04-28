@@ -17,6 +17,12 @@ declare global {
   }
 }
 
+// Safe promise handler
+const safePromise = (promise: Promise<any> | undefined) => {
+  if (!promise || typeof promise.then !== "function") return Promise.resolve()
+  return promise.catch((err) => console.log("Audio promise rejected:", err))
+}
+
 export default function AudioManager() {
   const { successfulSubmission, invalidSubmission, completedObjectives, selectedIslands } = useAppSelector(
     (state) => state.game,
@@ -63,291 +69,389 @@ export default function AudioManager() {
     if (audioEnabled && typeof window !== "undefined") {
       // Create audio elements with proper error handling
       const createAudio = (src: string, onLoad: () => void, onError: (e: Event) => void) => {
-        const audio = new Audio()
-        audio.addEventListener("canplaythrough", onLoad, { once: true })
-        audio.addEventListener("error", onError, { once: true })
+        try {
+          const audio = new Audio()
+          audio.addEventListener("canplaythrough", onLoad, { once: true })
+          audio.addEventListener("error", onError, { once: true })
 
-        // Add a timeout to handle cases where the file might be slow to load
-        const timeout = setTimeout(() => {
-          console.warn(`Audio file ${src} loading timed out, continuing without it`)
-          onLoad() // Mark as loaded anyway to prevent blocking
-        }, 3000)
+          // Add a timeout to handle cases where the file might be slow to load
+          const timeout = setTimeout(() => {
+            console.warn(`Audio file ${src} loading timed out, continuing without it`)
+            onLoad() // Mark as loaded anyway to prevent blocking
+          }, 3000)
 
-        // Clear timeout when loaded
-        audio.addEventListener("canplaythrough", () => clearTimeout(timeout), { once: true })
+          // Clear timeout when loaded
+          audio.addEventListener("canplaythrough", () => clearTimeout(timeout), { once: true })
 
-        // Set the source last to start loading
-        audio.src = src
-        return audio
+          // Set the source last to start loading
+          audio.src = src
+          return audio
+        } catch (error) {
+          console.error(`Error creating audio for ${src}:`, error)
+          onLoad() // Mark as loaded to prevent blocking
+          return null
+        }
       }
 
       // Create success sound with fallback
-      successSoundRef.current = createAudio(
-        "/sounds/success.mp3",
-        () => setAudioLoaded((prev) => ({ ...prev, success: true })),
-        (e) => {
-          console.warn("Failed to load success sound, using fallback", e)
-          // Create a simple beep as fallback
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const oscillator = ctx.createOscillator()
-          oscillator.type = "sine"
-          oscillator.frequency.setValueAtTime(880, ctx.currentTime) // A5
-          oscillator.connect(ctx.destination)
+      try {
+        successSoundRef.current = createAudio(
+          "/sounds/success.mp3",
+          () => setAudioLoaded((prev) => ({ ...prev, success: true })),
+          (e) => {
+            console.warn("Failed to load success sound, using fallback", e)
+            // Create a simple beep as fallback
+            try {
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const fallbackAudio = {
+                ctx,
+                play: () => {
+                  try {
+                    const osc = ctx.createOscillator()
+                    osc.type = "sine"
+                    osc.frequency.setValueAtTime(880, ctx.currentTime)
 
-          // Store the context and oscillator for later use
-          const fallbackAudio = {
-            ctx,
-            oscillator,
-            play: () => {
-              const osc = ctx.createOscillator()
-              osc.type = "sine"
-              osc.frequency.setValueAtTime(880, ctx.currentTime)
+                    const gain = ctx.createGain()
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime)
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5)
 
-              const gain = ctx.createGain()
-              gain.gain.setValueAtTime(0.2, ctx.currentTime)
-              gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5)
+                    osc.connect(gain)
+                    gain.connect(ctx.destination)
 
-              osc.connect(gain)
-              gain.connect(ctx.destination)
+                    osc.start()
+                    osc.stop(ctx.currentTime + 0.5)
+                    return Promise.resolve()
+                  } catch (error) {
+                    console.warn("Error playing fallback success sound:", error)
+                    return Promise.resolve()
+                  }
+                },
+                currentTime: 0,
+              }
 
-              osc.start()
-              osc.stop(ctx.currentTime + 0.5)
-            },
-            currentTime: 0,
-          }
-
-          // Replace the audio element with our fallback
-          successSoundRef.current = fallbackAudio as any
-          setAudioLoaded((prev) => ({ ...prev, success: true }))
-        },
-      )
+              // Replace the audio element with our fallback
+              successSoundRef.current = fallbackAudio as any
+              setAudioLoaded((prev) => ({ ...prev, success: true }))
+            } catch (error) {
+              console.warn("Could not create fallback audio:", error)
+              setAudioLoaded((prev) => ({ ...prev, success: true }))
+            }
+          },
+        )
+      } catch (error) {
+        console.error("Error setting up success sound:", error)
+        setAudioLoaded((prev) => ({ ...prev, success: true }))
+      }
 
       // Create error sound
-      errorSoundRef.current = createAudio(
-        "/sounds/error.mp3",
-        () => setAudioLoaded((prev) => ({ ...prev, error: true })),
-        (e) => {
-          console.warn("Failed to load error sound, using fallback", e)
-          // Create a simple lower beep as fallback
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const fallbackAudio = {
-            ctx,
-            play: () => {
-              const osc = ctx.createOscillator()
-              osc.type = "sine"
-              osc.frequency.setValueAtTime(220, ctx.currentTime) // A3
+      try {
+        errorSoundRef.current = createAudio(
+          "/sounds/error.mp3",
+          () => setAudioLoaded((prev) => ({ ...prev, error: true })),
+          (e) => {
+            console.warn("Failed to load error sound, using fallback", e)
+            try {
+              // Create a simple lower beep as fallback
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const fallbackAudio = {
+                ctx,
+                play: () => {
+                  try {
+                    const osc = ctx.createOscillator()
+                    osc.type = "sine"
+                    osc.frequency.setValueAtTime(220, ctx.currentTime) // A3
 
-              const gain = ctx.createGain()
-              gain.gain.setValueAtTime(0.2, ctx.currentTime)
-              gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3)
+                    const gain = ctx.createGain()
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime)
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3)
 
-              osc.connect(gain)
-              gain.connect(ctx.destination)
+                    osc.connect(gain)
+                    gain.connect(ctx.destination)
 
-              osc.start()
-              osc.stop(ctx.currentTime + 0.3)
-            },
-            currentTime: 0,
-          }
+                    osc.start()
+                    osc.stop(ctx.currentTime + 0.3)
+                    return Promise.resolve()
+                  } catch (error) {
+                    console.warn("Error playing fallback error sound:", error)
+                    return Promise.resolve()
+                  }
+                },
+                currentTime: 0,
+              }
 
-          // Replace the audio element with our fallback
-          errorSoundRef.current = fallbackAudio as any
-          setAudioLoaded((prev) => ({ ...prev, error: true }))
-        },
-      )
+              // Replace the audio element with our fallback
+              errorSoundRef.current = fallbackAudio as any
+              setAudioLoaded((prev) => ({ ...prev, error: true }))
+            } catch (error) {
+              console.warn("Could not create fallback audio:", error)
+              setAudioLoaded((prev) => ({ ...prev, error: true }))
+            }
+          },
+        )
+      } catch (error) {
+        console.error("Error setting up error sound:", error)
+        setAudioLoaded((prev) => ({ ...prev, error: true }))
+      }
 
       // Create objective sound
-      objectiveSoundRef.current = createAudio(
-        "/sounds/objective.mp3",
-        () => setAudioLoaded((prev) => ({ ...prev, objective: true })),
-        (e) => {
-          console.warn("Failed to load objective sound, using fallback", e)
-          // Create a simple chord as fallback
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const fallbackAudio = {
-            ctx,
-            play: () => {
-              const frequencies = [523.25, 659.25, 783.99] // C5, E5, G5
+      try {
+        objectiveSoundRef.current = createAudio(
+          "/sounds/objective.mp3",
+          () => setAudioLoaded((prev) => ({ ...prev, objective: true })),
+          (e) => {
+            console.warn("Failed to load objective sound, using fallback", e)
+            try {
+              // Create a simple chord as fallback
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const fallbackAudio = {
+                ctx,
+                play: () => {
+                  try {
+                    const frequencies = [523.25, 659.25, 783.99] // C5, E5, G5
 
-              frequencies.forEach((freq, i) => {
-                const osc = ctx.createOscillator()
-                osc.type = "sine"
-                osc.frequency.setValueAtTime(freq, ctx.currentTime)
+                    frequencies.forEach((freq, i) => {
+                      const osc = ctx.createOscillator()
+                      osc.type = "sine"
+                      osc.frequency.setValueAtTime(freq, ctx.currentTime)
 
-                const gain = ctx.createGain()
-                gain.gain.setValueAtTime(0.1, ctx.currentTime)
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.0)
+                      const gain = ctx.createGain()
+                      gain.gain.setValueAtTime(0.1, ctx.currentTime)
+                      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.0)
 
-                osc.connect(gain)
-                gain.connect(ctx.destination)
+                      osc.connect(gain)
+                      gain.connect(ctx.destination)
 
-                osc.start(ctx.currentTime + i * 0.05)
-                osc.stop(ctx.currentTime + 1.0)
-              })
-            },
-            currentTime: 0,
-          }
+                      osc.start(ctx.currentTime + i * 0.05)
+                      osc.stop(ctx.currentTime + 1.0)
+                    })
+                    return Promise.resolve()
+                  } catch (error) {
+                    console.warn("Error playing fallback objective sound:", error)
+                    return Promise.resolve()
+                  }
+                },
+                currentTime: 0,
+              }
 
-          // Replace the audio element with our fallback
-          objectiveSoundRef.current = fallbackAudio as any
-          setAudioLoaded((prev) => ({ ...prev, objective: true }))
-        },
-      )
+              // Replace the audio element with our fallback
+              objectiveSoundRef.current = fallbackAudio as any
+              setAudioLoaded((prev) => ({ ...prev, objective: true }))
+            } catch (error) {
+              console.warn("Could not create fallback audio:", error)
+              setAudioLoaded((prev) => ({ ...prev, objective: true }))
+            }
+          },
+        )
+      } catch (error) {
+        console.error("Error setting up objective sound:", error)
+        setAudioLoaded((prev) => ({ ...prev, objective: true }))
+      }
 
       // Create combo sound
-      comboSoundRef.current = createAudio(
-        "/sounds/combo.mp3",
-        () => setAudioLoaded((prev) => ({ ...prev, combo: true })),
-        (e) => {
-          console.warn("Failed to load combo sound, using fallback", e)
-          // Create a simple ascending notes as fallback
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const fallbackAudio = {
-            ctx,
-            play: () => {
-              const frequencies = [440, 554.37, 659.25] // A4, C#5, E5
+      try {
+        comboSoundRef.current = createAudio(
+          "/sounds/combo.mp3",
+          () => setAudioLoaded((prev) => ({ ...prev, combo: true })),
+          (e) => {
+            console.warn("Failed to load combo sound, using fallback", e)
+            try {
+              // Create a simple ascending notes as fallback
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const fallbackAudio = {
+                ctx,
+                play: () => {
+                  try {
+                    const frequencies = [440, 554.37, 659.25] // A4, C#5, E5
 
-              frequencies.forEach((freq, i) => {
-                const osc = ctx.createOscillator()
-                osc.type = "sine"
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1)
+                    frequencies.forEach((freq, i) => {
+                      const osc = ctx.createOscillator()
+                      osc.type = "sine"
+                      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1)
 
-                const gain = ctx.createGain()
-                gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1)
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.3)
+                      const gain = ctx.createGain()
+                      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1)
+                      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.3)
 
-                osc.connect(gain)
-                gain.connect(ctx.destination)
+                      osc.connect(gain)
+                      gain.connect(ctx.destination)
 
-                osc.start(ctx.currentTime + i * 0.1)
-                osc.stop(ctx.currentTime + i * 0.1 + 0.3)
-              })
-            },
-            currentTime: 0,
-          }
+                      osc.start(ctx.currentTime + i * 0.1)
+                      osc.stop(ctx.currentTime + i * 0.1 + 0.3)
+                    })
+                    return Promise.resolve()
+                  } catch (error) {
+                    console.warn("Error playing fallback combo sound:", error)
+                    return Promise.resolve()
+                  }
+                },
+                currentTime: 0,
+              }
 
-          // Replace the audio element with our fallback
-          comboSoundRef.current = fallbackAudio as any
-          setAudioLoaded((prev) => ({ ...prev, combo: true }))
-        },
-      )
+              // Replace the audio element with our fallback
+              comboSoundRef.current = fallbackAudio as any
+              setAudioLoaded((prev) => ({ ...prev, combo: true }))
+            } catch (error) {
+              console.warn("Could not create fallback audio:", error)
+              setAudioLoaded((prev) => ({ ...prev, combo: true }))
+            }
+          },
+        )
+      } catch (error) {
+        console.error("Error setting up combo sound:", error)
+        setAudioLoaded((prev) => ({ ...prev, combo: true }))
+      }
 
       // Create select sound
-      selectSoundRef.current = createAudio(
-        "/sounds/select.mp3",
-        () => setAudioLoaded((prev) => ({ ...prev, select: true })),
-        (e) => {
-          console.warn("Failed to load select sound, using fallback", e)
-          // Create a simple click as fallback
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          const fallbackAudio = {
-            ctx,
-            play: () => {
-              const osc = ctx.createOscillator()
-              osc.type = "sine"
-              osc.frequency.setValueAtTime(1200, ctx.currentTime)
+      try {
+        selectSoundRef.current = createAudio(
+          "/sounds/select.mp3",
+          () => setAudioLoaded((prev) => ({ ...prev, select: true })),
+          (e) => {
+            console.warn("Failed to load select sound, using fallback", e)
+            try {
+              // Create a simple click as fallback
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const fallbackAudio = {
+                ctx,
+                play: () => {
+                  try {
+                    const osc = ctx.createOscillator()
+                    osc.type = "sine"
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime)
 
-              const gain = ctx.createGain()
-              gain.gain.setValueAtTime(0.05, ctx.currentTime)
-              gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1)
+                    const gain = ctx.createGain()
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime)
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1)
 
-              osc.connect(gain)
-              gain.connect(ctx.destination)
+                    osc.connect(gain)
+                    gain.connect(ctx.destination)
 
-              osc.start()
-              osc.stop(ctx.currentTime + 0.1)
-            },
-            currentTime: 0,
-            volume: 0.3,
-          }
+                    osc.start()
+                    osc.stop(ctx.currentTime + 0.1)
+                    return Promise.resolve()
+                  } catch (error) {
+                    console.warn("Error playing fallback select sound:", error)
+                    return Promise.resolve()
+                  }
+                },
+                currentTime: 0,
+                volume: 0.3,
+              }
 
-          // Replace the audio element with our fallback
-          selectSoundRef.current = fallbackAudio as any
-          setAudioLoaded((prev) => ({ ...prev, select: true }))
-        },
-      )
+              // Replace the audio element with our fallback
+              selectSoundRef.current = fallbackAudio as any
+              setAudioLoaded((prev) => ({ ...prev, select: true }))
+            } catch (error) {
+              console.warn("Could not create fallback audio:", error)
+              setAudioLoaded((prev) => ({ ...prev, select: true }))
+            }
+          },
+        )
+      } catch (error) {
+        console.error("Error setting up select sound:", error)
+        setAudioLoaded((prev) => ({ ...prev, select: true }))
+      }
 
       // Create ambient sound
-      ambientSoundRef.current = createAudio(
-        "/sounds/ocean-waves.mp3",
-        () => {
-          setAudioLoaded((prev) => ({ ...prev, ambient: true }))
-          if (ambientEnabled && ambientSoundRef.current && "loop" in ambientSoundRef.current) {
-            ambientSoundRef.current.loop = true
-            ambientSoundRef.current.volume = 0.2
-            ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
-          }
-        },
-        (e) => {
-          console.warn("Failed to load ambient sound, using fallback", e)
-          // Create a simple ambient noise as fallback
-          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-          let isPlaying = false
+      try {
+        ambientSoundRef.current = createAudio(
+          "/sounds/ocean-waves.mp3",
+          () => {
+            setAudioLoaded((prev) => ({ ...prev, ambient: true }))
+            if (ambientEnabled && ambientSoundRef.current && "loop" in ambientSoundRef.current) {
+              ambientSoundRef.current.loop = true
+              ambientSoundRef.current.volume = 0.2
+              safePromise(ambientSoundRef.current.play())
+            }
+          },
+          (e) => {
+            console.warn("Failed to load ambient sound, using fallback", e)
+            try {
+              // Create a simple ambient noise as fallback
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+              let isPlaying = false
 
-          const fallbackAudio = {
-            ctx,
-            loop: false,
-            volume: 0.2,
-            play: () => {
-              if (isPlaying) return Promise.resolve()
-              isPlaying = true
+              const fallbackAudio = {
+                ctx,
+                loop: false,
+                volume: 0.2,
+                play: () => {
+                  try {
+                    if (isPlaying) return Promise.resolve()
+                    isPlaying = true
 
-              // Create white noise
-              const bufferSize = 2 * ctx.sampleRate
-              const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
-              const output = noiseBuffer.getChannelData(0)
+                    // Create white noise
+                    const bufferSize = 2 * ctx.sampleRate
+                    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+                    const output = noiseBuffer.getChannelData(0)
 
-              for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1
+                    for (let i = 0; i < bufferSize; i++) {
+                      output[i] = Math.random() * 2 - 1
+                    }
+
+                    const whiteNoise = ctx.createBufferSource()
+                    whiteNoise.buffer = noiseBuffer
+                    whiteNoise.loop = true
+
+                    const bandpass = ctx.createBiquadFilter()
+                    bandpass.type = "bandpass"
+                    bandpass.frequency.value = 500
+                    bandpass.Q.value = 0.5
+
+                    const gain = ctx.createGain()
+                    gain.gain.value = 0.05
+
+                    whiteNoise.connect(bandpass)
+                    bandpass.connect(gain)
+                    gain.connect(ctx.destination)
+
+                    whiteNoise.start()
+
+                    // Store for stopping later
+                    fallbackAudio._source = whiteNoise
+                    fallbackAudio._gain = gain
+
+                    return Promise.resolve()
+                  } catch (error) {
+                    console.warn("Error playing fallback ambient sound:", error)
+                    return Promise.resolve()
+                  }
+                },
+                pause: () => {
+                  try {
+                    if (!isPlaying) return
+                    isPlaying = false
+
+                    if (fallbackAudio._source) {
+                      fallbackAudio._source.stop()
+                      fallbackAudio._source = null
+                    }
+                  } catch (error) {
+                    console.warn("Error pausing fallback ambient sound:", error)
+                  }
+                },
+                _source: null,
+                _gain: null,
+                currentTime: 0,
               }
 
-              const whiteNoise = ctx.createBufferSource()
-              whiteNoise.buffer = noiseBuffer
-              whiteNoise.loop = true
+              // Replace the audio element with our fallback
+              ambientSoundRef.current = fallbackAudio as any
+              setAudioLoaded((prev) => ({ ...prev, ambient: true }))
 
-              const bandpass = ctx.createBiquadFilter()
-              bandpass.type = "bandpass"
-              bandpass.frequency.value = 500
-              bandpass.Q.value = 0.5
-
-              const gain = ctx.createGain()
-              gain.gain.value = 0.05
-
-              whiteNoise.connect(bandpass)
-              bandpass.connect(gain)
-              gain.connect(ctx.destination)
-
-              whiteNoise.start()
-
-              // Store for stopping later
-              fallbackAudio._source = whiteNoise
-              fallbackAudio._gain = gain
-
-              return Promise.resolve()
-            },
-            pause: () => {
-              if (!isPlaying) return
-              isPlaying = false
-
-              if (fallbackAudio._source) {
-                fallbackAudio._source.stop()
-                fallbackAudio._source = null
+              if (ambientEnabled) {
+                safePromise(fallbackAudio.play())
               }
-            },
-            _source: null,
-            _gain: null,
-            currentTime: 0,
-          }
-
-          // Replace the audio element with our fallback
-          ambientSoundRef.current = fallbackAudio as any
-          setAudioLoaded((prev) => ({ ...prev, ambient: true }))
-
-          if (ambientEnabled) {
-            fallbackAudio.play().catch((e) => console.log("Ambient fallback playback prevented:", e))
-          }
-        },
-      )
+            } catch (error) {
+              console.warn("Could not create fallback audio:", error)
+              setAudioLoaded((prev) => ({ ...prev, ambient: true }))
+            }
+          },
+        )
+      } catch (error) {
+        console.error("Error setting up ambient sound:", error)
+        setAudioLoaded((prev) => ({ ...prev, ambient: true }))
+      }
 
       // Configure select sound to be quieter
       if (selectSoundRef.current && "volume" in selectSoundRef.current) {
@@ -359,19 +463,31 @@ export default function AudioManager() {
       // Clean up audio elements
       if (ambientSoundRef.current) {
         if ("pause" in ambientSoundRef.current) {
-          ambientSoundRef.current.pause()
+          try {
+            ambientSoundRef.current.pause()
+          } catch (error) {
+            console.warn("Error pausing ambient sound during cleanup:", error)
+          }
         }
         if ("removeEventListener" in ambientSoundRef.current) {
-          ambientSoundRef.current.removeEventListener("canplaythrough", () => {})
-          ambientSoundRef.current.removeEventListener("error", () => {})
+          try {
+            ambientSoundRef.current.removeEventListener("canplaythrough", () => {})
+            ambientSoundRef.current.removeEventListener("error", () => {})
+          } catch (error) {
+            console.warn("Error removing event listeners during cleanup:", error)
+          }
         }
       }
 
       // Clean up other audio elements
       const cleanupAudio = (ref: React.MutableRefObject<any>) => {
         if (ref.current && "removeEventListener" in ref.current) {
-          ref.current.removeEventListener("canplaythrough", () => {})
-          ref.current.removeEventListener("error", () => {})
+          try {
+            ref.current.removeEventListener("canplaythrough", () => {})
+            ref.current.removeEventListener("error", () => {})
+          } catch (error) {
+            console.warn("Error removing event listeners during cleanup:", error)
+          }
         }
       }
 
@@ -388,11 +504,19 @@ export default function AudioManager() {
     if (audioEnabled && ambientSoundRef.current && audioLoaded.ambient) {
       if (ambientEnabled) {
         if ("play" in ambientSoundRef.current) {
-          ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
+          try {
+            safePromise(ambientSoundRef.current.play())
+          } catch (error) {
+            console.warn("Error playing ambient sound:", error)
+          }
         }
       } else {
         if ("pause" in ambientSoundRef.current) {
-          ambientSoundRef.current.pause()
+          try {
+            ambientSoundRef.current.pause()
+          } catch (error) {
+            console.warn("Error pausing ambient sound:", error)
+          }
         }
       }
     }
@@ -403,10 +527,14 @@ export default function AudioManager() {
     if (!audioEnabled || !audioLoaded.success) return
 
     if (successfulSubmission && successSoundRef.current && "play" in successSoundRef.current) {
-      if ("currentTime" in successSoundRef.current) {
-        successSoundRef.current.currentTime = 0
+      try {
+        if ("currentTime" in successSoundRef.current) {
+          successSoundRef.current.currentTime = 0
+        }
+        safePromise(successSoundRef.current.play())
+      } catch (error) {
+        console.warn("Error playing success sound:", error)
       }
-      successSoundRef.current.play().catch((e) => console.log("Success audio playback prevented:", e))
     }
   }, [successfulSubmission, audioEnabled, audioLoaded.success])
 
@@ -414,10 +542,14 @@ export default function AudioManager() {
     if (!audioEnabled || !audioLoaded.error) return
 
     if (invalidSubmission && errorSoundRef.current && "play" in errorSoundRef.current) {
-      if ("currentTime" in errorSoundRef.current) {
-        errorSoundRef.current.currentTime = 0
+      try {
+        if ("currentTime" in errorSoundRef.current) {
+          errorSoundRef.current.currentTime = 0
+        }
+        safePromise(errorSoundRef.current.play())
+      } catch (error) {
+        console.warn("Error playing error sound:", error)
       }
-      errorSoundRef.current.play().catch((e) => console.log("Error audio playback prevented:", e))
     }
   }, [invalidSubmission, audioEnabled, audioLoaded.error])
 
@@ -430,13 +562,17 @@ export default function AudioManager() {
     const newCompletedObjectives = completedObjectives.filter((id) => !prevCompletedObjectives.current.includes(id))
 
     if (newCompletedObjectives.length > 0) {
-      if ("currentTime" in objectiveSoundRef.current) {
-        objectiveSoundRef.current.currentTime = 0
-      }
-      objectiveSoundRef.current.play().catch((e) => console.log("Objective audio playback prevented:", e))
+      try {
+        if ("currentTime" in objectiveSoundRef.current) {
+          objectiveSoundRef.current.currentTime = 0
+        }
+        safePromise(objectiveSoundRef.current.play())
 
-      // Update the ref to the current completed objectives
-      prevCompletedObjectives.current = [...completedObjectives]
+        // Update the ref to the current completed objectives
+        prevCompletedObjectives.current = [...completedObjectives]
+      } catch (error) {
+        console.warn("Error playing objective sound:", error)
+      }
     }
   }, [completedObjectives, audioEnabled, audioLoaded.objective])
 
@@ -446,10 +582,14 @@ export default function AudioManager() {
 
     // Only play sound when a new island is selected (length increases)
     if (selectedIslands.length > prevSelectedLength.current) {
-      if ("currentTime" in selectSoundRef.current) {
-        selectSoundRef.current.currentTime = 0
+      try {
+        if ("currentTime" in selectSoundRef.current) {
+          selectSoundRef.current.currentTime = 0
+        }
+        safePromise(selectSoundRef.current.play())
+      } catch (error) {
+        console.warn("Error playing select sound:", error)
       }
-      selectSoundRef.current.play().catch((e) => console.log("Select audio playback prevented:", e))
     }
 
     // Update the previous length reference
