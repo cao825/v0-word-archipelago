@@ -1,0 +1,9 @@
+__tests__
+jest.config.js
+jest.setup.js
+.vscode
+.github
+.husky
+.eslintrc
+.prettierrc
+*.log
