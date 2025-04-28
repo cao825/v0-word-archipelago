@@ -9,12 +9,14 @@ import {
   formatTimestamp,
   type LeaderboardEntry,
 } from "@/lib/utils/leaderboardUtils"
+import { getCurrentHourTimestamp } from "@/lib/slices/gameSlice"
 
 export default function LeaderboardDisplay() {
   const [hourlyLeaderboard, setHourlyLeaderboard] = useState<LeaderboardEntry[]>([])
   const [dailyLeaderboard, setDailyLeaderboard] = useState<LeaderboardEntry[]>([])
   const [allTimeLeaderboard, setAllTimeLeaderboard] = useState<LeaderboardEntry[]>([])
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
+  const [currentHour, setCurrentHour] = useState<string>(getCurrentHourTimestamp())
 
   // Function to refresh leaderboard data
   const refreshLeaderboards = useCallback(() => {
@@ -22,6 +24,7 @@ export default function LeaderboardDisplay() {
     setDailyLeaderboard(getDailyLeaderboard())
     setAllTimeLeaderboard(getAllTimeLeaderboard())
     setLastRefreshed(new Date())
+    setCurrentHour(getCurrentHourTimestamp())
   }, [])
 
   useEffect(() => {
@@ -36,32 +39,42 @@ export default function LeaderboardDisplay() {
 
   const renderLeaderboard = (entries: LeaderboardEntry[]) => {
     if (entries.length === 0) {
-      return <p className="text-center text-sky-400 py-4">No entries yet</p>
+      return <p className="text-center text-sky-400 py-4 text-sm">No entries yet</p>
     }
 
     return (
-      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+      <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
         {entries.map((entry, index) => (
-          <div key={index} className="bg-sky-900 rounded-md p-2 flex items-center border border-sky-700">
-            <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center font-bold mr-2">
+          <div key={index} className="bg-sky-900 rounded-md p-1.5 flex items-center border border-sky-700">
+            <div className="w-6 h-6 rounded-full bg-amber-600 flex items-center justify-center font-bold mr-2 text-xs">
               {index + 1}
             </div>
             <div className="flex-1 flex items-center">
-              <div className="bg-sky-950 px-3 py-1 rounded-md font-mono font-bold tracking-wider text-amber-300 mr-3 uppercase">
+              <div className="bg-sky-950 px-2 py-0.5 rounded-md font-mono font-bold tracking-wider text-amber-300 mr-2 uppercase text-xs">
                 {entry.playerInitials}
               </div>
-              <div className="text-xs text-sky-300">
-                {entry.wordsFound} words · {entry.objectivesCompleted} objectives
+              <div className="text-[10px] text-sky-300">
+                {entry.wordsFound} words · {entry.objectivesCompleted} obj
               </div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-lg text-amber-400">{entry.score}</div>
-              <div className="text-xs text-sky-300">{formatTimestamp(entry.timestamp)}</div>
+              <div className="font-bold text-base text-amber-400">{entry.score}</div>
+              <div className="text-[10px] text-sky-300">{formatTimestamp(entry.timestamp)}</div>
             </div>
           </div>
         ))}
       </div>
     )
+  }
+
+  // Format the current hour for display
+  const formatHourDisplay = () => {
+    const parts = currentHour.split("-")
+    if (parts.length >= 4) {
+      const hour = Number.parseInt(parts[3])
+      return `${hour}:00 - ${(hour + 1) % 24}:00`
+    }
+    return "Current Hour"
   }
 
   return (
@@ -79,7 +92,7 @@ export default function LeaderboardDisplay() {
       </TabsList>
       <TabsContent value="hourly" className="mt-2">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg font-light tracking-wide text-sky-100">HOURLY TOP SCORES</h3>
+          <h3 className="text-sm font-light tracking-wide text-sky-100">{formatHourDisplay()}</h3>
           <button
             onClick={refreshLeaderboards}
             className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
@@ -92,7 +105,7 @@ export default function LeaderboardDisplay() {
       </TabsContent>
       <TabsContent value="daily" className="mt-2">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg font-light tracking-wide text-sky-100">DAILY TOP SCORES</h3>
+          <h3 className="text-sm font-light tracking-wide text-sky-100">DAILY TOP SCORES</h3>
           <button
             onClick={refreshLeaderboards}
             className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
@@ -105,7 +118,7 @@ export default function LeaderboardDisplay() {
       </TabsContent>
       <TabsContent value="alltime" className="mt-2">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg font-light tracking-wide text-sky-100">ALL-TIME TOP SCORES</h3>
+          <h3 className="text-sm font-light tracking-wide text-sky-100">ALL-TIME TOP SCORES</h3>
           <button
             onClick={refreshLeaderboards}
             className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"

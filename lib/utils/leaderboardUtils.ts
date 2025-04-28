@@ -146,15 +146,18 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
   }
 }
 
-// Get hourly leaderboard (top scores from the last hour)
+// Get hourly leaderboard (top scores from the current hour)
 export function getHourlyLeaderboard(): LeaderboardEntry[] {
   try {
     const entries = getLeaderboardEntries()
-    const now = Date.now()
-    const hourAgo = now - 60 * 60 * 1000
+    const now = new Date()
+
+    // Start of current hour
+    const currentHourStart = new Date(now)
+    currentHourStart.setMinutes(0, 0, 0)
 
     return entries
-      .filter((entry) => entry.timestamp >= hourAgo)
+      .filter((entry) => entry.timestamp >= currentHourStart.getTime())
       .sort((a, b) => b.score - a.score)
       .slice(0, 10)
   } catch (error) {
@@ -195,9 +198,9 @@ export function getAllTimeLeaderboard(): LeaderboardEntry[] {
 export function formatTimestamp(timestamp: number): string {
   try {
     const date = new Date(timestamp)
-    return date.toLocaleString()
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   } catch (error) {
     console.error("Error formatting timestamp:", error)
-    return "Unknown date"
+    return "Unknown time"
   }
 }

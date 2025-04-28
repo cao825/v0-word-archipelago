@@ -30,12 +30,12 @@ const AppContent = memo(function AppContent() {
   }
 
   return (
-    <main className={`min-h-screen ${bgGradient} text-white pb-8 font-sans`}>
-      <header className="pt-8 pb-6 px-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-white mb-1">
+    <main className={`min-h-screen ${bgGradient} text-white pb-6 font-sans`}>
+      <header className="pt-4 px-4 text-center">
+        <h1 className="text-3xl font-bold tracking-tight text-white">
           <span className="font-bold text-amber-400">WORD</span> ARCHIPELAGO
         </h1>
-        <p className="text-sky-200 text-sm tracking-wide uppercase">Navigate between islands to form words</p>
+        <p className="text-sky-200 text-xs tracking-wide uppercase mt-2 mb-4">Navigate between islands to form words</p>
       </header>
       <div className="px-4 max-w-6xl mx-auto">
         <GameBoard />

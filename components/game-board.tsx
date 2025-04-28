@@ -10,6 +10,7 @@ import {
   startGame,
   resetGame,
   setGameTheme,
+  checkForNewPuzzle,
   type GameTheme,
 } from "@/lib/slices/gameSlice"
 import GameControls from "./game-controls"
@@ -23,7 +24,9 @@ import LiveWordDisplay from "./live-word-display"
 import GameSettings from "./game-settings"
 import PointsAnimation from "./points-animation"
 import AudioManager from "./audio-manager"
+import NextPuzzleCountdown from "./next-puzzle-countdown"
 import { Button } from "./ui/button"
+import { Settings } from "lucide-react"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -45,6 +48,7 @@ export default function GameBoard() {
 
   const [showSettings, setShowSettings] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
 
   // Handle timer with useCallback for better performance
   useEffect(() => {
@@ -62,6 +66,23 @@ export default function GameBoard() {
       }
     }
   }, [gameActive, dispatch])
+
+  // Check for new puzzle every minute
+  useEffect(() => {
+    // Check immediately on component mount
+    dispatch(checkForNewPuzzle())
+
+    // Then check every minute
+    puzzleCheckRef.current = setInterval(() => {
+      dispatch(checkForNewPuzzle())
+    }, 60000)
+
+    return () => {
+      if (puzzleCheckRef.current) {
+        clearInterval(puzzleCheckRef.current)
+      }
+    }
+  }, [dispatch])
 
   // Memoize event handlers to prevent unnecessary re-renders
   const handleKeyDown = useCallback(
@@ -136,7 +157,7 @@ export default function GameBoard() {
   }, [currentWord, foundWords])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Audio Manager */}
       <AudioManager />
 
@@ -144,26 +165,36 @@ export default function GameBoard() {
       <PointsAnimation />
 
       {/* Game Status */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <GameStatus
-            score={score}
-            timeLeft={timeLeft}
-            message={message}
-            gameActive={gameActive}
-            comboCount={comboCount}
-          />
+          <div className="flex flex-col gap-2 flex-1">
+            <div className="flex items-center gap-2">
+              <GameStatus
+                score={score}
+                timeLeft={timeLeft}
+                message={message}
+                gameActive={gameActive}
+                comboCount={comboCount}
+              />
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToggleSettings}
-              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 hover:text-white"
-            >
-              Settings
-            </Button>
+              {!gameActive && <NextPuzzleCountdown />}
+            </div>
+
+            {gameActive && (
+              <div className="text-center text-sky-200 text-xs tracking-wide uppercase">
+                Select islands to form words
+              </div>
+            )}
           </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleToggleSettings}
+            className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 hover:text-white"
+          >
+            <Settings size={18} />
+          </Button>
         </div>
 
         {showSettings && !gameActive && (
@@ -172,9 +203,9 @@ export default function GameBoard() {
       </div>
 
       {/* Main Game Area */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="lg:col-span-3">
+          <div className="flex flex-col gap-3">
             {/* Live Word Display */}
             {gameActive && (
               <LiveWordDisplay
@@ -211,7 +242,7 @@ export default function GameBoard() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           {/* Objectives and Found Words */}
           <ObjectivesList objectives={objectives} />
           <FoundWordsList foundWords={foundWords} />

@@ -32,7 +32,7 @@ interface GameState {
   objectives: Objective[]
   completedObjectives: string[]
   message: string
-  gameDate: string
+  gameTimestamp: string
   // Properties
   comboCount: number
   lastWordTime: number
@@ -50,8 +50,14 @@ interface GameState {
   wordDefinition: string
 }
 
-const today = new Date().toISOString().split("T")[0]
-const seed = seedRandom(today)
+// Get current hour timestamp (YYYY-MM-DD-HH format)
+const getCurrentHourTimestamp = (): string => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}`
+}
+
+const hourlyTimestamp = getCurrentHourTimestamp()
+const seed = seedRandom(hourlyTimestamp)
 
 // Generate islands first
 const initialIslands = generateIslands(seed)
@@ -66,7 +72,7 @@ const initialState: GameState = {
   objectives: generateObjectives(seed, initialIslands),
   completedObjectives: [],
   message: "Select islands to form words!",
-  gameDate: today,
+  gameTimestamp: hourlyTimestamp,
   // Properties
   comboCount: 0,
   lastWordTime: 0,
@@ -267,15 +273,15 @@ export const gameSlice = createSlice({
     },
 
     startGame: (state) => {
-      // Check if it's a new day
-      const today = new Date().toISOString().split("T")[0]
+      // Check if it's a new hour
+      const currentHourTimestamp = getCurrentHourTimestamp()
 
-      if (today !== state.gameDate) {
-        // It's a new day, reset everything with new seed
-        const newSeed = seedRandom(today)
+      if (currentHourTimestamp !== state.gameTimestamp) {
+        // It's a new hour, reset everything with new seed
+        const newSeed = seedRandom(currentHourTimestamp)
         state.islands = generateIslands(newSeed)
         state.objectives = generateObjectives(newSeed, state.islands)
-        state.gameDate = today
+        state.gameTimestamp = currentHourTimestamp
         state.foundWords = []
         state.score = 0
       }
@@ -300,7 +306,7 @@ export const gameSlice = createSlice({
     },
 
     resetGame: (state) => {
-      // Keep the same islands and objectives (same day)
+      // Keep the same islands and objectives (same hour)
       state.selectedIslands = []
       state.foundWords = []
       state.score = 0
@@ -329,6 +335,27 @@ export const gameSlice = createSlice({
     hidePointsAnimation: (state) => {
       state.pointsAnimation.isVisible = false
     },
+
+    checkForNewPuzzle: (state) => {
+      const currentHourTimestamp = getCurrentHourTimestamp()
+
+      if (currentHourTimestamp !== state.gameTimestamp) {
+        // It's a new hour, reset everything with new seed
+        const newSeed = seedRandom(currentHourTimestamp)
+        state.islands = generateIslands(newSeed)
+        state.objectives = generateObjectives(newSeed, state.islands)
+        state.gameTimestamp = currentHourTimestamp
+
+        // Only reset game progress if the game is not active
+        if (!state.gameActive) {
+          state.foundWords = []
+          state.score = 0
+          state.selectedIslands = []
+          state.completedObjectives = []
+          state.message = "New puzzle available! Press Start to play."
+        }
+      }
+    },
   },
 })
 
@@ -341,6 +368,12 @@ export const {
   resetGame,
   setGameTheme,
   hidePointsAnimation,
+  checkForNewPuzzle,
 } = gameSlice.actions
 
-export default gameSlice.reducer
+const gameReducer = gameSlice.reducer
+
+export default gameReducer
+
+// Export the utility function for other components
+export { getCurrentHourTimestamp }

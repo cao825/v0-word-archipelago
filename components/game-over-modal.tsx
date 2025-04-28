@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { addLeaderboardEntry, formatInitials, type LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
 import LeaderboardDisplay from "./leaderboard-display"
+import NextPuzzleCountdown from "./next-puzzle-countdown"
 import { toast } from "@/components/ui/use-toast"
 
 interface GameOverModalProps {
@@ -110,7 +111,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
           </TabsList>
 
           <TabsContent value="summary" className="mt-0">
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-4">
               <div className="text-center">
                 <h3 className="text-lg font-light tracking-wide text-sky-100 mb-1">FINAL SCORE</h3>
                 <p className="text-4xl font-bold text-amber-400">{score}</p>
@@ -158,6 +159,16 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="bg-amber-600/30 border border-amber-600 rounded-md p-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium text-amber-200">NEXT PUZZLE IN</h3>
+                  <NextPuzzleCountdown />
+                </div>
+                <p className="text-xs text-amber-100 mt-1">
+                  New puzzles are available every hour. Come back to improve your score!
+                </p>
               </div>
 
               {!submitted && (
