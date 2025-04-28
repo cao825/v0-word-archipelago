@@ -611,10 +611,17 @@ export default function IslandMap({
       // Use a more visible background for selected islands
       if (isLastSelected) {
         ctx.fillStyle = "rgba(251, 191, 36, 0.6)" // Amber-400 with more opacity
+        // Add glow effect for last selected island
+        ctx.shadowColor = "rgba(251, 191, 36, 0.8)"
+        ctx.shadowBlur = 15
       } else if (isSelected) {
         ctx.fillStyle = "rgba(251, 191, 36, 0.4)" // Amber-400 with opacity
+        // Add subtle glow for selected islands
+        ctx.shadowColor = "rgba(251, 191, 36, 0.5)"
+        ctx.shadowBlur = 10
       } else {
         ctx.fillStyle = "rgba(0, 0, 0, 0.2)"
+        ctx.shadowBlur = 0
       }
       ctx.fill()
 
@@ -695,6 +702,13 @@ export default function IslandMap({
           islandClicked = true
           // Set the last clicked island for animation
           setLastClickedIsland(island.id)
+
+          // Play selection sound
+          if (typeof window !== "undefined" && window.gameAudio?.isAudioEnabled()) {
+            const selectSound = new Audio("/sounds/select.mp3")
+            selectSound.volume = 0.3
+            selectSound.play().catch((e) => console.log("Audio playback prevented:", e))
+          }
 
           // Clear the animation after a short delay
           setTimeout(() => {

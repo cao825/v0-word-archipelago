@@ -43,12 +43,7 @@ export default function GameBoard() {
   const timeLeft = useAppSelector((state) => state.game.timeLeft)
   const gameActive = useAppSelector((state) => state.game.gameActive)
   // Add a console log to track objective state changes
-  const objectives = useAppSelector((state) => {
-    // Log objectives state when it changes
-    console.log("Current objectives state:", state.game.objectives)
-    console.log("Completed objectives:", state.game.completedObjectives)
-    return state.game.objectives
-  })
+  const objectives = useAppSelector((state) => state.game.objectives)
   const theme = useAppSelector((state) => state.game.theme)
   const invalidSubmission = useAppSelector((state) => state.game.invalidSubmission)
   const duplicateSubmission = useAppSelector((state) => state.game.duplicateSubmission)

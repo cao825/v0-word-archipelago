@@ -21,8 +21,6 @@ export default function ObjectiveCompleteNotification() {
       const newlyCompletedId = newlyCompletedIds[newlyCompletedIds.length - 1]
       const objective = objectives.find((obj) => obj.id === newlyCompletedId)
 
-      console.log("New objective completed:", newlyCompletedId, objective)
-
       if (objective) {
         setLastCompletedObjective(objective.description)
         setShowNotification(true)

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Clock } from "lucide-react"
+import { Clock, Trophy, CheckCircle } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { addLeaderboardEntry, formatInitials, type LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
 import LeaderboardDisplay from "./leaderboard-display"
@@ -138,9 +138,16 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
       >
         <Card className="border-sky-700 bg-gradient-to-b from-sky-800 to-sky-900 text-white shadow-xl">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-3xl font-bold tracking-tight text-white">
-              GAME <span className="font-bold text-amber-400">OVER</span>
-            </CardTitle>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+            >
+              <Trophy className="h-12 w-12 text-amber-400 mx-auto mb-2" />
+              <CardTitle className="text-3xl font-bold tracking-tight text-white">
+                GAME <span className="font-bold text-amber-400">OVER</span>
+              </CardTitle>
+            </motion.div>
           </CardHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -158,17 +165,31 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
 
             <TabsContent value="summary" className="mt-0">
               <CardContent className="space-y-4">
-                <div className="text-center">
+                <motion.div
+                  className="text-center"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                >
                   <h3 className="text-lg font-light tracking-wide text-sky-100 mb-1">FINAL SCORE</h3>
                   <p className="text-4xl font-bold text-amber-400">{score}</p>
                   <div className="mt-2 text-sm bg-sky-900 rounded-md p-2 flex justify-between">
                     <span>Words: {wordPoints} pts</span>
                     <span className="text-amber-400">Objectives: +{objectiveBonus} pts</span>
                   </div>
-                </div>
+                </motion.div>
 
-                <div>
-                  <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">OBJECTIVES COMPLETED</h3>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.3 }}
+                >
+                  <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle size={16} className="text-amber-400" />
+                      OBJECTIVES COMPLETED
+                    </span>
+                  </h3>
                   <div className="bg-sky-900 rounded-md p-3 border border-sky-700">
                     {completedObjectives.length === 0 ? (
                       <p className="text-sky-400 text-center">No objectives completed</p>
@@ -183,9 +204,13 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                       </ul>
                     )}
                   </div>
-                </div>
+                </motion.div>
 
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.3 }}
+                >
                   <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">
                     WORDS FOUND ({foundWords.length})
                   </h3>
@@ -205,9 +230,14 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="bg-sky-900 rounded-md p-3 border border-sky-700">
+                <motion.div
+                  className="bg-sky-900 rounded-md p-3 border border-sky-700"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.3 }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Clock size={16} className="text-amber-400" />
@@ -220,10 +250,14 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                   <p className="text-xs text-sky-300 mt-1">
                     New puzzles are available every hour. Come back to improve your score!
                   </p>
-                </div>
+                </motion.div>
 
                 {!submitted && (
-                  <div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6, duration: 0.3 }}
+                  >
                     <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">ENTER YOUR INITIALS</h3>
                     <div className="flex gap-2 items-center">
                       <div className="flex-1">
@@ -249,7 +283,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                     <p className="text-xs text-sky-300 mt-2 text-center">
                       Leaderboard data is stored locally in your browser and simulates a global leaderboard experience.
                     </p>
-                  </div>
+                  </motion.div>
                 )}
               </CardContent>
             </TabsContent>
