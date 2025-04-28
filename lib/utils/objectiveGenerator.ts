@@ -221,7 +221,14 @@ export function checkObjectives(word: string, objectives: Objective[], completed
       return
     }
 
-    if (checkWordAgainstObjective(lowerWord, objective)) {
+    const completed = checkWordAgainstObjective(lowerWord, objective)
+
+    // Debug logging for troubleshooting
+    console.debug(
+      `[checkObjectives] Word "${lowerWord}" against objective ${objective.id} (${objective.type}:${objective.parameter}): ${completed ? "COMPLETED" : "not completed"}`,
+    )
+
+    if (completed) {
       newCompletedObjectives.push(objective.id)
     }
   })
@@ -244,26 +251,53 @@ export function checkWordAgainstObjective(word: string, objective: Objective): b
   // Normalize the word
   const normalizedWord = word.toLowerCase().trim()
 
+  // Debug logging for troubleshooting
+  console.debug(
+    `[checkWordAgainstObjective] Checking "${normalizedWord}" against ${objective.type}:${objective.parameter}`,
+  )
+
   switch (objective.type) {
     case "length": {
       const targetLength =
         typeof objective.parameter === "number" ? objective.parameter : Number.parseInt(String(objective.parameter), 10)
 
       if (isNaN(targetLength)) return false
-      return normalizedWord.length === targetLength
+
+      const result = normalizedWord.length === targetLength
+      console.debug(`[length] ${normalizedWord}.length(${normalizedWord.length}) === ${targetLength}: ${result}`)
+      return result
     }
-    case "startsWith":
+    case "startsWith": {
       if (!objective.parameter || typeof objective.parameter !== "string") return false
-      return normalizedWord.startsWith(objective.parameter.toLowerCase())
-    case "endsWith":
+
+      const param = objective.parameter.toLowerCase()
+      const result = normalizedWord.startsWith(param)
+      console.debug(`[startsWith] ${normalizedWord}.startsWith(${param}): ${result}`)
+      return result
+    }
+    case "endsWith": {
       if (!objective.parameter || typeof objective.parameter !== "string") return false
-      return normalizedWord.endsWith(objective.parameter.toLowerCase())
-    case "contains":
+
+      const param = objective.parameter.toLowerCase()
+      const result = normalizedWord.endsWith(param)
+      console.debug(`[endsWith] ${normalizedWord}.endsWith(${param}): ${result}`)
+      return result
+    }
+    case "contains": {
       if (!objective.parameter || typeof objective.parameter !== "string") return false
-      return normalizedWord.includes(objective.parameter.toLowerCase())
-    case "palindrome":
-      return isPalindrome(normalizedWord)
+
+      const param = objective.parameter.toLowerCase()
+      const result = normalizedWord.includes(param)
+      console.debug(`[contains] ${normalizedWord}.includes(${param}): ${result}`)
+      return result
+    }
+    case "palindrome": {
+      const result = isPalindrome(normalizedWord)
+      console.debug(`[palindrome] isPalindrome(${normalizedWord}): ${result}`)
+      return result
+    }
     default:
+      console.warn(`Unknown objective type: ${objective.type}`)
       return false
   }
 }
