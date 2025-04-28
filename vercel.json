@@ -1,6 +1,6 @@
 {
-  "installCommand": "npm install --no-optional --legacy-peer-deps",
-  "buildCommand": "npm run build",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm run build",
   "outputDirectory": ".next",
   "regions": ["sfo1"],
   "github": {
