@@ -391,8 +391,10 @@ export const dictionary = [
   "task",
   "team",
   "tell",
+  "tent", // Added "tent" here
   "term",
   "test",
+  "text", // Added "text" here
   "than",
   "that",
   "them",
@@ -404,6 +406,7 @@ export const dictionary = [
   "time",
   "told",
   "took",
+  "tool", // Added "tool" here
   "torn",
   "town",
   "tree",
