@@ -17,6 +17,8 @@ interface MobileSettingsSheetProps {
 
 export default function MobileSettingsSheet({ isOpen, onClose, currentTheme, onSetTheme }: MobileSettingsSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
+  const [audioEnabled, setAudioEnabled] = useState(false)
+  const [ambientEnabled, setAmbientEnabled] = useState(false)
 
   // Close when clicking outside
   useEffect(() => {
@@ -35,12 +37,32 @@ export default function MobileSettingsSheet({ isOpen, onClose, currentTheme, onS
     }
   }, [isOpen, onClose])
 
-  // Handle audio settings
-  const [audioEnabled, setAudioEnabled] = useState(false)
+  // Sync with audio settings when opened
+  useEffect(() => {
+    if (isOpen && typeof window !== "undefined" && window.gameAudio) {
+      setAudioEnabled(window.gameAudio.isAudioEnabled())
+      setAmbientEnabled(window.gameAudio.isAmbientEnabled())
+    }
+  }, [isOpen])
 
-  const toggleAudio = () => {
-    setAudioEnabled(!audioEnabled)
-    // Logic to enable/disable audio would go here
+  const toggleAudio = (enabled: boolean) => {
+    setAudioEnabled(enabled)
+    if (typeof window !== "undefined" && window.gameAudio) {
+      window.gameAudio.toggleAudio(enabled)
+
+      // If audio is disabled, also disable ambient
+      if (!enabled) {
+        setAmbientEnabled(false)
+        window.gameAudio.toggleAmbient(false)
+      }
+    }
+  }
+
+  const toggleAmbient = (enabled: boolean) => {
+    setAmbientEnabled(enabled)
+    if (typeof window !== "undefined" && window.gameAudio) {
+      window.gameAudio.toggleAmbient(enabled)
+    }
   }
 
   return (
@@ -128,8 +150,8 @@ export default function MobileSettingsSheet({ isOpen, onClose, currentTheme, onS
                       </Label>
                       <Switch
                         id="ambient-toggle"
-                        checked={audioEnabled}
-                        onCheckedChange={toggleAudio}
+                        checked={ambientEnabled}
+                        onCheckedChange={toggleAmbient}
                         disabled={!audioEnabled}
                       />
                     </div>

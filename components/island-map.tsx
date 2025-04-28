@@ -54,15 +54,17 @@ export default function IslandMap({
 
   // Detect mobile devices
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+    if (typeof window !== "undefined") {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768)
+      }
 
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
+      checkMobile()
+      window.addEventListener("resize", checkMobile)
 
-    return () => {
-      window.removeEventListener("resize", checkMobile)
+      return () => {
+        window.removeEventListener("resize", checkMobile)
+      }
     }
   }, [])
 
@@ -90,21 +92,23 @@ export default function IslandMap({
 
   // Animation timer for water movement - optimized with requestAnimationFrame
   useEffect(() => {
-    let lastTime = 0
-    const animate = (timestamp: number) => {
-      if (timestamp - lastTime > 100) {
-        // Only update every 100ms
-        setTime((prev) => (prev + 1) % 1000)
-        lastTime = timestamp
+    if (typeof window !== "undefined") {
+      let lastTime = 0
+      const animate = (timestamp: number) => {
+        if (timestamp - lastTime > 100) {
+          // Only update every 100ms
+          setTime((prev) => (prev + 1) % 1000)
+          lastTime = timestamp
+        }
+        animationFrameRef.current = requestAnimationFrame(animate)
       }
+
       animationFrameRef.current = requestAnimationFrame(animate)
-    }
 
-    animationFrameRef.current = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current)
+        }
       }
     }
   }, [])
@@ -200,9 +204,11 @@ export default function IslandMap({
   }, [])
 
   useEffect(() => {
-    resizeCanvas()
-    window.addEventListener("resize", resizeCanvas)
-    return () => window.removeEventListener("resize", resizeCanvas)
+    if (typeof window !== "undefined") {
+      resizeCanvas()
+      window.addEventListener("resize", resizeCanvas)
+      return () => window.removeEventListener("resize", resizeCanvas)
+    }
   }, [resizeCanvas])
 
   // Memoize theme colors to avoid recalculating on every render

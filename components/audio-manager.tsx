@@ -3,6 +3,18 @@
 import { useEffect, useRef, useState } from "react"
 import { useAppSelector } from "@/lib/hooks/hooks"
 
+// Create a type for the global audio controls
+declare global {
+  interface Window {
+    gameAudio?: {
+      toggleAudio: (enabled: boolean) => void
+      toggleAmbient: (enabled: boolean) => void
+      isAudioEnabled: () => boolean
+      isAmbientEnabled: () => boolean
+    }
+  }
+}
+
 export default function AudioManager() {
   const { successfulSubmission, invalidSubmission, completedObjectives, selectedIslands } = useAppSelector(
     (state) => state.game,
@@ -35,7 +47,7 @@ export default function AudioManager() {
 
   // Set up audio elements
   useEffect(() => {
-    if (audioEnabled) {
+    if (audioEnabled && typeof window !== "undefined") {
       // Create audio elements
       successSoundRef.current = new Audio("/sounds/success.mp3")
       errorSoundRef.current = new Audio("/sounds/error.mp3")
@@ -124,16 +136,26 @@ export default function AudioManager() {
   }, [selectedIslands.length, audioEnabled])
 
   // Expose methods to control audio settings
-  window.gameAudio = {
-    toggleAudio: (enabled: boolean) => {
-      setAudioEnabled(enabled)
-    },
-    toggleAmbient: (enabled: boolean) => {
-      setAmbientEnabled(enabled)
-    },
-    isAudioEnabled: () => audioEnabled,
-    isAmbientEnabled: () => ambientEnabled,
-  }
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.gameAudio = {
+        toggleAudio: (enabled: boolean) => {
+          setAudioEnabled(enabled)
+        },
+        toggleAmbient: (enabled: boolean) => {
+          setAmbientEnabled(enabled)
+        },
+        isAudioEnabled: () => audioEnabled,
+        isAmbientEnabled: () => ambientEnabled,
+      }
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.gameAudio = undefined
+      }
+    }
+  }, [audioEnabled, ambientEnabled])
 
   return null // This component doesn't render anything
 }
