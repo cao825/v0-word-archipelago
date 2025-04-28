@@ -22,11 +22,13 @@ export default function LiveWordDisplay({
   const [prevWord, setPrevWord] = useState("")
   const [showInvalidMessage, setShowInvalidMessage] = useState(false)
   const [wordStatus, setWordStatus] = useState<"valid" | "invalid" | "potential" | "empty">("empty")
+  const [letters, setLetters] = useState<string[]>([])
 
   // Track previous word for animation
   useEffect(() => {
     if (currentWord !== prevWord) {
       setPrevWord(currentWord)
+      setLetters(currentWord.split(""))
     }
   }, [currentWord, prevWord])
 
@@ -72,22 +74,26 @@ export default function LiveWordDisplay({
     <Card className="border-sky-700 bg-sky-800/80 shadow-lg overflow-hidden">
       <CardContent className="p-3">
         <div className="flex flex-col items-center justify-center">
-          <div className="relative h-12 flex items-center justify-center">
+          <div className="relative h-16 flex items-center justify-center">
             {currentWord ? (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentWord}
-                  initial={{ y: -20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 20, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`text-3xl font-bold tracking-wider ${getTextColor()}`}
-                >
-                  {currentWord}
-                </motion.div>
-              </AnimatePresence>
+              <div className="flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  {letters.map((letter, index) => (
+                    <motion.span
+                      key={`${index}-${letter}`}
+                      initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                      transition={{ duration: 0.15, delay: index * 0.05 }}
+                      className={`text-4xl font-bold tracking-wider ${getTextColor()}`}
+                    >
+                      {letter}
+                    </motion.span>
+                  ))}
+                </AnimatePresence>
+              </div>
             ) : (
-              <div className="h-8"></div> // Empty space holder when no word is selected
+              <div className="h-10"></div> // Empty space holder when no word is selected
             )}
           </div>
 

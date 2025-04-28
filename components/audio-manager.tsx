@@ -8,6 +8,7 @@ export default function AudioManager() {
     (state) => state.game,
   )
   const [audioEnabled, setAudioEnabled] = useState(false)
+  const [ambientEnabled, setAmbientEnabled] = useState(false)
   const prevSelectedLength = useRef(0)
 
   // Audio refs
@@ -47,7 +48,11 @@ export default function AudioManager() {
       if (ambientSoundRef.current) {
         ambientSoundRef.current.loop = true
         ambientSoundRef.current.volume = 0.2
-        ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
+
+        // Only play ambient if enabled in settings
+        if (ambientEnabled) {
+          ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
+        }
       }
 
       // Configure select sound to be quieter and shorter
@@ -62,7 +67,18 @@ export default function AudioManager() {
         ambientSoundRef.current.pause()
       }
     }
-  }, [audioEnabled])
+  }, [audioEnabled, ambientEnabled])
+
+  // Toggle ambient sound based on settings
+  useEffect(() => {
+    if (audioEnabled && ambientSoundRef.current) {
+      if (ambientEnabled) {
+        ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
+      } else {
+        ambientSoundRef.current.pause()
+      }
+    }
+  }, [audioEnabled, ambientEnabled])
 
   // Play sounds based on game state
   useEffect(() => {
@@ -106,6 +122,18 @@ export default function AudioManager() {
     // Update the previous length reference
     prevSelectedLength.current = selectedIslands.length
   }, [selectedIslands.length, audioEnabled])
+
+  // Expose methods to control audio settings
+  window.gameAudio = {
+    toggleAudio: (enabled: boolean) => {
+      setAudioEnabled(enabled)
+    },
+    toggleAmbient: (enabled: boolean) => {
+      setAmbientEnabled(enabled)
+    },
+    isAudioEnabled: () => audioEnabled,
+    isAmbientEnabled: () => ambientEnabled,
+  }
 
   return null // This component doesn't render anything
 }

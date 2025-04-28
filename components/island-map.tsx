@@ -10,6 +10,7 @@ interface IslandMapProps {
   islands: Island[]
   selectedIslands: string[]
   onIslandClick: (id: string) => void
+  onIslandDoubleTap?: (id: string) => void
   theme?: GameTheme
   invalidSubmission?: boolean
   successfulSubmission?: boolean
@@ -26,6 +27,7 @@ export default function IslandMap({
   islands,
   selectedIslands,
   onIslandClick,
+  onIslandDoubleTap,
   theme = "tropical",
   invalidSubmission = false,
   successfulSubmission = false,
@@ -36,6 +38,9 @@ export default function IslandMap({
   const [time, setTime] = useState(0)
   const animationFrameRef = useRef<number | null>(null)
   const [lastClickedIsland, setLastClickedIsland] = useState<string | null>(null)
+  const [lastTapTime, setLastTapTime] = useState(0)
+  const [lastTapIsland, setLastTapIsland] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
 
   // Track if we've already animated for this invalid submission
   const [hasShaken, setHasShaken] = useState(false)
@@ -46,6 +51,20 @@ export default function IslandMap({
       setHasShaken(false)
     }
   }, [invalidSubmission])
+
+  // Detect mobile devices
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+    }
+  }, [])
 
   // Handle shake animation for invalid submission
   const shakeAnimation = useSpring({
@@ -653,7 +672,10 @@ export default function IslandMap({
       for (const island of islands) {
         const distance = Math.sqrt(Math.pow(x - island.position.x, 2) + Math.pow(y - island.position.y, 2))
 
-        if (distance <= island.size) {
+        // Increase tap target size on mobile for better touch experience
+        const tapTargetSize = isMobile ? Math.max(island.size, 22) : island.size
+
+        if (distance <= tapTargetSize) {
           // Set the last clicked island for animation
           setLastClickedIsland(island.id)
 
@@ -662,12 +684,25 @@ export default function IslandMap({
             setLastClickedIsland(null)
           }, 150) // Shorter flash duration for better responsiveness
 
-          onIslandClick(island.id)
+          // Handle double tap
+          const now = Date.now()
+          if (onIslandDoubleTap && lastTapIsland === island.id && now - lastTapTime < 300) {
+            // Double tap detected
+            onIslandDoubleTap(island.id)
+          } else {
+            // Single tap
+            onIslandClick(island.id)
+          }
+
+          // Update tap tracking
+          setLastTapTime(now)
+          setLastTapIsland(island.id)
+
           break
         }
       }
     },
-    [islands, scale, onIslandClick],
+    [islands, scale, onIslandClick, onIslandDoubleTap, lastTapTime, lastTapIsland, isMobile],
   )
 
   // Create a CSS transform string for the shake effect

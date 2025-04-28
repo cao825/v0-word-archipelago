@@ -27,14 +27,23 @@ export default function PointsAnimation() {
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1, y: -50 }}
           exit={{ scale: 1.5, opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6, type: "spring", damping: 12 }}
         >
           <div className="text-center">
-            <div className="text-5xl font-bold text-amber-400 drop-shadow-lg">+{pointsAnimation.points}</div>
+            <div className="text-4xl font-bold text-amber-400 drop-shadow-lg">+{pointsAnimation.points}</div>
             {comboCount >= 3 && (
-              <div className="text-xl font-bold text-white mt-2 bg-amber-600/80 px-3 py-1 rounded-md">
+              <motion.div
+                className="text-xl font-bold text-white mt-2 bg-amber-600/80 px-3 py-1 rounded-md"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1.1 }}
+                transition={{
+                  repeat: 2,
+                  repeatType: "reverse",
+                  duration: 0.3,
+                }}
+              >
                 COMBO x{comboCount}!
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>

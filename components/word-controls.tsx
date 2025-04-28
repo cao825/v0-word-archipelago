@@ -8,6 +8,7 @@ interface WordControlsProps {
   selectedIslands: string[]
   onSubmitWord: () => void
   onResetSelection: () => void
+  isMobile?: boolean
 }
 
 export default function WordControls({
@@ -15,20 +16,18 @@ export default function WordControls({
   selectedIslands,
   onSubmitWord,
   onResetSelection,
+  isMobile = false,
 }: WordControlsProps) {
   return (
     <Card className="border-sky-700 bg-sky-800/80 shadow-lg">
-      <CardContent className="p-3">
+      <CardContent className={isMobile ? "p-2" : "p-3"}>
         <div className="flex items-center gap-3">
-          <div className="bg-sky-900/80 rounded-md p-2 text-lg font-bold text-white min-h-[2.5rem] flex items-center justify-center border border-sky-700 flex-1">
-            {currentWord || "Select islands"}
-          </div>
-
           <div className="flex gap-2">
             <Button
               onClick={onSubmitWord}
               disabled={selectedIslands.length < 2}
-              className="bg-amber-500 hover:bg-amber-600 text-white shadow-md"
+              className="bg-amber-500 hover:bg-amber-600 text-white shadow-md h-12"
+              size={isMobile ? "sm" : "default"}
             >
               Submit
             </Button>
@@ -36,11 +35,14 @@ export default function WordControls({
               onClick={onResetSelection}
               variant="outline"
               disabled={selectedIslands.length === 0}
-              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600"
+              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 h-12"
+              size={isMobile ? "sm" : "default"}
             >
               Clear
             </Button>
           </div>
+
+          <div className="text-xs text-sky-200 ml-auto">Double-tap last island to submit</div>
         </div>
       </CardContent>
     </Card>

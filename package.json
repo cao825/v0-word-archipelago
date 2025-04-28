@@ -62,9 +62,9 @@
     "redux": "latest",
     "@emotion/is-prop-valid": "latest",
     "@reduxjs/toolkit": "latest",
+    "@jest/globals": "latest",
     "framer-motion": "latest",
-    "react-spring": "latest",
-    "@jest/globals": "latest"
+    "react-spring": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
