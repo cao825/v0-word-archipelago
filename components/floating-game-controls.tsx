@@ -43,7 +43,8 @@ export default function FloatingGameControls({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="bg-sky-800 border border-sky-700 rounded-lg shadow-lg p-2 flex flex-col gap-2"
+            transition={{ duration: 0.15 }}
+            className="bg-sky-800/90 backdrop-blur-sm border border-sky-700 rounded-lg shadow-lg p-2 flex flex-col gap-2"
           >
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs font-medium text-white">Game Controls</span>
@@ -81,6 +82,7 @@ export default function FloatingGameControls({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
           >
             <Button
               onClick={() => setIsExpanded(true)}

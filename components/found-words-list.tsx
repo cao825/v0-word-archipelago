@@ -6,15 +6,15 @@ export default function FoundWordsList({ foundWords }: FoundWordsListProps) {
   return (
     <div>
       {foundWords.length === 0 ? (
-        <p className="text-sky-400/70 text-center py-1 text-xs italic">No words found yet</p>
+        <p className="text-sky-300 text-center py-2 text-sm italic">No words found yet</p>
       ) : (
-        <div className="flex flex-wrap gap-1.5 overflow-y-auto pr-1">
+        <div className="flex flex-wrap gap-2">
           {foundWords.map((word, index) => (
             <span
               key={index}
-              className="bg-sky-900/80 text-amber-300 px-1.5 py-0.5 rounded-md text-xs border border-sky-700"
+              className="bg-sky-700/60 text-white px-2 py-1 rounded-md text-sm border border-sky-600/50"
             >
-              {word}
+              {word.toUpperCase()}
             </span>
           ))}
         </div>

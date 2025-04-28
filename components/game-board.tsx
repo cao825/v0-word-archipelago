@@ -24,8 +24,9 @@ import PointsAnimation from "./points-animation"
 import NextPuzzleCountdown from "./next-puzzle-countdown"
 import MobileSettingsSheet from "./mobile-settings-sheet"
 import CompactTopBar from "./compact-top-bar"
-import PillButton from "./pill-button"
 import FloatingGameControls from "./floating-game-controls"
+import ModalOverlay from "./modal-overlay"
+import WordFoundToast from "./word-found-toast"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -46,10 +47,15 @@ export default function GameBoard() {
   } = useAppSelector((state) => state.game)
 
   const [showSettings, setShowSettings] = useState(false)
+  const [showObjectivesModal, setShowObjectivesModal] = useState(false)
+  const [showFoundWordsModal, setShowFoundWordsModal] = useState(false)
+  const [wordFoundToast, setWordFoundToast] = useState({ word: "", points: 0, visible: false })
   const [isMobile, setIsMobile] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
   const gameAreaRef = useRef<HTMLDivElement>(null)
+  const lastFoundWordRef = useRef<string>("")
+  const lastScoreRef = useRef<number>(0)
 
   // Detect mobile devices
   useEffect(() => {
@@ -100,6 +106,23 @@ export default function GameBoard() {
       }
     }
   }, [dispatch])
+
+  // Show toast when a new word is found
+  useEffect(() => {
+    if (foundWords.length > 0 && lastFoundWordRef.current !== foundWords[0] && score > lastScoreRef.current) {
+      const newWord = foundWords[0]
+      const pointsEarned = score - lastScoreRef.current
+
+      setWordFoundToast({
+        word: newWord.toUpperCase(),
+        points: pointsEarned,
+        visible: true,
+      })
+
+      lastFoundWordRef.current = newWord
+      lastScoreRef.current = score
+    }
+  }, [foundWords, score])
 
   // Memoize event handlers to prevent unnecessary re-renders
   const handleKeyDown = useCallback(
@@ -155,10 +178,14 @@ export default function GameBoard() {
 
   const handleStartGame = useCallback(() => {
     dispatch(startGame())
+    lastScoreRef.current = 0
+    lastFoundWordRef.current = ""
   }, [dispatch])
 
   const handleResetGame = useCallback(() => {
     dispatch(resetGame())
+    lastScoreRef.current = 0
+    lastFoundWordRef.current = ""
   }, [dispatch])
 
   const handleSetGameTheme = useCallback(
@@ -170,6 +197,18 @@ export default function GameBoard() {
 
   const handleToggleSettings = useCallback(() => {
     setShowSettings((prev) => !prev)
+  }, [])
+
+  const handleShowObjectives = useCallback(() => {
+    setShowObjectivesModal(true)
+  }, [])
+
+  const handleShowFoundWords = useCallback(() => {
+    setShowFoundWordsModal(true)
+  }, [])
+
+  const handleCloseWordFoundToast = useCallback(() => {
+    setWordFoundToast((prev) => ({ ...prev, visible: false }))
   }, [])
 
   // Memoize the current word to avoid recalculating on every render
@@ -219,6 +258,14 @@ export default function GameBoard() {
       {/* Points Animation */}
       <PointsAnimation />
 
+      {/* Word Found Toast */}
+      <WordFoundToast
+        word={wordFoundToast.word}
+        points={wordFoundToast.points}
+        isVisible={wordFoundToast.visible}
+        onClose={handleCloseWordFoundToast}
+      />
+
       {/* Compact Top Bar */}
       {gameActive && (
         <CompactTopBar
@@ -229,6 +276,11 @@ export default function GameBoard() {
           onResetGame={handleResetGame}
           gameActive={gameActive}
           theme={theme}
+          objectivesCompleted={completedObjectivesCount}
+          totalObjectives={objectives.length}
+          foundWordsCount={foundWords.length}
+          onShowObjectives={handleShowObjectives}
+          onShowFoundWords={handleShowFoundWords}
         />
       )}
 
@@ -268,19 +320,6 @@ export default function GameBoard() {
           />
         )}
 
-        {/* Pill Buttons for Objectives and Found Words */}
-        {gameActive && (
-          <div className="flex justify-center gap-2 mt-1">
-            <PillButton label="Objectives" count={completedObjectivesCount} defaultOpen={false}>
-              <ObjectivesList objectives={objectives} />
-            </PillButton>
-
-            <PillButton label="Words" count={foundWords.length} defaultOpen={false}>
-              <FoundWordsList foundWords={foundWords} />
-            </PillButton>
-          </div>
-        )}
-
         {/* Next Puzzle Countdown - only show when game is not active */}
         {!gameActive && timeLeft !== 0 && (
           <div className="mt-1">
@@ -309,6 +348,16 @@ export default function GameBoard() {
         currentTheme={theme}
         onSetTheme={handleSetGameTheme}
       />
+
+      {/* Objectives Modal */}
+      <ModalOverlay isOpen={showObjectivesModal} onClose={() => setShowObjectivesModal(false)} title="Objectives">
+        <ObjectivesList objectives={objectives} />
+      </ModalOverlay>
+
+      {/* Found Words Modal */}
+      <ModalOverlay isOpen={showFoundWordsModal} onClose={() => setShowFoundWordsModal(false)} title="Found Words">
+        <FoundWordsList foundWords={foundWords} />
+      </ModalOverlay>
     </div>
   )
 }

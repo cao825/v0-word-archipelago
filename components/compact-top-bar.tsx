@@ -1,5 +1,5 @@
 "use client"
-import { Clock, Trophy, Settings, RefreshCw } from "lucide-react"
+import { Clock, Trophy, Settings, RefreshCw, Target, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GameTheme } from "@/lib/slices/gameSlice"
 
@@ -11,6 +11,11 @@ interface CompactTopBarProps {
   onResetGame: () => void
   gameActive: boolean
   theme: GameTheme
+  objectivesCompleted: number
+  totalObjectives: number
+  foundWordsCount: number
+  onShowObjectives: () => void
+  onShowFoundWords: () => void
 }
 
 export default function CompactTopBar({
@@ -21,6 +26,11 @@ export default function CompactTopBar({
   onResetGame,
   gameActive,
   theme,
+  objectivesCompleted,
+  totalObjectives,
+  foundWordsCount,
+  onShowObjectives,
+  onShowFoundWords,
 }: CompactTopBarProps) {
   // Format time as MM:SS
   const minutes = Math.floor(timeLeft / 60)
@@ -30,10 +40,42 @@ export default function CompactTopBar({
   return (
     <div className="sticky top-0 z-30 backdrop-blur-md bg-sky-900/80 border-b border-sky-700 shadow-md">
       <div className="flex items-center justify-between h-10 px-2">
-        {/* Score */}
-        <div className="flex items-center gap-1">
-          <Trophy size={14} className="text-amber-400" />
-          <span className="font-medium text-amber-400 text-sm">{score}</span>
+        {/* Score and Objectives */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Trophy size={14} className="text-amber-400" />
+            <span className="font-medium text-amber-400 text-sm">{score}</span>
+          </div>
+
+          {gameActive && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onShowObjectives}
+              className="h-6 w-6 p-0.5 text-sky-100 hover:bg-sky-800 hover:text-white relative"
+              title="Show Objectives"
+            >
+              <Target size={14} className="text-sky-200" />
+              <span className="absolute -top-0.5 -right-0.5 bg-amber-500 text-white text-[10px] rounded-full h-3.5 w-3.5 flex items-center justify-center">
+                {objectivesCompleted}
+              </span>
+            </Button>
+          )}
+
+          {gameActive && foundWordsCount > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onShowFoundWords}
+              className="h-6 w-6 p-0.5 text-sky-100 hover:bg-sky-800 hover:text-white relative"
+              title="Show Found Words"
+            >
+              <BookOpen size={14} className="text-sky-200" />
+              <span className="absolute -top-0.5 -right-0.5 bg-sky-600 text-white text-[10px] rounded-full h-3.5 w-3.5 flex items-center justify-center">
+                {foundWordsCount}
+              </span>
+            </Button>
+          )}
 
           {/* Combo indicator */}
           {gameActive && comboCount >= 2 && (
