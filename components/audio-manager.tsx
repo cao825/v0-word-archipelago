@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
 import { useAppSelector } from "@/lib/hooks/hooks"
+import { preloadAudioFiles } from "@/lib/utils/audioUtils"
 
 // Create a type for the global audio controls
 declare global {
@@ -52,8 +53,13 @@ export default function AudioManager() {
 
   // Initialize audio on first user interaction
   useEffect(() => {
-    const handleFirstInteraction = () => {
+    const handleFirstInteraction = async () => {
       setAudioEnabled(true)
+
+      // Preload audio files to check availability
+      const availableFiles = await preloadAudioFiles()
+      console.log("Audio files availability:", availableFiles)
+
       document.removeEventListener("click", handleFirstInteraction)
     }
 
@@ -63,6 +69,34 @@ export default function AudioManager() {
       document.removeEventListener("click", handleFirstInteraction)
     }
   }, [])
+
+  // Check if audio files exist
+  const checkAudioFiles = async () => {
+    try {
+      const files = [
+        "/sounds/success.mp3",
+        "/sounds/error.mp3",
+        "/sounds/objective.mp3",
+        "/sounds/combo.mp3",
+        "/sounds/select.mp3",
+        "/sounds/ocean-waves.mp3",
+      ]
+
+      for (const file of files) {
+        try {
+          // Use a relative path that works in both development and production
+          const response = await fetch(file, { method: "HEAD" })
+          if (!response.ok) {
+            console.warn(`Audio file ${file} not found or inaccessible, will use fallback`)
+          }
+        } catch (error) {
+          console.warn(`Error checking audio file ${file}, will use fallback:`, error)
+        }
+      }
+    } catch (error) {
+      console.error("Error checking audio files:", error)
+    }
+  }
 
   // Set up audio elements
   useEffect(() => {
@@ -83,8 +117,11 @@ export default function AudioManager() {
           // Clear timeout when loaded
           audio.addEventListener("canplaythrough", () => clearTimeout(timeout), { once: true })
 
+          // Make sure we're using a relative path that works in both dev and production
+          const relativeSrc = src.startsWith("/") ? src : `/${src}`
+
           // Set the source last to start loading
-          audio.src = src
+          audio.src = relativeSrc
           return audio
         } catch (error) {
           console.error(`Error creating audio for ${src}:`, error)
@@ -620,29 +657,6 @@ export default function AudioManager() {
 
   // Add placeholder audio files if they don't exist
   useEffect(() => {
-    // Check if audio files exist
-    const checkAudioFiles = async () => {
-      try {
-        const files = [
-          "/sounds/success.mp3",
-          "/sounds/error.mp3",
-          "/sounds/objective.mp3",
-          "/sounds/combo.mp3",
-          "/sounds/select.mp3",
-          "/sounds/ocean-waves.mp3",
-        ]
-
-        for (const file of files) {
-          const response = await fetch(file, { method: "HEAD" })
-          if (!response.ok) {
-            console.warn(`Audio file ${file} not found or inaccessible`)
-          }
-        }
-      } catch (error) {
-        console.error("Error checking audio files:", error)
-      }
-    }
-
     checkAudioFiles()
   }, [])
 
