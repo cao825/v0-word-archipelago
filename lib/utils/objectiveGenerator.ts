@@ -1,37 +1,66 @@
-// Helper function to check if a word is a palindrome
-export function isPalindrome(word: string): boolean {
-  if (!word || word.length < 3) return false
-  const cleanWord = word.toLowerCase()
-  const reversedWord = cleanWord.split("").reverse().join("")
-  return cleanWord === reversedWord
-}
+/**
+ * Objective system for the Word Archipelago game
+ * Handles generation, validation, and checking of game objectives
+ */
 
-// Helper function to check if a word has at least N vowels
-export function hasAtLeastNVowels(word: string, n: number): boolean {
-  const vowels = "aeiou"
-  let vowelCount = 0
-  for (const char of word.toLowerCase()) {
-    if (vowels.includes(char)) {
-      vowelCount++
-    }
-  }
-  return vowelCount >= n
-}
-
+/**
+ * Represents a game objective that players need to complete
+ */
 export interface Objective {
   id: string
-  type: string
+  type: ObjectiveType
   description: string
   parameter: string | number
   completed: boolean
 }
 
-// Generate objectives based on the current islands and seed
+/**
+ * Valid objective types
+ */
+export type ObjectiveType = "length" | "startsWith" | "endsWith" | "contains" | "palindrome"
+
+/**
+ * Checks if a word is a palindrome (reads the same backward as forward)
+ * @param word - The word to check
+ * @returns True if the word is a palindrome, false otherwise
+ */
+export function isPalindrome(word: string): boolean {
+  // Validate input
+  if (!word || typeof word !== "string" || word.length < 3) return false
+
+  // Normalize and check
+  const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, "")
+  const reversed = normalized.split("").reverse().join("")
+
+  return normalized === reversed
+}
+
+/**
+ * Checks if a word has at least N vowels
+ * @param word - The word to check
+ * @param n - The minimum number of vowels required
+ * @returns True if the word has at least N vowels, false otherwise
+ */
+export function hasAtLeastNVowels(word: string, n: number): boolean {
+  if (!word || typeof word !== "string") return false
+
+  const vowels = "aeiou"
+  const vowelCount = [...word.toLowerCase()].filter((char) => vowels.includes(char)).length
+
+  return vowelCount >= n
+}
+
+/**
+ * Generates objectives based on the current islands and seed
+ * @param seed - Function that returns a random number between 0 and 1
+ * @param islands - Array of island objects
+ * @returns Array of objectives
+ */
 export function generateObjectives(seed: () => number, islands: any[]): Objective[] {
-  // Safety check to ensure islands is an array
+  // Safety check for islands
   if (!islands || !Array.isArray(islands)) {
-    console.error("Invalid islands data provided to generateObjectives:", islands)
-    return [] // Return empty array to prevent errors
+    console.error("Invalid islands data provided to generateObjectives")
+    return []
   }
 
   try {
@@ -39,38 +68,31 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
     const usedTypes = new Set<string>()
     const usedParameters = new Set<string>()
 
-    // Define objective types
+    // Define objective types and their generation/validation logic
     const objectiveTypes = [
       {
-        type: "length",
+        type: "length" as ObjectiveType,
         description: "Find a word with {parameter} letters",
         generateParameter: () => {
-          // Generate a length between 3-6 letters, but no longer than the number of islands
           const maxLength = Math.min(6, islands.length)
           return Math.floor(seed() * (maxLength - 2)) + 3 // 3 to maxLength letter words
         },
         checkCompletion: (word: string, parameter: string | number): boolean => {
-          const targetLength = Number(parameter)
+          const targetLength = typeof parameter === "number" ? parameter : Number.parseInt(parameter as string, 10)
+          if (isNaN(targetLength)) return false
           return word.length === targetLength
         },
       },
       {
-        type: "startsWith",
+        type: "startsWith" as ObjectiveType,
         description: "Find a word starting with '{parameter}'",
         generateParameter: () => {
-          try {
-            // Get all available letters from islands
-            const availableLetters = islands.map((island) => island.letter?.toLowerCase() || "")
-            // Filter out empty letters
-            const validLetters = availableLetters.filter((letter) => letter)
-            if (validLetters.length === 0) return "a" // Fallback
-            // Choose a random letter from available letters
-            const letterIndex = Math.floor(seed() * validLetters.length)
-            return validLetters[letterIndex]
-          } catch (error) {
-            console.error("Error generating startsWith parameter:", error)
-            return "a" // Fallback to a common letter
-          }
+          const availableLetters = islands
+            .map((island) => island.letter?.toLowerCase() || "")
+            .filter((letter) => letter)
+
+          if (availableLetters.length === 0) return "a"
+          return availableLetters[Math.floor(seed() * availableLetters.length)]
         },
         checkCompletion: (word: string, parameter: string | number): boolean => {
           if (!parameter || typeof parameter !== "string") return false
@@ -78,22 +100,15 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
         },
       },
       {
-        type: "endsWith",
+        type: "endsWith" as ObjectiveType,
         description: "Find a word ending with '{parameter}'",
         generateParameter: () => {
-          try {
-            // Get all available letters from islands
-            const availableLetters = islands.map((island) => island.letter?.toLowerCase() || "")
-            // Filter out empty letters
-            const validLetters = availableLetters.filter((letter) => letter)
-            if (validLetters.length === 0) return "a" // Fallback
-            // Choose a random letter from available letters
-            const letterIndex = Math.floor(seed() * validLetters.length)
-            return validLetters[letterIndex]
-          } catch (error) {
-            console.error("Error generating endsWith parameter:", error)
-            return "a" // Fallback to a common letter
-          }
+          const availableLetters = islands
+            .map((island) => island.letter?.toLowerCase() || "")
+            .filter((letter) => letter)
+
+          if (availableLetters.length === 0) return "a"
+          return availableLetters[Math.floor(seed() * availableLetters.length)]
         },
         checkCompletion: (word: string, parameter: string | number): boolean => {
           if (!parameter || typeof parameter !== "string") return false
@@ -101,22 +116,15 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
         },
       },
       {
-        type: "contains",
+        type: "contains" as ObjectiveType,
         description: "Find a word containing '{parameter}'",
         generateParameter: () => {
-          try {
-            // Get all available letters from islands
-            const availableLetters = islands.map((island) => island.letter?.toLowerCase() || "")
-            // Filter out empty letters
-            const validLetters = availableLetters.filter((letter) => letter)
-            if (validLetters.length === 0) return "a" // Fallback
-            // Choose a random letter from available letters
-            const letterIndex = Math.floor(seed() * validLetters.length)
-            return validLetters[letterIndex]
-          } catch (error) {
-            console.error("Error generating contains parameter:", error)
-            return "a" // Fallback to a common letter
-          }
+          const availableLetters = islands
+            .map((island) => island.letter?.toLowerCase() || "")
+            .filter((letter) => letter)
+
+          if (availableLetters.length === 0) return "a"
+          return availableLetters[Math.floor(seed() * availableLetters.length)]
         },
         checkCompletion: (word: string, parameter: string | number): boolean => {
           if (!parameter || typeof parameter !== "string") return false
@@ -124,7 +132,7 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
         },
       },
       {
-        type: "palindrome",
+        type: "palindrome" as ObjectiveType,
         description: "Find a palindrome (reads the same forwards and backwards)",
         generateParameter: () => "palindrome",
         checkCompletion: (word: string): boolean => {
@@ -143,8 +151,6 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
 
       // Generate parameter for this objective type
       const parameter = objectiveType.generateParameter()
-
-      // Create a unique key combining type and parameter to ensure truly unique objectives
       const uniqueKey = `${objectiveType.type}-${parameter}`
 
       // Ensure we don't duplicate objective types or parameters
@@ -190,27 +196,28 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
     return objectives
   } catch (error) {
     console.error("Error generating objectives:", error)
-    return [] // Return empty array on error
+    return []
   }
 }
 
-// Check if a word completes any objectives
+/**
+ * Checks if a word completes any objectives
+ * @param word - The word to check
+ * @param objectives - Array of objectives to check against
+ * @param completedObjectives - Array of already completed objective IDs
+ * @returns Array of newly completed objective IDs
+ */
 export function checkObjectives(word: string, objectives: Objective[], completedObjectives: string[]): string[] {
   if (!word || typeof word !== "string" || word.length < 2) {
-    console.log("Invalid word provided to checkObjectives:", word)
     return []
   }
 
   const newCompletedObjectives: string[] = []
   const lowerWord = word.toLowerCase()
 
-  console.log(`[checkObjectives] Checking word "${lowerWord}" against objectives:`, JSON.stringify(objectives, null, 2))
-  console.log(`[checkObjectives] Already completed objectives:`, completedObjectives)
-
   objectives.forEach((objective) => {
     // Skip already completed objectives
     if (objective.completed || completedObjectives.includes(objective.id)) {
-      console.log(`[checkObjectives] Objective ${objective.id} already completed, skipping`)
       return
     }
 
@@ -219,28 +226,47 @@ export function checkObjectives(word: string, objectives: Objective[], completed
     }
   })
 
-  console.log(`[checkObjectives] Newly completed objectives:`, newCompletedObjectives)
   return newCompletedObjectives
 }
 
-// Check a word against a single objective
+/**
+ * Checks if a word completes a specific objective
+ * @param word - The word to check
+ * @param objective - The objective to check against
+ * @returns True if the word completes the objective, false otherwise
+ */
 export function checkWordAgainstObjective(word: string, objective: Objective): boolean {
+  // Validate inputs
+  if (!word || !objective) {
+    return false
+  }
+
+  // Normalize the word
+  const normalizedWord = word.toLowerCase().trim()
+
   switch (objective.type) {
-    case "length":
-      return word.length === Number(objective.parameter)
+    case "length": {
+      const targetLength =
+        typeof objective.parameter === "number" ? objective.parameter : Number.parseInt(String(objective.parameter), 10)
+
+      if (isNaN(targetLength)) return false
+      return normalizedWord.length === targetLength
+    }
     case "startsWith":
-      return typeof objective.parameter === "string" && word.startsWith(objective.parameter)
+      if (!objective.parameter || typeof objective.parameter !== "string") return false
+      return normalizedWord.startsWith(objective.parameter.toLowerCase())
     case "endsWith":
-      return typeof objective.parameter === "string" && word.endsWith(objective.parameter)
+      if (!objective.parameter || typeof objective.parameter !== "string") return false
+      return normalizedWord.endsWith(objective.parameter.toLowerCase())
     case "contains":
-      return typeof objective.parameter === "string" && word.includes(objective.parameter)
+      if (!objective.parameter || typeof objective.parameter !== "string") return false
+      return normalizedWord.includes(objective.parameter.toLowerCase())
     case "palindrome":
-      return isPalindrome(word)
+      return isPalindrome(normalizedWord)
     default:
-      console.warn(`Unknown objective type: ${objective.type}`)
       return false
   }
 }
 
 // Export objective types for testing
-export const objectiveTypes = ["length", "startsWith", "endsWith", "contains", "palindrome"]
+export const objectiveTypes: ObjectiveType[] = ["length", "startsWith", "endsWith", "contains", "palindrome"]

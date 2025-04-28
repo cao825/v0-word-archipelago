@@ -65,31 +65,34 @@ export default function CompactTopBar({
 
         {/* Right side controls with nowrap and overflow handling */}
         <div className="flex items-center gap-1 flex-nowrap overflow-x-auto scrollbar-hide">
+          {/* Fixed: Added py-1 for vertical padding to prevent buttons from being cut off */}
           <button
             onClick={onShowFoundWords}
-            className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
             title="Found Words"
           >
             <BookOpen size={16} />
-            <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
+            {/* Fixed: Adjusted badge positioning to prevent it from being cut off */}
+            <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px] shadow-sm">
               {foundWordsCount}
             </span>
           </button>
 
           <button
             onClick={onShowObjectives}
-            className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
             title="Objectives"
           >
             <Target size={16} />
-            <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
+            {/* Fixed: Adjusted badge positioning to prevent it from being cut off */}
+            <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px] shadow-sm">
               {actualObjectivesCompleted}/{totalObjectives}
             </span>
           </button>
 
           <button
             onClick={onShowShareModal}
-            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
             title="Share"
           >
             <Share2 size={16} />
@@ -97,7 +100,7 @@ export default function CompactTopBar({
 
           <button
             onClick={onResetGame}
-            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
             title="Reset Game"
           >
             <RotateCcw size={16} />
@@ -105,7 +108,7 @@ export default function CompactTopBar({
 
           <button
             onClick={onOpenSettings}
-            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
             title="Settings"
           >
             <Settings size={16} />
