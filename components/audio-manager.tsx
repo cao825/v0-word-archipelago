@@ -32,6 +32,16 @@ export default function AudioManager() {
   const selectSoundRef = useRef<HTMLAudioElement | null>(null)
   const ambientSoundRef = useRef<HTMLAudioElement | null>(null)
 
+  // Audio loading state
+  const [audioLoaded, setAudioLoaded] = useState({
+    success: false,
+    error: false,
+    objective: false,
+    combo: false,
+    select: false,
+    ambient: false,
+  })
+
   // Initialize audio on first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
@@ -49,26 +59,65 @@ export default function AudioManager() {
   // Set up audio elements
   useEffect(() => {
     if (audioEnabled && typeof window !== "undefined") {
-      // Create audio elements
-      successSoundRef.current = new Audio("/sounds/success.mp3")
-      errorSoundRef.current = new Audio("/sounds/error.mp3")
-      objectiveSoundRef.current = new Audio("/sounds/objective.mp3")
-      comboSoundRef.current = new Audio("/sounds/combo.mp3")
-      selectSoundRef.current = new Audio("/sounds/select.mp3")
-      ambientSoundRef.current = new Audio("/sounds/ocean-waves.mp3")
-
-      // Configure ambient sound
-      if (ambientSoundRef.current) {
-        ambientSoundRef.current.loop = true
-        ambientSoundRef.current.volume = 0.2
-
-        // Only play ambient if enabled in settings
-        if (ambientEnabled) {
-          ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
-        }
+      // Create audio elements with proper error handling
+      const createAudio = (src: string, onLoad: () => void, onError: (e: ErrorEvent) => void) => {
+        const audio = new Audio()
+        audio.addEventListener("canplaythrough", onLoad)
+        audio.addEventListener("error", onError)
+        audio.src = src
+        return audio
       }
 
-      // Configure select sound to be quieter and shorter
+      // Create success sound
+      successSoundRef.current = createAudio(
+        "/sounds/success.mp3",
+        () => setAudioLoaded((prev) => ({ ...prev, success: true })),
+        (e) => console.error("Failed to load success sound:", e),
+      )
+
+      // Create error sound
+      errorSoundRef.current = createAudio(
+        "/sounds/error.mp3",
+        () => setAudioLoaded((prev) => ({ ...prev, error: true })),
+        (e) => console.error("Failed to load error sound:", e),
+      )
+
+      // Create objective sound
+      objectiveSoundRef.current = createAudio(
+        "/sounds/objective.mp3",
+        () => setAudioLoaded((prev) => ({ ...prev, objective: true })),
+        (e) => console.error("Failed to load objective sound:", e),
+      )
+
+      // Create combo sound
+      comboSoundRef.current = createAudio(
+        "/sounds/combo.mp3",
+        () => setAudioLoaded((prev) => ({ ...prev, combo: true })),
+        (e) => console.error("Failed to load combo sound:", e),
+      )
+
+      // Create select sound
+      selectSoundRef.current = createAudio(
+        "/sounds/select.mp3",
+        () => setAudioLoaded((prev) => ({ ...prev, select: true })),
+        (e) => console.error("Failed to load select sound:", e),
+      )
+
+      // Create ambient sound
+      ambientSoundRef.current = createAudio(
+        "/sounds/ocean-waves.mp3",
+        () => {
+          setAudioLoaded((prev) => ({ ...prev, ambient: true }))
+          if (ambientEnabled && ambientSoundRef.current) {
+            ambientSoundRef.current.loop = true
+            ambientSoundRef.current.volume = 0.2
+            ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
+          }
+        },
+        (e) => console.error("Failed to load ambient sound:", e),
+      )
+
+      // Configure select sound to be quieter
       if (selectSoundRef.current) {
         selectSoundRef.current.volume = 0.3
       }
@@ -78,43 +127,65 @@ export default function AudioManager() {
       // Clean up audio elements
       if (ambientSoundRef.current) {
         ambientSoundRef.current.pause()
+        ambientSoundRef.current.removeEventListener("canplaythrough", () => {})
+        ambientSoundRef.current.removeEventListener("error", () => {})
+      }
+      if (successSoundRef.current) {
+        successSoundRef.current.removeEventListener("canplaythrough", () => {})
+        successSoundRef.current.removeEventListener("error", () => {})
+      }
+      if (errorSoundRef.current) {
+        errorSoundRef.current.removeEventListener("canplaythrough", () => {})
+        errorSoundRef.current.removeEventListener("error", () => {})
+      }
+      if (objectiveSoundRef.current) {
+        objectiveSoundRef.current.removeEventListener("canplaythrough", () => {})
+        objectiveSoundRef.current.removeEventListener("error", () => {})
+      }
+      if (comboSoundRef.current) {
+        comboSoundRef.current.removeEventListener("canplaythrough", () => {})
+        comboSoundRef.current.removeEventListener("error", () => {})
+      }
+      if (selectSoundRef.current) {
+        selectSoundRef.current.removeEventListener("canplaythrough", () => {})
+        selectSoundRef.current.removeEventListener("error", () => {})
       }
     }
   }, [audioEnabled, ambientEnabled])
 
   // Toggle ambient sound based on settings
   useEffect(() => {
-    if (audioEnabled && ambientSoundRef.current) {
+    if (audioEnabled && ambientSoundRef.current && audioLoaded.ambient) {
       if (ambientEnabled) {
         ambientSoundRef.current.play().catch((e) => console.log("Ambient audio playback prevented:", e))
       } else {
         ambientSoundRef.current.pause()
       }
     }
-  }, [audioEnabled, ambientEnabled])
+  }, [audioEnabled, ambientEnabled, audioLoaded.ambient])
 
   // Play sounds based on game state
   useEffect(() => {
-    if (!audioEnabled) return
+    if (!audioEnabled || !audioLoaded.success) return
 
     if (successfulSubmission && successSoundRef.current) {
       successSoundRef.current.currentTime = 0
       successSoundRef.current.play().catch((e) => console.log("Success audio playback prevented:", e))
     }
-  }, [successfulSubmission, audioEnabled])
+  }, [successfulSubmission, audioEnabled, audioLoaded.success])
 
   useEffect(() => {
-    if (!audioEnabled) return
+    if (!audioEnabled || !audioLoaded.error) return
 
     if (invalidSubmission && errorSoundRef.current) {
       errorSoundRef.current.currentTime = 0
       errorSoundRef.current.play().catch((e) => console.log("Error audio playback prevented:", e))
     }
-  }, [invalidSubmission, audioEnabled])
+  }, [invalidSubmission, audioEnabled, audioLoaded.error])
 
   // Track completedObjectives.length to detect when new objectives are completed
   useEffect(() => {
-    if (!audioEnabled || !objectiveSoundRef.current) return
+    if (!audioEnabled || !audioLoaded.objective || !objectiveSoundRef.current) return
 
     // Check if any new objectives were completed
     const newCompletedObjectives = completedObjectives.filter((id) => !prevCompletedObjectives.current.includes(id))
@@ -126,11 +197,11 @@ export default function AudioManager() {
       // Update the ref to the current completed objectives
       prevCompletedObjectives.current = [...completedObjectives]
     }
-  }, [completedObjectives, audioEnabled])
+  }, [completedObjectives, audioEnabled, audioLoaded.objective])
 
   // Play a sound when an island is selected
   useEffect(() => {
-    if (!audioEnabled || !selectSoundRef.current) return
+    if (!audioEnabled || !audioLoaded.select || !selectSoundRef.current) return
 
     // Only play sound when a new island is selected (length increases)
     if (selectedIslands.length > prevSelectedLength.current) {
@@ -140,7 +211,7 @@ export default function AudioManager() {
 
     // Update the previous length reference
     prevSelectedLength.current = selectedIslands.length
-  }, [selectedIslands.length, audioEnabled])
+  }, [selectedIslands.length, audioEnabled, audioLoaded.select])
 
   // Expose methods to control audio settings
   useEffect(() => {
@@ -163,6 +234,34 @@ export default function AudioManager() {
       }
     }
   }, [audioEnabled, ambientEnabled])
+
+  // Add placeholder audio files if they don't exist
+  useEffect(() => {
+    // Check if audio files exist
+    const checkAudioFiles = async () => {
+      try {
+        const files = [
+          "/sounds/success.mp3",
+          "/sounds/error.mp3",
+          "/sounds/objective.mp3",
+          "/sounds/combo.mp3",
+          "/sounds/select.mp3",
+          "/sounds/ocean-waves.mp3",
+        ]
+
+        for (const file of files) {
+          const response = await fetch(file, { method: "HEAD" })
+          if (!response.ok) {
+            console.warn(`Audio file ${file} not found or inaccessible`)
+          }
+        }
+      } catch (error) {
+        console.error("Error checking audio files:", error)
+      }
+    }
+
+    checkAudioFiles()
+  }, [])
 
   return null // This component doesn't render anything
 }

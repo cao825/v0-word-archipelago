@@ -33,8 +33,10 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   const [dailyLoading, setDailyLoading] = useState<boolean>(true)
   const [allTimeLoading, setAllTimeLoading] = useState<boolean>(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState<number>(0)
+  const maxRetries = 3
 
-  // Function to refresh leaderboard data
+  // Function to refresh leaderboard data with retry logic
   const refreshLeaderboards = useCallback(async () => {
     setIsLoading(true)
     setHourlyLoading(true)
@@ -44,14 +46,20 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
     try {
       // Get initial data from local storage for immediate display
-      setHourlyLeaderboard(getHourlyLeaderboard())
-      setDailyLeaderboard(getDailyLeaderboard())
-      setAllTimeLeaderboard(getAllTimeLeaderboard())
+      const localHourly = getHourlyLeaderboard()
+      const localDaily = getDailyLeaderboard()
+      const localAllTime = getAllTimeLeaderboard()
+
+      setHourlyLeaderboard(localHourly)
+      setDailyLeaderboard(localDaily)
+      setAllTimeLeaderboard(localAllTime)
 
       // Then fetch fresh data from Supabase
       try {
         const hourly = await fetchHourlyLeaderboard()
-        setHourlyLeaderboard(hourly)
+        if (hourly.length > 0) {
+          setHourlyLeaderboard(hourly)
+        }
         setHourlyLoading(false)
       } catch (error) {
         console.error("Error fetching hourly leaderboard:", error)
@@ -60,7 +68,9 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
       try {
         const daily = await fetchDailyLeaderboard()
-        setDailyLeaderboard(daily)
+        if (daily.length > 0) {
+          setDailyLeaderboard(daily)
+        }
         setDailyLoading(false)
       } catch (error) {
         console.error("Error fetching daily leaderboard:", error)
@@ -69,7 +79,9 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
       try {
         const allTime = await fetchAllTimeLeaderboard()
-        setAllTimeLeaderboard(allTime)
+        if (allTime.length > 0) {
+          setAllTimeLeaderboard(allTime)
+        }
         setAllTimeLoading(false)
       } catch (error) {
         console.error("Error fetching all-time leaderboard:", error)
@@ -78,13 +90,26 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
       setLastRefreshed(new Date())
       setCurrentHour(getCurrentHourTimestamp())
+      setRetryCount(0) // Reset retry count on success
     } catch (error) {
       console.error("Error refreshing leaderboards:", error)
-      setFetchError("Failed to load leaderboard data. Please try again later.")
+
+      // Implement retry with exponential backoff
+      if (retryCount < maxRetries) {
+        const backoffTime = Math.pow(2, retryCount) * 1000 // Exponential backoff
+        console.log(`Retrying in ${backoffTime}ms (attempt ${retryCount + 1}/${maxRetries})`)
+
+        setTimeout(() => {
+          setRetryCount((prev) => prev + 1)
+          refreshLeaderboards()
+        }, backoffTime)
+      } else {
+        setFetchError("Failed to load leaderboard data after multiple attempts. Please try again later.")
+      }
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [retryCount])
 
   // Add a function to handle submitting a new score
   const submitScore = useCallback(

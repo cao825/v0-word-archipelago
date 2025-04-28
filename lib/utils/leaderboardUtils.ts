@@ -52,6 +52,7 @@ export async function fetchLeaderboardEntries(): Promise<LeaderboardEntry[]> {
     }
 
     if (!data || data.length === 0) {
+      console.log("No leaderboard entries found in Supabase")
       return []
     }
 
@@ -213,13 +214,14 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
 // Get hourly leaderboard (top scores from the current hour)
 export async function fetchHourlyLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    // Calculate the start of the current hour
+    // Calculate the start of the current hour using the current date
     const now = new Date()
     const hourStart = new Date(now)
     hourStart.setMinutes(0, 0, 0)
 
     console.log("Fetching hourly leaderboard from:", hourStart.toISOString())
 
+    // Use the correct filter syntax for Supabase
     const { data, error } = await supabase
       .from("leaderboard")
       .select("*")
@@ -245,20 +247,26 @@ export async function fetchHourlyLeaderboard(): Promise<LeaderboardEntry[]> {
   }
 }
 
-// Get hourly leaderboard (top scores from the current hour)
+// Get hourly leaderboard from local storage (top scores from the current hour)
 export function getHourlyLeaderboard(): LeaderboardEntry[] {
   try {
-    const entries = getLeaderboardEntries()
+    const entries = getLocalLeaderboardEntries()
     const now = new Date()
 
     // Start of current hour
     const currentHourStart = new Date(now)
     currentHourStart.setMinutes(0, 0, 0)
+    const currentHourStartTime = currentHourStart.getTime()
 
-    return entries
-      .filter((entry) => entry.timestamp >= currentHourStart.getTime())
+    console.log("Filtering local entries for current hour starting at:", new Date(currentHourStartTime).toISOString())
+
+    const hourlyEntries = entries
+      .filter((entry) => entry.timestamp >= currentHourStartTime)
       .sort((a, b) => b.score - a.score)
       .slice(0, 10)
+
+    console.log(`Found ${hourlyEntries.length} local hourly entries`)
+    return hourlyEntries
   } catch (error) {
     console.error("Error getting hourly leaderboard:", error)
     return []
@@ -298,17 +306,22 @@ export async function fetchDailyLeaderboard(): Promise<LeaderboardEntry[]> {
   }
 }
 
-// Get daily leaderboard (top scores from the last 24 hours)
+// Get daily leaderboard from local storage (top scores from the last 24 hours)
 export function getDailyLeaderboard(): LeaderboardEntry[] {
   try {
-    const entries = getLeaderboardEntries()
+    const entries = getLocalLeaderboardEntries()
     const now = Date.now()
     const dayAgo = now - 24 * 60 * 60 * 1000
 
-    return entries
+    console.log("Filtering local entries for past 24 hours from:", new Date(dayAgo).toISOString())
+
+    const dailyEntries = entries
       .filter((entry) => entry.timestamp >= dayAgo)
       .sort((a, b) => b.score - a.score)
       .slice(0, 10)
+
+    console.log(`Found ${dailyEntries.length} local daily entries`)
+    return dailyEntries
   } catch (error) {
     console.error("Error getting daily leaderboard:", error)
     return []
@@ -344,11 +357,14 @@ export async function fetchAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   }
 }
 
-// Get all-time leaderboard (top 10 scores)
+// Get all-time leaderboard from local storage (top 10 scores)
 export function getAllTimeLeaderboard(): LeaderboardEntry[] {
   try {
-    const entries = getLeaderboardEntries()
-    return entries.sort((a, b) => b.score - a.score).slice(0, 10)
+    const entries = getLocalLeaderboardEntries()
+    const allTimeEntries = entries.sort((a, b) => b.score - a.score).slice(0, 10)
+
+    console.log(`Found ${allTimeEntries.length} local all-time entries`)
+    return allTimeEntries
   } catch (error) {
     console.error("Error getting all-time leaderboard:", error)
     return []

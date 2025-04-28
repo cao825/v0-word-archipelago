@@ -68,6 +68,8 @@ export default function GameBoard() {
   const gameAreaRef = useRef<HTMLDivElement>(null)
   const lastFoundWordRef = useRef<string>("")
   const lastScoreRef = useRef<number>(0)
+  // Add a ref to track the current word being formed
+  const currentWordRef = useRef<string>("")
 
   // Detect mobile devices and set viewport height
   useEffect(() => {
@@ -147,11 +149,13 @@ export default function GameBoard() {
   // Show toast when a new word is found
   useEffect(() => {
     if (successfulSubmission && foundWords.length > 0) {
-      const newWord = foundWords[0]
+      // Get the most recent word (the last one added to the array)
+      const newWord = currentWordRef.current || foundWords[foundWords.length - 1]
+
       // Calculate points earned - if we can't determine exactly, use a reasonable estimate
       const pointsEarned = score - lastScoreRef.current > 0 ? score - lastScoreRef.current : newWord.length * 10 // Fallback calculation
 
-      // Fix: Use the actual word length for the toast
+      // Show the toast with the most recent word
       setWordFoundToast({
         word: newWord.toUpperCase(),
         points: pointsEarned,
@@ -220,8 +224,18 @@ export default function GameBoard() {
   )
 
   const handleSubmitWord = useCallback(() => {
+    // Store the current word before submitting
+    const word = selectedIslands
+      .map((id) => {
+        const island = islands.find((i) => i.id === id)
+        return island ? island.letter : ""
+      })
+      .join("")
+      .toLowerCase()
+
+    currentWordRef.current = word
     dispatch(submitWord())
-  }, [dispatch])
+  }, [selectedIslands, islands, dispatch])
 
   const handleResetSelection = useCallback(() => {
     dispatch(resetSelection())
@@ -231,12 +245,14 @@ export default function GameBoard() {
     dispatch(startGame())
     lastScoreRef.current = 0
     lastFoundWordRef.current = ""
+    currentWordRef.current = ""
   }, [dispatch])
 
   const handleResetGame = useCallback(() => {
     dispatch(resetGame())
     lastScoreRef.current = 0
     lastFoundWordRef.current = ""
+    currentWordRef.current = ""
   }, [dispatch])
 
   const handleSetGameTheme = useCallback(
@@ -293,6 +309,11 @@ export default function GameBoard() {
       .join("")
   }, [selectedIslands, islands])
 
+  // Update the currentWordRef whenever currentWord changes
+  useEffect(() => {
+    currentWordRef.current = currentWord.toLowerCase()
+  }, [currentWord])
+
   // Memoize the word validity check
   const isWordValid = useMemo(() => {
     return currentWord.length >= 2 && !foundWords.includes(currentWord.toLowerCase())
@@ -317,8 +338,8 @@ export default function GameBoard() {
   // Add effect to check for achievements
   useEffect(() => {
     // Check for word length achievements
-    if (successfulSubmission && foundWords.length > 0) {
-      const newWord = foundWords[0]
+    if (successfulSubmission && currentWordRef.current) {
+      const newWord = currentWordRef.current
 
       // First word achievement
       if (foundWords.length === 1) {
