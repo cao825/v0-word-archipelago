@@ -5,6 +5,9 @@ import { RotateCcw, Share2, Trophy, Clock } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { motion } from "framer-motion"
 import ScoreSubmission from "./score-submission"
+import ShareResults from "./share-results"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/store"
 
 interface GameOverModalProps {
   score: number
@@ -12,9 +15,17 @@ interface GameOverModalProps {
   objectives: Objective[]
   onResetGame: () => void
   onShare: () => void
+  puzzleDate?: string
 }
 
-export default function GameOverModal({ score, foundWords, objectives, onResetGame, onShare }: GameOverModalProps) {
+export default function GameOverModal({
+  score,
+  foundWords,
+  objectives,
+  onResetGame,
+  onShare,
+  puzzleDate = new Date().toISOString(),
+}: GameOverModalProps) {
   const [timeRemaining, setTimeRemaining] = useState<{
     minutes: string
     seconds: string
@@ -25,6 +36,10 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
 
   const [isVisible, setIsVisible] = useState(false)
 
+  // Get the completed objectives directly from the Redux store to ensure accuracy
+  const completedObjectives = useSelector((state: RootState) => state.game.completedObjectives)
+  const completedObjectivesCount = completedObjectives.length
+
   // Animation delay for modal appearance
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,9 +48,6 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
 
     return () => clearTimeout(timer)
   }, [])
-
-  // Count completed objectives
-  const completedObjectives = objectives.filter((obj) => obj.completed).length
 
   // Calculate time until next puzzle
   useEffect(() => {
@@ -96,6 +108,15 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
     }
   }, [score])
 
+  // Add a state to track if share modal is open
+  const [showShareModal, setShowShareModal] = useState(false)
+
+  // Update the onShare function to show the share modal
+  const handleShare = () => {
+    setShowShareModal(true)
+    if (onShare) onShare()
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 p-4">
       <motion.div
@@ -112,7 +133,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
             <ScoreSubmission
               score={score}
               wordsFound={foundWords.length}
-              objectivesCompleted={objectives.filter((obj) => obj.completed).length}
+              objectivesCompleted={completedObjectivesCount}
               totalObjectives={objectives.length}
               onSubmit={() => {
                 setScoreSubmitted(true)
@@ -151,7 +172,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
               </div>
               <div className="bg-slate-800/50 p-2 rounded-lg">
                 <div className="text-xl font-bold text-white">
-                  {objectives.filter((obj) => obj.completed).length}/{objectives.length}
+                  {completedObjectivesCount}/{objectives.length}
                 </div>
                 <div className="text-slate-400 text-xs">Objectives</div>
               </div>
@@ -176,7 +197,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
 
             <div className="flex gap-2">
               <button
-                onClick={onShare}
+                onClick={handleShare}
                 className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors text-sm"
               >
                 <Share2 size={16} />
@@ -188,6 +209,26 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
               >
                 <RotateCcw size={16} />
                 Play Again
+              </button>
+            </div>
+          </div>
+        )}
+        {showShareModal && (
+          <div className="absolute inset-0 bg-slate-900/95 flex items-center justify-center p-4 z-10">
+            <div className="bg-slate-800 rounded-xl p-5 w-full max-w-md">
+              <h3 className="text-xl font-bold text-white mb-4">Share Your Results</h3>
+              <ShareResults
+                score={score}
+                foundWordsCount={foundWords.length}
+                completedObjectives={completedObjectivesCount}
+                totalObjectives={objectives.length}
+                puzzleDate={puzzleDate}
+              />
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-medium"
+              >
+                Close
               </button>
             </div>
           </div>

@@ -4,6 +4,9 @@ import { Trie } from "./trie"
 import { generatePlurals, canFormWord, getWordDifficulty } from "./word-utils"
 import { applyValidationRules } from "./validation-rules"
 
+// Add this to the top of the file, after the imports
+console.log(`Dictionary loaded with ${dictionary.length} words`)
+
 // Create a Set for O(1) lookups
 const dictionarySet = new Set(dictionary.map((word) => word.toLowerCase()))
 
@@ -547,6 +550,9 @@ commonEnglishWords.forEach((word) => {
   }
 })
 
+// Add this after the commonEnglishWords are added to the dictionary
+console.log(`Dictionary expanded to ${dictionarySet.size} words with common words and plurals`)
+
 /**
  * Validate if a word is valid according to game rules
  * @param word The word to validate
@@ -561,10 +567,33 @@ export function validateWord(word: string): boolean {
   if (!applyValidationRules(lowerWord)) return false
 
   // Check if the word exists in our dictionary
-  if (dictionarySet.has(lowerWord)) return true
+  if (dictionarySet.has(lowerWord)) {
+    return true
+  }
 
   // Check in our comprehensive common words list as a fallback
-  if (commonEnglishWords.has(lowerWord)) return true
+  if (commonEnglishWords.has(lowerWord)) {
+    // If we find it in the common words list but not in the dictionary,
+    // add it to the dictionary for future lookups
+    if (!dictionarySet.has(lowerWord)) {
+      dictionarySet.add(lowerWord)
+      dictionaryTrie.insert(lowerWord)
+      console.log(`Added missing common word to dictionary: ${lowerWord}`)
+    }
+    return true
+  }
+
+  // Special case for "plot" and other potentially missing words
+  const specialCaseWords = ["plot", "plug", "plan", "play", "plum", "plus"]
+  if (specialCaseWords.includes(lowerWord)) {
+    // Add these to the dictionary if they're missing
+    if (!dictionarySet.has(lowerWord)) {
+      dictionarySet.add(lowerWord)
+      dictionaryTrie.insert(lowerWord)
+      console.log(`Added special case word to dictionary: ${lowerWord}`)
+    }
+    return true
+  }
 
   return false
 }

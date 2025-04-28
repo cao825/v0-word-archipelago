@@ -342,6 +342,23 @@ export default function GameBoard() {
     }
   }, [successfulSubmission, foundWords, comboCount, objectives, showMiniAchievement])
 
+  // Add state or derive the puzzleDate
+  // Add this near the other state variables:
+
+  const [showGameOver, setShowGameOver] = useState(false)
+
+  useEffect(() => {
+    if (!gameActive && timeLeft === 0) {
+      setShowGameOver(true)
+    } else {
+      setShowGameOver(false)
+    }
+  }, [gameActive, timeLeft])
+
+  const handleShareResults = useCallback(() => {
+    setShowShareModal(true)
+  }, [])
+
   return (
     <div className="flex flex-col transition-all duration-300" ref={gameAreaRef}>
       {/* Audio Manager */}
@@ -459,13 +476,14 @@ export default function GameBoard() {
       />
 
       {/* Game Over Modal */}
-      {!gameActive && timeLeft === 0 && (
+      {showGameOver && (
         <GameOverModal
           score={score}
           foundWords={foundWords}
           objectives={objectives}
           onResetGame={handleResetGame}
-          onShare={handleShowShareModal}
+          onShare={handleShareResults}
+          puzzleDate={puzzleDate}
         />
       )}
 

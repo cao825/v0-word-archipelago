@@ -12,6 +12,11 @@ export const householdWords = [
   "sofa",
   "stool",
   "table",
+  "chest", // Added "chest"
+  "crib", // Added "crib"
+  "futon", // Added "futon"
+  "stand", // Added "stand"
+  "rack", // Added "rack"
 
   // Rooms
   "attic",
@@ -29,6 +34,11 @@ export const householdWords = [
   "porch",
   "room",
   "study",
+  "foyer", // Added "foyer"
+  "lobby", // Added "lobby"
+  "loft", // Added "loft"
+  "deck", // Added "deck"
+  "patio", // Added "patio"
 
   // Appliances
   "blender",
@@ -43,6 +53,13 @@ export const householdWords = [
   "stove",
   "toaster",
   "washer",
+  "fan", // Added "fan"
+  "grill", // Added "grill"
+  "mixer", // Added "mixer"
+  "radio", // Added "radio"
+  "scale", // Added "scale"
+  "timer", // Added "timer"
+  "vacuum", // Added "vacuum"
 
   // Kitchenware
   "bowl",
@@ -57,6 +74,14 @@ export const householdWords = [
   "plate",
   "pot",
   "spoon",
+  "can", // Added "can"
+  "cork", // Added "cork"
+  "grid", // Added "grid"
+  "jug", // Added "jug"
+  "ladle", // Added "ladle"
+  "lid", // Added "lid"
+  "tray", // Added "tray"
+  "whisk", // Added "whisk"
 
   // Household items
   "broom",
@@ -80,6 +105,42 @@ export const householdWords = [
   "towel",
   "vase",
   "window",
+  "alarm", // Added "alarm"
+  "bag", // Added "bag"
+  "basket", // Added "basket"
+  "bin", // Added "bin"
+  "blind", // Added "blind"
+  "bolt", // Added "bolt"
+  "book", // Added "book"
+  "box", // Added "box"
+  "bulb", // Added "bulb"
+  "cable", // Added "cable"
+  "chain", // Added "chain"
+  "cord", // Added "cord"
+  "drain", // Added "drain"
+  "duster", // Added "duster"
+  "fence", // Added "fence"
+  "gate", // Added "gate"
+  "hook", // Added "hook"
+  "knob", // Added "knob"
+  "latch", // Added "latch"
+  "mat", // Added "mat"
+  "nail", // Added "nail"
+  "net", // Added "net"
+  "pail", // Added "pail"
+  "pen", // Added "pen"
+  "pin", // Added "pin"
+  "plug", // Added "plug"
+  "rail", // Added "rail"
+  "rope", // Added "rope"
+  "safe", // Added "safe"
+  "screw", // Added "screw"
+  "sink", // Added "sink"
+  "tap", // Added "tap"
+  "tile", // Added "tile"
+  "tool", // Added "tool"
+  "tub", // Added "tub"
+  "wire", // Added "wire"
 
   // Clothing
   "belt",
@@ -103,4 +164,15 @@ export const householdWords = [
   "sweater",
   "tie",
   "vest",
+  "bra", // Added "bra"
+  "cloak", // Added "cloak"
+  "gown", // Added "gown"
+  "hood", // Added "hood"
+  "mask", // Added "mask"
+  "mitt", // Added "mitt"
+  "robe", // Added "robe"
+  "shawl", // Added "shawl"
+  "short", // Added "short"
+  "slip", // Added "slip"
+  "tee", // Added "tee"
 ]

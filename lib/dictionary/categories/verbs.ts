@@ -19,90 +19,173 @@ export const verbWords = [
   "come",
   "cost",
   "cut",
+  "deal", // Added "deal"
+  "dig", // Added "dig"
+  "dive", // Added "dive"
   "do",
+  "drag", // Added "drag"
   "draw",
+  "dream", // Added "dream"
   "drink",
   "drive",
+  "drop", // Added "drop"
   "eat",
+  "edit", // Added "edit"
+  "end", // Added "end"
   "fall",
   "feed",
   "feel",
   "fight",
   "find",
+  "fix", // Added "fix"
   "fly",
+  "fold", // Added "fold"
   "forget",
+  "free", // Added "free"
   "get",
   "give",
   "go",
+  "grab", // Added "grab"
   "grow",
+  "hang", // Added "hang"
   "have",
   "hear",
   "help",
   "hide",
   "hit",
   "hold",
+  "hunt", // Added "hunt"
   "hurt",
+  "join", // Added "join"
+  "jump", // Added "jump"
   "keep",
+  "kick", // Added "kick"
+  "kill", // Added "kill"
   "know",
   "lay",
   "lead",
+  "lean", // Added "lean"
   "learn",
   "leave",
   "lend",
   "let",
   "lie",
+  "lift", // Added "lift"
   "like",
+  "link", // Added "link"
+  "list", // Added "list"
   "live",
+  "load", // Added "load"
+  "lock", // Added "lock"
   "look",
   "lose",
+  "love", // Added "love"
   "make",
+  "mark", // Added "mark"
   "mean",
   "meet",
+  "melt", // Added "melt"
+  "miss", // Added "miss"
+  "mix", // Added "mix"
+  "move", // Added "move"
+  "name", // Added "name"
+  "need", // Added "need"
+  "note", // Added "note"
+  "open", // Added "open"
+  "pack", // Added "pack"
+  "park", // Added "park"
+  "pass", // Added "pass"
   "pay",
-  "play",
+  "pick", // Added "pick"
+  "plan", // Added "plan"
+  "play", // Added "play"
+  "plot", // Added "plot"
+  "plug", // Added "plug"
+  "pull", // Added "pull"
+  "push", // Added "push"
   "put",
+  "quit", // Added "quit"
   "read",
   "ride",
   "ring",
   "rise",
+  "roll", // Added "roll"
+  "rule", // Added "rule"
   "run",
+  "rush", // Added "rush"
+  "save", // Added "save"
   "say",
   "see",
+  "seek", // Added "seek"
   "sell",
   "send",
   "set",
+  "sew", // Added "sew"
   "shake",
+  "share", // Added "share"
   "shine",
+  "shop", // Added "shop"
   "show",
+  "shut", // Added "shut"
   "sing",
+  "sink", // Added "sink"
   "sit",
+  "skip", // Added "skip"
   "sleep",
+  "slide", // Added "slide"
+  "slip", // Added "slip"
+  "smell", // Added "smell"
   "speak",
   "spend",
+  "spin", // Added "spin"
+  "split", // Added "split"
   "stand",
+  "start", // Added "start"
+  "stay", // Added "stay"
   "steal",
+  "step", // Added "step"
   "stick",
+  "stop", // Added "stop"
   "strike",
+  "study", // Added "study"
   "swim",
+  "swing", // Added "swing"
   "take",
   "talk",
+  "taste", // Added "taste"
   "teach",
+  "tear", // Added "tear"
   "tell",
+  "test", // Added "test"
   "think",
   "throw",
+  "tie", // Added "tie"
+  "touch", // Added "touch"
+  "trade", // Added "trade"
+  "train", // Added "train"
+  "trap", // Added "trap"
   "try",
   "turn",
+  "type", // Added "type"
   "use",
+  "visit", // Added "visit"
+  "vote", // Added "vote"
   "wait",
   "wake",
   "walk",
-  "want",
+  "want", // Added "want"
+  "warn", // Added "warn"
   "wash",
   "watch",
+  "wave", // Added "wave"
   "wear",
   "win",
+  "wish", // Added "wish"
   "work",
+  "wrap", // Added "wrap"
   "write",
+  "yell", // Added "yell"
+  "zoom", // Added "zoom"
 
   // Common verb forms
   "added",

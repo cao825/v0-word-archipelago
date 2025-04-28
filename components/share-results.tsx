@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react"
 import { Check, Copy, Link } from "lucide-react"
 import html2canvas from "html2canvas"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/store"
 
 interface ShareResultsProps {
   score: number
@@ -23,15 +25,43 @@ export default function ShareResults({
   const [imageBlob, setImageBlob] = useState<string | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
-  // Format date for display
-  const formattedDate = new Date(puzzleDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+  // Get the completed objectives directly from the Redux store to ensure accuracy
+  const completedObjectivesFromStore = useSelector((state: RootState) => state.game.completedObjectives.length)
+
+  // Use the value from the store instead of the prop
+  const actualCompletedObjectives = completedObjectivesFromStore
+
+  // Format date for display with error handling
+  const formattedDate = (() => {
+    try {
+      const date = new Date(puzzleDate)
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        // If invalid, use today's date as fallback
+        return new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      }
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    } catch (error) {
+      console.error("Error formatting date:", error)
+      // Return today's date as fallback
+      return new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    }
+  })()
 
   // Generate share text
-  const shareText = `🏝️ Word Archipelago: ${formattedDate}\n\n🏆 Score: ${score}\n📚 Words: ${foundWordsCount}\n🎯 Objectives: ${completedObjectives}/${totalObjectives}\n\nPlay now at word-archipelago.vercel.app`
+  const shareText = `🏝️ Word Archipelago: ${formattedDate}\n\n🏆 Score: ${score}\n📚 Words: ${foundWordsCount}\n🎯 Objectives: ${actualCompletedObjectives}/${totalObjectives}\n\nPlay now at word-archipelago.vercel.app`
 
   // Generate share image
   useEffect(() => {
@@ -104,7 +134,7 @@ export default function ShareResults({
             </div>
             <div className="bg-sky-800/30 p-3 rounded-lg text-center">
               <div className="text-2xl font-bold text-white">
-                {completedObjectives}/{totalObjectives}
+                {actualCompletedObjectives}/{totalObjectives}
               </div>
               <div className="text-sky-300 text-sm">Objectives</div>
             </div>
