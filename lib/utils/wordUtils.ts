@@ -1,4 +1,5 @@
 import type { Island } from "../slices/gameSlice"
+import { dictionary } from "../dictionary"
 
 // Check if a word can be formed with the available islands
 export function canFormWord(word: string, islands: Island[]): boolean {
@@ -33,9 +34,6 @@ export function canFormWord(word: string, islands: Island[]): boolean {
 // Find all possible words that can be formed with the available islands
 export function findPossibleWords(islands: Island[]): string[] {
   const availableLetters = islands.map((island) => island.letter.toLowerCase())
-
-  // Import the dictionary from wordValidator
-  const dictionary = require("./wordValidator").dictionary
 
   // Filter the dictionary to only include words that can be formed
   return dictionary.filter((word) => canFormWord(word, islands))

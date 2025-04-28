@@ -1,109 +1,15 @@
-// Dictionary Service - Handles word validation and special rules
-
-import { dictionary } from "../utils/dictionary"
+// Dictionary Service - Handles word validation and dictionary operations
+import { dictionary } from "../dictionary"
+import { Trie } from "./trie"
+import { generatePlurals, canFormWord, getWordDifficulty } from "./word-utils"
+import { applyValidationRules } from "./validation-rules"
 
 // Create a Set for O(1) lookups
 const dictionarySet = new Set(dictionary.map((word) => word.toLowerCase()))
 
-// Create a Trie data structure for prefix lookups
-class TrieNode {
-  children: Map<string, TrieNode>
-  isEndOfWord: boolean
-
-  constructor() {
-    this.children = new Map()
-    this.isEndOfWord = false
-  }
-}
-
-class Trie {
-  root: TrieNode
-
-  constructor() {
-    this.root = new TrieNode()
-  }
-
-  // Insert a word into the trie
-  insert(word: string): void {
-    let current = this.root
-    for (const char of word.toLowerCase()) {
-      if (!current.children.has(char)) {
-        current.children.set(char, new TrieNode())
-      }
-      current = current.children.get(char)!
-    }
-    current.isEndOfWord = true
-  }
-
-  // Check if a word exists in the trie
-  search(word: string): boolean {
-    let current = this.root
-    for (const char of word.toLowerCase()) {
-      if (!current.children.has(char)) {
-        return false
-      }
-      current = current.children.get(char)!
-    }
-    return current.isEndOfWord
-  }
-
-  // Check if there is any word in the trie that starts with the given prefix
-  startsWith(prefix: string): boolean {
-    let current = this.root
-    for (const char of prefix.toLowerCase()) {
-      if (!current.children.has(char)) {
-        return false
-      }
-      current = current.children.get(char)!
-    }
-    return true
-  }
-}
-
 // Initialize the trie with all dictionary words
 const dictionaryTrie = new Trie()
 dictionary.forEach((word) => dictionaryTrie.insert(word))
-
-// Function to generate common plural forms
-function generatePlurals(words: string[]): string[] {
-  const plurals: string[] = []
-
-  words.forEach((word) => {
-    // Skip words that are already plurals or too short
-    if (word.length < 3) return
-
-    // Common plural rules
-    if (word.endsWith("y")) {
-      // city -> cities, but boy -> boys
-      const isConsonantBeforeY = !["a", "e", "i", "o", "u"].includes(word[word.length - 2])
-      if (isConsonantBeforeY) {
-        plurals.push(word.slice(0, -1) + "ies")
-      } else {
-        plurals.push(word + "s")
-      }
-    } else if (
-      word.endsWith("s") ||
-      word.endsWith("x") ||
-      word.endsWith("z") ||
-      word.endsWith("ch") ||
-      word.endsWith("sh")
-    ) {
-      // bus -> buses, box -> boxes, church -> churches
-      plurals.push(word + "es")
-    } else if (word.endsWith("f")) {
-      // leaf -> leaves
-      plurals.push(word.slice(0, -1) + "ves")
-    } else if (word.endsWith("fe")) {
-      // knife -> knives
-      plurals.push(word.slice(0, -2) + "ves")
-    } else {
-      // Regular plurals: cat -> cats
-      plurals.push(word + "s")
-    }
-  })
-
-  return plurals
-}
 
 // Generate plurals for words in the dictionary
 const generatedPlurals = generatePlurals(dictionary)
@@ -149,7 +55,7 @@ const commonEnglishWords = new Set([
   "we",
   "ye",
 
-  // Common 3-letter words
+  // Common 3-letter words that might be missing
   "ace",
   "act",
   "add",
@@ -631,348 +537,6 @@ const commonEnglishWords = new Set([
   "zig",
   "zip",
   "zoo",
-
-  // Common 4-letter words
-  "tent",
-  "text",
-  "tool",
-  "fork",
-  "lamp",
-  "desk",
-  "book",
-  "door",
-  "roof",
-  "wall",
-  "milk",
-  "salt",
-  "soap",
-  "shoe",
-  "sock",
-  "coat",
-  "belt",
-  "ring",
-  "card",
-  "gift",
-  "game",
-  "song",
-  "film",
-  "news",
-  "idea",
-  "plan",
-  "goal",
-  "hope",
-  "fear",
-  "love",
-  "hate",
-  "pain",
-  "rest",
-  "work",
-  "play",
-  "talk",
-  "walk",
-  "jump",
-  "swim",
-  "ride",
-  "cook",
-  "bake",
-  "wash",
-  "iron",
-  "fold",
-  "pack",
-  "send",
-  "post",
-  "mail",
-  "call",
-  "meet",
-  "join",
-  "help",
-  "save",
-  "stop",
-  "wait",
-  "move",
-  "stay",
-  "grow",
-  "fall",
-  "rise",
-  "drop",
-  "lift",
-  "push",
-  "pull",
-  "open",
-  "shut",
-  "lock",
-  "hide",
-  "seek",
-  "find",
-  "lose",
-  "keep",
-  "give",
-  "take",
-  "sell",
-  "shop",
-  "cost",
-  "earn",
-  "owe",
-  "pay",
-  "lend",
-  "loan",
-  "debt",
-  "bill",
-  "cash",
-  "bank",
-  "fund",
-  "risk",
-  "safe",
-  "harm",
-  "hurt",
-  "heal",
-  "cure",
-  "sick",
-  "well",
-  "good",
-  "evil",
-  "kind",
-  "mean",
-  "nice",
-  "rude",
-  "calm",
-  "busy",
-  "free",
-  "full",
-  "half",
-  "part",
-  "some",
-  "none",
-  "many",
-  "most",
-  "more",
-  "less",
-  "high",
-  "low",
-  "deep",
-  "flat",
-  "wide",
-  "thin",
-  "long",
-  "tall",
-  "tiny",
-  "huge",
-  "vast",
-  "near",
-  "far",
-  "here",
-  "gone",
-  "home",
-  "away",
-  "back",
-  "next",
-  "last",
-  "past",
-  "time",
-  "date",
-  "hour",
-  "week",
-  "year",
-  "day",
-  "dawn",
-  "dusk",
-  "noon",
-  "dark",
-  "rain",
-  "snow",
-  "wind",
-  "cold",
-  "warm",
-  "cool",
-  "heat",
-  "fire",
-  "burn",
-  "melt",
-  "boil",
-  "cook",
-  "food",
-  "meal",
-  "meat",
-  "fish",
-  "bird",
-  "tree",
-  "seed",
-  "leaf",
-  "root",
-  "stem",
-  "soil",
-  "dirt",
-  "dust",
-  "sand",
-  "rock",
-  "hill",
-  "lake",
-  "pond",
-  "pool",
-  "river",
-  "sea",
-  "wave",
-  "tide",
-  "ship",
-  "boat",
-  "sail",
-  "swim",
-  "dive",
-  "float",
-  "sink",
-  "road",
-  "path",
-  "way",
-  "trip",
-  "tour",
-  "city",
-  "town",
-  "farm",
-  "land",
-  "area",
-  "zone",
-  "spot",
-  "site",
-  "room",
-  "hall",
-  "door",
-  "wall",
-  "roof",
-  "bed",
-  "seat",
-  "desk",
-  "lamp",
-  "bulb",
-  "wire",
-  "plug",
-  "cord",
-  "knot",
-  "rope",
-  "line",
-  "dot",
-  "mark",
-  "sign",
-  "note",
-  "card",
-  "page",
-  "book",
-  "read",
-  "word",
-  "name",
-  "term",
-  "code",
-  "data",
-  "file",
-  "list",
-  "grid",
-  "cell",
-  "row",
-  "link",
-  "web",
-  "site",
-  "blog",
-  "post",
-  "chat",
-  "talk",
-  "call",
-  "ring",
-  "bell",
-  "tone",
-  "song",
-  "tune",
-  "beat",
-  "band",
-  "team",
-  "crew",
-  "club",
-  "shop",
-  "mall",
-  "sale",
-  "deal",
-  "cost",
-  "bill",
-  "debt",
-  "loan",
-  "fund",
-  "cash",
-  "coin",
-  "gold",
-  "rich",
-  "poor",
-  "wage",
-  "work",
-  "job",
-  "task",
-  "duty",
-  "role",
-  "rank",
-  "vote",
-  "poll",
-  "rule",
-  "law",
-  "case",
-  "fact",
-  "true",
-  "real",
-  "fake",
-  "lie",
-  "myth",
-  "tale",
-  "plot",
-  "plan",
-  "idea",
-  "view",
-  "mind",
-  "soul",
-  "self",
-  "life",
-  "fate",
-  "luck",
-  "hope",
-  "wish",
-  "need",
-  "want",
-  "like",
-  "love",
-  "hate",
-  "fear",
-  "risk",
-  "safe",
-  "harm",
-  "hurt",
-  "pain",
-  "ache",
-  "sore",
-  "heal",
-  "cure",
-  "drug",
-  "pill",
-  "dose",
-  "sick",
-  "ill",
-  "well",
-  "good",
-  "fine",
-  "okay",
-  "nice",
-  "kind",
-  "mean",
-  "rude",
-  "calm",
-  "cool",
-  "wild",
-  "free",
-  "busy",
-  "idle",
-  "lazy",
-  "hard",
-  "soft",
-  "firm",
-  "weak",
-  "bold",
-  "shy",
-  "loud",
-  "quiet",
 ])
 
 // Add common English words to the dictionary set and trie
@@ -983,37 +547,18 @@ commonEnglishWords.forEach((word) => {
   }
 })
 
-// Special rules for word validation
-const specialRules = {
-  // Q must be followed by U in English words
-  qRequiresU: (word: string): boolean => {
-    const lowerWord = word.toLowerCase()
-    for (let i = 0; i < lowerWord.length; i++) {
-      if (lowerWord[i] === "q") {
-        // Check if q is followed by u
-        if (i === lowerWord.length - 1 || lowerWord[i + 1] !== "u") {
-          return false
-        }
-      }
-    }
-    return true
-  },
-
-  // Words must be at least 2 characters long
-  minimumLength: (word: string): boolean => {
-    return word.length >= 2
-  },
-}
-
-// Main validation function
+/**
+ * Validate if a word is valid according to game rules
+ * @param word The word to validate
+ * @returns Boolean indicating if the word is valid
+ */
 export function validateWord(word: string): boolean {
   if (!word) return false
 
   const lowerWord = word.toLowerCase()
 
   // Apply special rules
-  if (!specialRules.minimumLength(lowerWord)) return false
-  if (!specialRules.qRequiresU(lowerWord)) return false
+  if (!applyValidationRules(lowerWord)) return false
 
   // Check if the word exists in our dictionary
   if (dictionarySet.has(lowerWord)) return true
@@ -1024,14 +569,18 @@ export function validateWord(word: string): boolean {
   return false
 }
 
-// Function to check if a word could potentially be valid (for real-time feedback)
+/**
+ * Check if a prefix could potentially form a valid word
+ * @param prefix The prefix to check
+ * @returns Boolean indicating if the prefix could form a valid word
+ */
 export function couldBeValidWord(prefix: string): boolean {
   if (!prefix) return true
 
   const lowerPrefix = prefix.toLowerCase()
 
   // Apply special rules that can be checked on prefixes
-  if (!specialRules.qRequiresU(lowerPrefix)) return false
+  if (!applyValidationRules.qRequiresU(lowerPrefix)) return false
 
   // Check if any word in the dictionary starts with this prefix
   if (dictionaryTrie.startsWith(lowerPrefix)) return true
@@ -1044,10 +593,12 @@ export function couldBeValidWord(prefix: string): boolean {
   return false
 }
 
-// Function to get possible words from available letters
+/**
+ * Find all possible words that can be formed with given letters
+ * @param letters Array of available letters
+ * @returns Array of valid words that can be formed
+ */
 export function getPossibleWords(letters: string[]): string[] {
-  // This is a simplified implementation - in a real app, you might want to use
-  // a more sophisticated algorithm to find all possible words
   const possibleWords: string[] = []
 
   // Check dictionary words
@@ -1067,41 +618,5 @@ export function getPossibleWords(letters: string[]): string[] {
   return possibleWords
 }
 
-// Helper function to check if a word can be formed with given letters
-function canFormWord(word: string, availableLetters: string[]): boolean {
-  const letterCounts = new Map<string, number>()
-
-  // Count available letters
-  for (const letter of availableLetters) {
-    const lowerLetter = letter.toLowerCase()
-    letterCounts.set(lowerLetter, (letterCounts.get(lowerLetter) || 0) + 1)
-  }
-
-  // Check if the word can be formed
-  for (const char of word.toLowerCase()) {
-    const count = letterCounts.get(char) || 0
-    if (count <= 0) return false
-    letterCounts.set(char, count - 1)
-  }
-
-  return true
-}
-
-// Function to get word difficulty (1-10 scale)
-export function getWordDifficulty(word: string): number {
-  // Simple algorithm based on word length and uncommon letters
-  const uncommonLetters = "jqxzvwkfy"
-  let difficulty = Math.min(10, Math.max(1, Math.floor(word.length / 2)))
-
-  // Add points for uncommon letters
-  for (const char of word.toLowerCase()) {
-    if (uncommonLetters.includes(char)) {
-      difficulty += 1
-    }
-  }
-
-  return Math.min(10, difficulty)
-}
-
-// Export the dictionary for other uses
-export { dictionary, dictionarySet, dictionaryTrie }
+// Export for use in other modules
+export { dictionary, dictionarySet, dictionaryTrie, getWordDifficulty }
