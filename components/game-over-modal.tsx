@@ -3,25 +3,20 @@
 import type React from "react"
 
 import { useState, useEffect, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Clock, Trophy, CheckCircle } from "lucide-react"
+import { Award, RotateCcw, Share2 } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { addLeaderboardEntry, formatInitials, type LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
-import LeaderboardDisplay from "./leaderboard-display"
 import { toast } from "@/components/ui/use-toast"
-import { motion } from "framer-motion"
 
 interface GameOverModalProps {
   score: number
   foundWords: string[]
   objectives: Objective[]
   onResetGame: () => void
+  onShare: () => void
 }
 
-export default function GameOverModal({ score, foundWords, objectives, onResetGame }: GameOverModalProps) {
+export default function GameOverModal({ score, foundWords, objectives, onResetGame, onShare }: GameOverModalProps) {
   const [playerInitials, setPlayerInitials] = useState("")
   const [formattedInitials, setFormattedInitials] = useState("")
   const [submitted, setSubmitted] = useState(false)
@@ -35,8 +30,22 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
     seconds: "00",
   })
 
-  const completedObjectives = objectives.filter((obj) => obj.completed)
-  const objectiveBonus = completedObjectives.length * 50 // 50 points per objective
+  const [isVisible, setIsVisible] = useState(false)
+
+  // Animation delay for modal appearance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Count completed objectives
+  const completedObjectives = objectives.filter((obj) => obj.completed).length
+
+  const completedObjectivesList = objectives.filter((obj) => obj.completed)
+  const objectiveBonus = completedObjectivesList.length * 50 // 50 points per objective
   const wordPoints = score - objectiveBonus
 
   // Calculate time until next puzzle
@@ -100,7 +109,7 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
         playerInitials: formattedInitials,
         score,
         timestamp: Date.now(),
-        objectivesCompleted: completedObjectives.length,
+        objectivesCompleted: completedObjectivesList.length,
         wordsFound: foundWords.length,
       }
 
@@ -126,182 +135,63 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
     } finally {
       setIsSubmitting(false)
     }
-  }, [playerInitials, isSubmitting, formattedInitials, score, completedObjectives.length, foundWords.length])
+  }, [playerInitials, isSubmitting, formattedInitials, score, completedObjectivesList.length, foundWords.length])
 
   return (
-    <div className="fixed inset-0 bg-sky-950/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="w-full max-w-md"
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 p-4">
+      <div
+        className={`bg-gradient-to-b from-slate-900 to-slate-800 rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-500 ease-out ${
+          isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
       >
-        <Card className="border-sky-700 bg-gradient-to-b from-sky-800 to-sky-900 text-white shadow-xl">
-          <CardHeader className="text-center pb-2">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
+        <div className="p-6 text-center">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-1">Game Over</h2>
+            <p className="text-slate-300">Your archipelago adventure has ended!</p>
+          </div>
+
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <Award className="w-12 h-12 text-amber-400" />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="text-4xl font-bold text-amber-400 mb-1">{score}</div>
+            <p className="text-slate-300">Final Score</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-slate-800/50 p-3 rounded-lg">
+              <div className="text-2xl font-bold text-white">{foundWords.length}</div>
+              <div className="text-slate-400 text-sm">Words Found</div>
+            </div>
+            <div className="bg-slate-800/50 p-3 rounded-lg">
+              <div className="text-2xl font-bold text-white">
+                {completedObjectives}/{objectives.length}
+              </div>
+              <div className="text-slate-400 text-sm">Objectives</div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onShare}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
             >
-              <Trophy className="h-12 w-12 text-amber-400 mx-auto mb-2" />
-              <CardTitle className="text-3xl font-bold tracking-tight text-white">
-                GAME <span className="font-bold text-amber-400">OVER</span>
-              </CardTitle>
-            </motion.div>
-          </CardHeader>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 bg-sky-900 mx-4">
-              <TabsTrigger value="summary" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
-                Summary
-              </TabsTrigger>
-              <TabsTrigger
-                value="leaderboard"
-                className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-              >
-                Leaderboard
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="summary" className="mt-0">
-              <CardContent className="space-y-4">
-                <motion.div
-                  className="text-center"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.3 }}
-                >
-                  <h3 className="text-lg font-light tracking-wide text-sky-100 mb-1">FINAL SCORE</h3>
-                  <p className="text-4xl font-bold text-amber-400">{score}</p>
-                  <div className="mt-2 text-sm bg-sky-900 rounded-md p-2 flex justify-between">
-                    <span>Words: {wordPoints} pts</span>
-                    <span className="text-amber-400">Objectives: +{objectiveBonus} pts</span>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.3 }}
-                >
-                  <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle size={16} className="text-amber-400" />
-                      OBJECTIVES COMPLETED
-                    </span>
-                  </h3>
-                  <div className="bg-sky-900 rounded-md p-3 border border-sky-700">
-                    {completedObjectives.length === 0 ? (
-                      <p className="text-sky-400 text-center">No objectives completed</p>
-                    ) : (
-                      <ul className="space-y-1">
-                        {completedObjectives.map((obj) => (
-                          <li key={obj.id} className="text-white flex items-start gap-2">
-                            <span className="text-amber-400">✓</span> {obj.description}
-                            <span className="ml-auto text-amber-400">+50 pts</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.3 }}
-                >
-                  <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">
-                    WORDS FOUND ({foundWords.length})
-                  </h3>
-                  <div className="bg-sky-900 rounded-md p-3 max-h-40 overflow-y-auto border border-sky-700">
-                    {foundWords.length === 0 ? (
-                      <p className="text-sky-400 text-center">No words found</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {foundWords.map((word, index) => (
-                          <span
-                            key={index}
-                            className="bg-sky-950 text-amber-300 px-2 py-1 rounded-md text-xs border border-sky-800"
-                          >
-                            {word}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  className="bg-sky-900 rounded-md p-3 border border-sky-700"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.3 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock size={16} className="text-amber-400" />
-                      <h3 className="text-sm font-medium text-amber-200">NEXT PUZZLE IN</h3>
-                    </div>
-                    <div className="text-lg font-mono font-bold text-amber-100">
-                      {timeRemaining.minutes}:{timeRemaining.seconds}
-                    </div>
-                  </div>
-                  <p className="text-xs text-sky-300 mt-1">
-                    New puzzles are available every hour. Come back to improve your score!
-                  </p>
-                </motion.div>
-
-                {!submitted && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6, duration: 0.3 }}
-                  >
-                    <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">ENTER YOUR INITIALS</h3>
-                    <div className="flex gap-2 items-center">
-                      <div className="flex-1">
-                        <Input
-                          type="text"
-                          placeholder="AAA"
-                          value={playerInitials}
-                          onChange={handleInitialsChange}
-                          maxLength={3}
-                          className="bg-sky-900 border-sky-700 text-white text-center text-xl font-bold tracking-widest uppercase"
-                          aria-label="Enter your initials (3 letters)"
-                        />
-                        <p className="text-xs text-sky-300 mt-1 text-center">Enter 3 letters</p>
-                      </div>
-                      <Button
-                        onClick={handleSubmitScore}
-                        className="bg-amber-500 hover:bg-amber-600 whitespace-nowrap"
-                        disabled={!playerInitials.trim() || isSubmitting}
-                      >
-                        {isSubmitting ? "Submitting..." : "Submit"}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-sky-300 mt-2 text-center">
-                      Leaderboard data is stored locally in your browser and simulates a global leaderboard experience.
-                    </p>
-                  </motion.div>
-                )}
-              </CardContent>
-            </TabsContent>
-
-            <TabsContent value="leaderboard" className="mt-0">
-              <CardContent>
-                <LeaderboardDisplay />
-              </CardContent>
-            </TabsContent>
-          </Tabs>
-
-          <CardFooter className="pt-2">
-            <Button onClick={onResetGame} className="w-full bg-amber-500 hover:bg-amber-600 text-white py-6 text-lg">
+              <Share2 size={18} />
+              Share Results
+            </button>
+            <button
+              onClick={onResetGame}
+              className="bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <RotateCcw size={18} />
               Play Again
-            </Button>
-          </CardFooter>
-        </Card>
-      </motion.div>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

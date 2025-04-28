@@ -48,6 +48,17 @@ interface GameState {
   }
   showWordDefinition: boolean
   wordDefinition: string
+  // Track objective completion notification
+  objectiveCompletionNotification: {
+    isVisible: boolean
+    count: number
+    completedObjectiveIds: string[]
+  }
+  // Debug info
+  debugInfo: {
+    lastWord: string
+    lastObjectiveCheck: any
+  }
 }
 
 // Get current hour timestamp (YYYY-MM-DD-HH format)
@@ -88,6 +99,17 @@ const initialState: GameState = {
   },
   showWordDefinition: false,
   wordDefinition: "",
+  // Track objective completion notification
+  objectiveCompletionNotification: {
+    isVisible: false,
+    count: 0,
+    completedObjectiveIds: [],
+  },
+  // Debug info
+  debugInfo: {
+    lastWord: "",
+    lastObjectiveCheck: null,
+  },
 }
 
 export const gameSlice = createSlice({
@@ -140,6 +162,8 @@ export const gameSlice = createSlice({
       state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
+      state.objectiveCompletionNotification.isVisible = false
+      state.objectiveCompletionNotification.completedObjectiveIds = []
 
       if (state.selectedIslands.length < 2) {
         state.message = "Words must be at least 2 letters long!"
@@ -154,6 +178,9 @@ export const gameSlice = createSlice({
         })
         .join("")
         .toLowerCase()
+
+      // Store the word for debugging
+      state.debugInfo.lastWord = word
 
       if (state.foundWords.includes(word)) {
         state.message = "You've already found this word!"
@@ -200,60 +227,89 @@ export const gameSlice = createSlice({
 
         // Check if any objectives were completed
         const newCompletedObjectives = checkObjectives(word, state.objectives, state.completedObjectives)
+        console.log("[gameSlice] New completed objectives:", newCompletedObjectives)
 
-        let objectiveCompleted = false
-
-        if (newCompletedObjectives.length > 0) {
-          objectiveCompleted = true
-
-          // Add newly completed objectives to state
-          newCompletedObjectives.forEach((objId) => {
-            if (!state.completedObjectives.includes(objId)) {
-              state.completedObjectives.push(objId)
-              state.score += 50 // Bonus for completing an objective
-            }
-          })
-
-          // Update objectives completion status immediately
-          state.objectives = state.objectives.map((obj) => ({
-            ...obj,
-            completed: state.completedObjectives.includes(obj.id),
-          }))
+        // Store objective check results for debugging
+        state.debugInfo.lastObjectiveCheck = {
+          word,
+          objectives: JSON.parse(JSON.stringify(state.objectives)),
+          completedBefore: [...state.completedObjectives],
+          newlyCompleted: newCompletedObjectives,
         }
 
-        // Set appropriate message
-        if (objectiveCompleted) {
-          if (state.comboCount >= 3) {
-            state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus) and objective completed!`
+        if (newCompletedObjectives.length > 0) {
+          // Add newly completed objectives to state
+          const actuallyNewObjectives = newCompletedObjectives.filter(
+            (objId) => !state.completedObjectives.includes(objId),
+          )
+
+          if (actuallyNewObjectives.length > 0) {
+            console.log("[gameSlice] Actually new objectives:", actuallyNewObjectives)
+
+            // Add to completed objectives array
+            actuallyNewObjectives.forEach((objId) => {
+              state.completedObjectives.push(objId)
+              state.score += 50 // Bonus for completing an objective
+            })
+
+            console.log("[gameSlice] Updated completedObjectives:", state.completedObjectives)
+
+            // Update objectives completion status immediately
+            state.objectives = state.objectives.map((obj) => {
+              const isCompleted = state.completedObjectives.includes(obj.id)
+              console.log(`[gameSlice] Setting objective ${obj.id} completed: ${isCompleted}`)
+              return {
+                ...obj,
+                completed: isCompleted,
+              }
+            })
+
+            // Show objective completion notification
+            state.objectiveCompletionNotification = {
+              isVisible: true,
+              count: actuallyNewObjectives.length,
+              completedObjectiveIds: actuallyNewObjectives,
+            }
+
+            // Set appropriate message
+            if (state.comboCount >= 3) {
+              state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus) and ${actuallyNewObjectives.length} objective${actuallyNewObjectives.length > 1 ? "s" : ""} completed!`
+            } else {
+              state.message = `Word found! +${wordScore} points and ${actuallyNewObjectives.length} objective${actuallyNewObjectives.length > 1 ? "s" : ""} completed!`
+            }
+
+            // Only generate new objectives to replace completed ones AFTER updating the UI
+            // Find indices of completed objectives
+            const completedObjectiveIndices = state.objectives
+              .map((obj, index) => (obj.completed ? index : -1))
+              .filter((index) => index !== -1)
+
+            if (completedObjectiveIndices.length > 0) {
+              // Generate new objectives to replace completed ones
+              const newSeed = () => Math.random() // Simple random for new objectives
+              const newObjectives = generateObjectives(newSeed, state.islands)
+
+              // Replace completed objectives with new ones
+              completedObjectiveIndices.forEach((index, i) => {
+                if (i < newObjectives.length) {
+                  state.objectives[index] = newObjectives[i]
+                }
+              })
+            }
           } else {
-            state.message = `Word found! +${wordScore} points and objective completed!`
+            // No new objectives completed
+            if (state.comboCount >= 3) {
+              state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus)`
+            } else {
+              state.message = `Word found! +${wordScore} points`
+            }
           }
         } else {
+          // No objectives completed
           if (state.comboCount >= 3) {
             state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus)`
           } else {
             state.message = `Word found! +${wordScore} points`
-          }
-        }
-
-        // Only generate new objectives to replace completed ones AFTER updating the UI
-        if (objectiveCompleted) {
-          // Find indices of completed objectives
-          const completedObjectiveIndices = state.objectives
-            .map((obj, index) => (obj.completed ? index : -1))
-            .filter((index) => index !== -1)
-
-          if (completedObjectiveIndices.length > 0) {
-            // Generate new objectives to replace completed ones
-            const newSeed = () => Math.random() // Simple random for new objectives
-            const newObjectives = generateObjectives(newSeed, state.islands)
-
-            // Replace completed objectives with new ones
-            completedObjectiveIndices.forEach((index, i) => {
-              if (i < newObjectives.length) {
-                state.objectives[index] = newObjectives[i]
-              }
-            })
           }
         }
       } else {
@@ -308,6 +364,8 @@ export const gameSlice = createSlice({
       state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
+      state.objectiveCompletionNotification.isVisible = false
+      state.objectiveCompletionNotification.completedObjectiveIds = []
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -331,6 +389,8 @@ export const gameSlice = createSlice({
       state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
+      state.objectiveCompletionNotification.isVisible = false
+      state.objectiveCompletionNotification.completedObjectiveIds = []
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -345,6 +405,10 @@ export const gameSlice = createSlice({
 
     hidePointsAnimation: (state) => {
       state.pointsAnimation.isVisible = false
+    },
+
+    hideObjectiveNotification: (state) => {
+      state.objectiveCompletionNotification.isVisible = false
     },
 
     checkForNewPuzzle: (state) => {
@@ -391,8 +455,9 @@ export const {
   resetGame,
   setGameTheme,
   hidePointsAnimation,
+  hideObjectiveNotification,
   checkForNewPuzzle,
-  resetInvalidSubmission, // Add this new action
+  resetInvalidSubmission,
 } = gameSlice.actions
 
 const gameReducer = gameSlice.reducer

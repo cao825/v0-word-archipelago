@@ -7,14 +7,14 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Word Archipelago | Daily Word Puzzle Game",
+  title: "Word Archipelago | Hourly Word Puzzle Game",
   description:
-    "Navigate between tropical islands to form words in this daily word puzzle game. Challenge yourself with new objectives every day!",
-  keywords: "word game, puzzle game, word archipelago, daily puzzle, word challenge, island game",
+    "Navigate between tropical islands to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
+  keywords: "word game, puzzle game, word archipelago, hourly puzzle, word challenge, island game",
   openGraph: {
-    title: "Word Archipelago | Daily Word Puzzle Game",
+    title: "Word Archipelago | Hourly Word Puzzle Game",
     description:
-      "Navigate between tropical islands to form words in this daily word puzzle game. Challenge yourself with new objectives every day!",
+      "Navigate between tropical islands to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
     url: "https://word-archipelago.vercel.app",
     siteName: "Word Archipelago",
     images: [
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Word Archipelago | Daily Word Puzzle Game",
+    title: "Word Archipelago | Hourly Word Puzzle Game",
     description:
-      "Navigate between tropical islands to form words in this daily word puzzle game. Challenge yourself with new objectives every day!",
+      "Navigate between tropical islands to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
     images: ["/og-image.png"],
   },
   robots: {

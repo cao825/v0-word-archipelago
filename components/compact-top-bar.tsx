@@ -1,8 +1,8 @@
 "use client"
-import { Clock, Trophy, Settings, Target, BookOpen } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
+import { Share2, Clock, BookOpen, Settings, RotateCcw } from "lucide-react"
+import { memo } from "react"
 import type { GameTheme } from "@/lib/slices/gameSlice"
-import { motion } from "framer-motion"
 
 interface CompactTopBarProps {
   score: number
@@ -17,9 +17,10 @@ interface CompactTopBarProps {
   foundWordsCount: number
   onShowObjectives: () => void
   onShowFoundWords: () => void
+  onShowShareModal: () => void
 }
 
-export default function CompactTopBar({
+export default memo(function CompactTopBar({
   score,
   timeLeft,
   comboCount,
@@ -32,101 +33,103 @@ export default function CompactTopBar({
   foundWordsCount,
   onShowObjectives,
   onShowFoundWords,
+  onShowShareModal,
 }: CompactTopBarProps) {
   // Format time as MM:SS
   const minutes = Math.floor(timeLeft / 60)
   const seconds = timeLeft % 60
-  const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+  const formattedTime = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
 
-  // Calculate time percentage for progress bar
-  const timePercentage = (timeLeft / 120) * 100
-
-  // Determine color for time indicator
-  const getTimeColor = () => {
-    if (timeLeft < 10) return "bg-red-500"
-    if (timeLeft < 30) return "bg-amber-500"
-    return "bg-emerald-500"
+  // Determine background color based on theme
+  let bgColor = "bg-sky-800/80"
+  if (theme === "sunset") {
+    bgColor = "bg-orange-900/80"
+  } else if (theme === "stormy") {
+    bgColor = "bg-slate-800/80"
+  } else if (theme === "volcanic") {
+    bgColor = "bg-red-900/80"
   }
 
   return (
-    <div className="sticky top-0 z-30 backdrop-blur-md bg-sky-900/80 border-b border-sky-700 shadow-md">
-      <div className="flex items-center justify-between h-10 px-2">
-        {/* Score and Objectives */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <Trophy size={14} className="text-amber-400" />
-            <span className="font-mono font-medium text-amber-400 text-sm w-[2.5rem] text-right">{score}</span>
+    <div
+      className={`${bgColor} backdrop-blur-sm text-white rounded-lg p-2 shadow-lg flex flex-wrap justify-between items-center gap-2 sticky top-0 z-10`}
+    >
+      {/* Left side - Score and Time */}
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center">
+          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Score</div>
+          <div className="text-xl font-bold">{score}</div>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Time</div>
+          <div className="text-xl font-bold flex items-center gap-1">
+            <Clock size={16} />
+            {formattedTime}
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onShowObjectives}
-            className="h-6 w-6 p-0.5 text-sky-100 hover:bg-sky-800 hover:text-white relative"
-            title="Show Objectives"
-          >
-            <Target size={14} className="text-sky-200" />
-            <span className="absolute -top-0.5 -right-0.5 bg-amber-500 text-white text-[10px] rounded-full h-3.5 w-3.5 flex items-center justify-center">
-              {objectivesCompleted}
-            </span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onShowFoundWords}
-            className="h-6 w-6 p-0.5 text-sky-100 hover:bg-sky-800 hover:text-white relative"
-            title="Show Found Words"
-          >
-            <BookOpen size={14} className="text-sky-200" />
-            <span className="absolute -top-0.5 -right-0.5 bg-sky-600 text-white text-[10px] rounded-full h-3.5 w-3.5 flex items-center justify-center">
-              {foundWordsCount}
-            </span>
-          </Button>
-
-          {/* Combo indicator */}
-          {gameActive && comboCount >= 2 && (
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="ml-1 bg-amber-600/80 text-white text-xs px-1.5 py-0.5 rounded-md"
-            >
-              x{comboCount}
-            </motion.div>
-          )}
         </div>
 
-        {/* Timer */}
-        <div className={`flex items-center gap-1 ${timeLeft < 30 ? "text-red-400" : "text-white"}`}>
-          <Clock size={14} className={timeLeft < 30 ? "text-red-400" : "text-white"} />
-          <span className="font-mono font-medium text-sm">{formattedTime}</span>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-sky-100 hover:bg-sky-800 hover:text-white"
-            onClick={onOpenSettings}
-            title="Settings"
-          >
-            <Settings size={14} />
-          </Button>
-        </div>
+        {comboCount > 1 && (
+          <div className="flex flex-col items-center">
+            <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Combo</div>
+            <div className="text-xl font-bold">x{comboCount}</div>
+          </div>
+        )}
       </div>
 
-      {/* Progress bar for time */}
-      {gameActive && (
-        <div className="h-1 bg-sky-800 w-full">
-          <motion.div
-            className={`h-full ${getTimeColor()}`}
-            initial={{ width: "100%" }}
-            animate={{ width: `${timePercentage}%` }}
-            transition={{ duration: 0.5, ease: "linear" }}
-          ></motion.div>
+      {/* Right side - Objectives, Words, Settings */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onShowObjectives}
+          className="flex flex-col items-center p-1 hover:bg-white/10 rounded transition-colors"
+          aria-label="Show objectives"
+        >
+          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Objectives</div>
+          <div className="text-sm font-bold">
+            {objectivesCompleted}/{totalObjectives}
+          </div>
+        </button>
+
+        <button
+          onClick={onShowFoundWords}
+          className="flex flex-col items-center p-1 hover:bg-white/10 rounded transition-colors"
+          aria-label="Show found words"
+        >
+          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Words</div>
+          <div className="text-sm font-bold flex items-center gap-1">
+            <BookOpen size={14} />
+            {foundWordsCount}
+          </div>
+        </button>
+
+        <button
+          onClick={onShowShareModal}
+          className="flex flex-col items-center p-1 hover:bg-white/10 rounded transition-colors"
+          aria-label="Share results"
+        >
+          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Share</div>
+          <div className="text-sm font-bold flex items-center gap-1">
+            <Share2 size={14} />
+          </div>
+        </button>
+
+        <div className="flex gap-1">
+          <button
+            onClick={onOpenSettings}
+            className="p-2 hover:bg-white/10 rounded transition-colors"
+            aria-label="Settings"
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={onResetGame}
+            className="p-2 hover:bg-white/10 rounded transition-colors"
+            aria-label="Reset game"
+          >
+            <RotateCcw size={20} />
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
-}
+})

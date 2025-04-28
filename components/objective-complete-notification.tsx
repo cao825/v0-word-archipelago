@@ -1,56 +1,56 @@
 "use client"
-
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useAppSelector } from "@/lib/hooks/hooks"
+import { useAppSelector, useAppDispatch } from "@/lib/hooks/hooks"
+import { hideObjectiveNotification } from "@/lib/slices/gameSlice"
 import { CheckCircle } from "lucide-react"
 
 export default function ObjectiveCompleteNotification() {
-  const { completedObjectives, objectives } = useAppSelector((state) => state.game)
-  const [showNotification, setShowNotification] = useState(false)
-  const [lastCompletedObjective, setLastCompletedObjective] = useState<string | null>(null)
-  const [prevCompletedCount, setPrevCompletedCount] = useState(0)
+  const dispatch = useAppDispatch()
+  const { isVisible, count, completedObjectiveIds } = useAppSelector(
+    (state) => state.game.objectiveCompletionNotification,
+  )
+  const objectives = useAppSelector((state) => state.game.objectives)
+
+  // Find the completed objective descriptions
+  const completedObjectives = objectives
+    .filter((obj) => completedObjectiveIds.includes(obj.id))
+    .map((obj) => obj.description)
 
   useEffect(() => {
-    // Check if a new objective was completed
-    if (completedObjectives.length > prevCompletedCount) {
-      // Find the newly completed objective(s)
-      const newlyCompletedIds = completedObjectives.slice(prevCompletedCount)
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        dispatch(hideObjectiveNotification())
+      }, 3000)
 
-      // Get the most recently completed objective
-      const newlyCompletedId = newlyCompletedIds[newlyCompletedIds.length - 1]
-      const objective = objectives.find((obj) => obj.id === newlyCompletedId)
-
-      if (objective) {
-        setLastCompletedObjective(objective.description)
-        setShowNotification(true)
-
-        // Hide notification after 3 seconds
-        const timer = setTimeout(() => {
-          setShowNotification(false)
-        }, 3000)
-
-        return () => clearTimeout(timer)
-      }
+      return () => clearTimeout(timer)
     }
-
-    // Update the previous count
-    setPrevCompletedCount(completedObjectives.length)
-  }, [completedObjectives, objectives, prevCompletedCount])
+  }, [isVisible, dispatch])
 
   return (
     <AnimatePresence>
-      {showNotification && lastCompletedObjective && (
+      {isVisible && count > 0 && (
         <motion.div
-          className="fixed top-12 left-0 right-0 flex justify-center items-center z-50 pointer-events-none"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.3 }}
+          className="fixed top-12 left-1/2 transform -translate-x-1/2 z-50"
         >
-          <div className="bg-amber-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-            <CheckCircle size={16} className="text-white" />
-            <span className="font-medium text-sm">Objective Complete!</span>
+          <div className="bg-amber-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            <div>
+              <span className="font-medium">
+                {count} Objective{count > 1 ? "s" : ""} Completed! +{count * 50} points
+              </span>
+              {completedObjectives.length > 0 && (
+                <ul className="text-xs mt-1 font-normal">
+                  {completedObjectives.map((desc, i) => (
+                    <li key={i}>• {desc}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </motion.div>
       )}

@@ -9,16 +9,24 @@ const objectiveTypes = [
       const maxLength = Math.min(6, islands.length)
       return Math.floor(seed() * (maxLength - 2)) + 3 // 3 to maxLength letter words
     },
+    checkCompletion: (word: string, parameter: string | number): boolean => {
+      const targetLength = Number(parameter)
+      return word.length === targetLength
+    },
   },
   {
     type: "startsWith",
     description: "Find a word starting with '{parameter}'",
     generateParameter: (seed: () => number, islands: Island[]) => {
       // Get all available letters from islands
-      const availableLetters = islands.map((island) => island.letter)
+      const availableLetters = islands.map((island) => island.letter.toLowerCase())
       // Choose a random letter from available letters
       const letterIndex = Math.floor(seed() * availableLetters.length)
       return availableLetters[letterIndex]
+    },
+    checkCompletion: (word: string, parameter: string | number): boolean => {
+      if (!parameter || typeof parameter !== "string") return false
+      return word.toLowerCase().startsWith(parameter.toString().toLowerCase())
     },
   },
   {
@@ -26,10 +34,14 @@ const objectiveTypes = [
     description: "Find a word ending with '{parameter}'",
     generateParameter: (seed: () => number, islands: Island[]) => {
       // Get all available letters from islands
-      const availableLetters = islands.map((island) => island.letter)
+      const availableLetters = islands.map((island) => island.letter.toLowerCase())
       // Choose a random letter from available letters
       const letterIndex = Math.floor(seed() * availableLetters.length)
       return availableLetters[letterIndex]
+    },
+    checkCompletion: (word: string, parameter: string | number): boolean => {
+      if (!parameter || typeof parameter !== "string") return false
+      return word.toLowerCase().endsWith(parameter.toString().toLowerCase())
     },
   },
   {
@@ -37,33 +49,52 @@ const objectiveTypes = [
     description: "Find a word containing '{parameter}'",
     generateParameter: (seed: () => number, islands: Island[]) => {
       // Get all available letters from islands
-      const availableLetters = islands.map((island) => island.letter)
+      const availableLetters = islands.map((island) => island.letter.toLowerCase())
       // Choose a random letter from available letters
       const letterIndex = Math.floor(seed() * availableLetters.length)
       return availableLetters[letterIndex]
+    },
+    checkCompletion: (word: string, parameter: string | number): boolean => {
+      if (!parameter || typeof parameter !== "string") return false
+      return word.toLowerCase().includes(parameter.toString().toLowerCase())
     },
   },
   {
     type: "palindrome",
     description: "Find a palindrome (reads the same forwards and backwards)",
     generateParameter: () => "palindrome",
+    checkCompletion: (word: string): boolean => {
+      if (word.length < 3) return false // Palindromes should be at least 3 letters
+      const reversed = word.toLowerCase().split("").reverse().join("")
+      return word.toLowerCase() === reversed
+    },
   },
 ]
 
 export function generateObjectives(seed: () => number, islands: Island[]): Objective[] {
   const objectives: Objective[] = []
   const usedTypes = new Set<string>()
+  const usedParameters = new Set<string>()
 
   // Generate 3 unique objectives
-  while (objectives.length < 3) {
+  while (objectives.length < 3 && usedTypes.size < objectiveTypes.length) {
     const typeIndex = Math.floor(seed() * objectiveTypes.length)
     const objectiveType = objectiveTypes[typeIndex]
 
-    // Ensure we don't duplicate objective types
-    if (!usedTypes.has(objectiveType.type)) {
-      usedTypes.add(objectiveType.type)
+    // Skip if we've already used this type
+    if (usedTypes.has(objectiveType.type)) continue
 
-      const parameter = objectiveType.generateParameter(seed, islands)
+    // Generate parameter for this objective type
+    const parameter = objectiveType.generateParameter(seed, islands)
+
+    // Create a unique key combining type and parameter to ensure truly unique objectives
+    const uniqueKey = `${objectiveType.type}-${parameter}`
+
+    // Ensure we don't duplicate objective types or parameters
+    if (!usedParameters.has(uniqueKey)) {
+      usedTypes.add(objectiveType.type)
+      usedParameters.add(uniqueKey)
+
       const description = objectiveType.description.replace("{parameter}", parameter.toString())
 
       objectives.push({
@@ -76,64 +107,77 @@ export function generateObjectives(seed: () => number, islands: Island[]): Objec
     }
   }
 
+  // If we couldn't generate 3 unique objectives, fill with fallbacks
+  if (objectives.length < 3) {
+    const fallbackLengths = [3, 4, 5, 6]
+
+    for (let i = objectives.length; i < 3; i++) {
+      // Use length objectives as fallbacks with different lengths
+      for (const length of fallbackLengths) {
+        const uniqueKey = `length-${length}`
+        if (!usedParameters.has(uniqueKey)) {
+          usedParameters.add(uniqueKey)
+          objectives.push({
+            id: `objective-${i}`,
+            type: "length",
+            description: `Find a word with ${length} letters`,
+            parameter: length,
+            completed: false,
+          })
+          break
+        }
+      }
+    }
+  }
+
   return objectives
 }
 
-// Let's add some debug logging to help identify the issue
 export function checkObjectives(word: string, objectives: Objective[], completedObjectives: string[]): string[] {
+  if (!word || typeof word !== "string" || word.length < 2) {
+    console.log("Invalid word provided to checkObjectives:", word)
+    return []
+  }
+
   const newCompletedObjectives: string[] = []
   const lowerWord = word.toLowerCase()
 
-  console.log(`Checking word "${lowerWord}" against objectives:`, objectives)
-  console.log(`Already completed objectives:`, completedObjectives)
+  console.log(`[checkObjectives] Checking word "${lowerWord}" against objectives:`, JSON.stringify(objectives, null, 2))
+  console.log(`[checkObjectives] Already completed objectives:`, completedObjectives)
 
   objectives.forEach((objective) => {
     // Skip already completed objectives
-    if (completedObjectives.includes(objective.id)) {
+    if (objective.completed || completedObjectives.includes(objective.id)) {
+      console.log(`[checkObjectives] Objective ${objective.id} already completed, skipping`)
       return
     }
 
-    let completed = false
-    let reason = ""
-
-    switch (objective.type) {
-      case "length":
-        // Ensure we're comparing numbers to handle both string and number parameter types
-        const targetLength = Number.parseInt(objective.parameter.toString(), 10)
-        completed = lowerWord.length === targetLength
-        reason = `Word length ${lowerWord.length}, target ${targetLength}`
-        break
-      case "startsWith":
-        const targetStart = objective.parameter.toString().toLowerCase()
-        completed = lowerWord.startsWith(targetStart)
-        reason = `Word starts with "${lowerWord[0]}", target "${targetStart}"`
-        break
-      case "endsWith":
-        const targetEnd = objective.parameter.toString().toLowerCase()
-        completed = lowerWord.endsWith(targetEnd)
-        reason = `Word ends with "${lowerWord[lowerWord.length - 1]}", target "${targetEnd}"`
-        break
-      case "contains":
-        const targetChar = objective.parameter.toString().toLowerCase()
-        completed = lowerWord.includes(targetChar)
-        reason = `Word contains chars "${[...new Set(lowerWord.split(""))].join("")}", target "${targetChar}"`
-        break
-      case "palindrome":
-        const reversed = lowerWord.split("").reverse().join("")
-        completed = lowerWord === reversed && lowerWord.length > 1
-        reason = `Word "${lowerWord}" reversed is "${reversed}"`
-        break
+    // Find the objective type definition
+    const objectiveType = objectiveTypes.find((type) => type.type === objective.type)
+    if (!objectiveType) {
+      console.error(`[checkObjectives] Unknown objective type: ${objective.type}`)
+      return
     }
 
-    console.log(
-      `Objective ${objective.id} (${objective.type}): ${completed ? "COMPLETED" : "not completed"} - ${reason}`,
-    )
+    try {
+      // Use the type-specific check function
+      const completed = objectiveType.checkCompletion(lowerWord, objective.parameter)
 
-    if (completed) {
-      newCompletedObjectives.push(objective.id)
+      console.log(
+        `[checkObjectives] Objective ${objective.id} (${objective.type}): ${completed ? "COMPLETED" : "not completed"} - Parameter: ${objective.parameter}, Word: ${lowerWord}`,
+      )
+
+      if (completed) {
+        newCompletedObjectives.push(objective.id)
+      }
+    } catch (error) {
+      console.error(`[checkObjectives] Error checking objective ${objective.id}:`, error)
     }
   })
 
-  console.log(`Newly completed objectives:`, newCompletedObjectives)
+  console.log(`[checkObjectives] Newly completed objectives:`, newCompletedObjectives)
   return newCompletedObjectives
 }
+
+// Export objective types for testing
+export { objectiveTypes }

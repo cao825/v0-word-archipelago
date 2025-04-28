@@ -31,6 +31,8 @@ import WordFoundToast from "./word-found-toast"
 // Add the import for the new component
 import GameNotification from "./game-notification"
 import ObjectiveCompleteNotification from "./objective-complete-notification"
+// Add this import at the top
+import ShareResults from "./share-results"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -49,10 +51,12 @@ export default function GameBoard() {
   const duplicateSubmission = useAppSelector((state) => state.game.duplicateSubmission)
   const successfulSubmission = useAppSelector((state) => state.game.successfulSubmission)
   const comboCount = useAppSelector((state) => state.game.comboCount)
+  const puzzleDate = useAppSelector((state) => state.game.puzzleDate)
 
   const [showSettings, setShowSettings] = useState(false)
   const [showObjectivesModal, setShowObjectivesModal] = useState(false)
   const [showFoundWordsModal, setShowFoundWordsModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [wordFoundToast, setWordFoundToast] = useState({ word: "", points: 0, visible: false })
   const [isMobile, setIsMobile] = useState(false)
   // Add state for the notification
@@ -249,6 +253,10 @@ export default function GameBoard() {
     setShowFoundWordsModal(true)
   }, [])
 
+  const handleShowShareModal = useCallback(() => {
+    setShowShareModal(true)
+  }, [])
+
   const handleCloseWordFoundToast = useCallback(() => {
     setWordFoundToast((prev) => ({ ...prev, visible: false }))
   }, [])
@@ -347,6 +355,7 @@ export default function GameBoard() {
           foundWordsCount={foundWords.length}
           onShowObjectives={handleShowObjectives}
           onShowFoundWords={handleShowFoundWords}
+          onShowShareModal={handleShowShareModal}
         />
       )}
 
@@ -405,7 +414,13 @@ export default function GameBoard() {
 
       {/* Game Over Modal */}
       {!gameActive && timeLeft === 0 && (
-        <GameOverModal score={score} foundWords={foundWords} objectives={objectives} onResetGame={handleResetGame} />
+        <GameOverModal
+          score={score}
+          foundWords={foundWords}
+          objectives={objectives}
+          onResetGame={handleResetGame}
+          onShare={handleShowShareModal}
+        />
       )}
 
       {/* Mobile Settings Sheet */}
@@ -424,6 +439,16 @@ export default function GameBoard() {
       {/* Found Words Modal */}
       <ModalOverlay isOpen={showFoundWordsModal} onClose={() => setShowFoundWordsModal(false)} title="Found Words">
         <FoundWordsList foundWords={foundWords} />
+      </ModalOverlay>
+      {/* Share Results Modal */}
+      <ModalOverlay isOpen={showShareModal} onClose={() => setShowShareModal(false)} title="Share Your Results">
+        <ShareResults
+          score={score}
+          foundWordsCount={foundWords.length}
+          completedObjectives={completedObjectivesCount}
+          totalObjectives={objectives.length}
+          puzzleDate={puzzleDate}
+        />
       </ModalOverlay>
     </div>
   )
