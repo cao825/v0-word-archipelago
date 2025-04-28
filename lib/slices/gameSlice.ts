@@ -10,6 +10,7 @@ export interface Island {
   position: { x: number; y: number }
   size: number
   connections: string[]
+  multiplier?: number // Add optional multiplier property
 }
 
 export interface Objective {
@@ -205,8 +206,22 @@ export const gameSlice = createSlice({
 
         state.lastWordTime = now
 
-        // Calculate word score with combo multiplier
+        // Calculate word score with combo multiplier and island multipliers
         let wordScore = word.length * 10
+
+        // Apply island multipliers if any
+        const usedIslands = state.selectedIslands
+          .map((id) => state.islands.find((island) => island.id === id))
+          .filter(Boolean)
+
+        // Find the highest multiplier among used islands
+        const highestMultiplier = usedIslands.reduce((max, island) => Math.max(max, island?.multiplier || 1), 1)
+
+        // Apply the highest multiplier
+        if (highestMultiplier > 1) {
+          wordScore *= highestMultiplier
+        }
+
         let comboBonus = 0
 
         // Apply combo bonus for 3+ words in a row

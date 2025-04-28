@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Award, RotateCcw, Share2 } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { RotateCcw, Share2, Trophy, Clock } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { motion } from "framer-motion"
 
@@ -68,6 +68,22 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
     return () => clearInterval(interval)
   }, [])
 
+  // Find longest word and highest scoring word
+  const gameStats = useMemo(() => {
+    if (foundWords.length === 0) return { longestWord: "", highestScoringWord: "" }
+
+    const longestWord = [...foundWords].sort((a, b) => b.length - a.length)[0]
+
+    // Simple scoring: word length * 10 (this is a simplification)
+    const highestScoringWord = [...foundWords].sort((a, b) => b.length - a.length)[0]
+
+    return {
+      longestWord: longestWord.toUpperCase(),
+      highestScoringWord: highestScoringWord.toUpperCase(),
+      wordLength: longestWord.length,
+    }
+  }, [foundWords])
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 p-4">
       <motion.div
@@ -82,14 +98,17 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
         <div className="p-5 text-center">
           <div className="mb-4">
             <h2 className="text-2xl font-bold text-white">Game Over</h2>
-            <p className="text-slate-300 text-sm">
-              Next puzzle in {timeRemaining.minutes}:{timeRemaining.seconds}
-            </p>
+            <div className="flex items-center justify-center gap-2 text-slate-300 text-sm">
+              <Clock size={14} className="text-amber-400" />
+              <p>
+                Next puzzle in {timeRemaining.minutes}:{timeRemaining.seconds}
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-center mb-4">
             <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Award className="w-10 h-10 text-amber-400" />
+              <Trophy className="w-10 h-10 text-amber-400" />
             </div>
           </div>
 
@@ -110,6 +129,23 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
               <div className="text-slate-400 text-xs">Objectives</div>
             </div>
           </div>
+
+          {/* New section for game highlights */}
+          {foundWords.length > 0 && (
+            <div className="mb-5 bg-slate-800/30 p-3 rounded-lg">
+              <h3 className="text-sm font-medium text-slate-300 mb-2">Game Highlights</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <div className="text-amber-400 font-medium">{gameStats.longestWord}</div>
+                  <div className="text-slate-400 text-xs">Longest Word ({gameStats.wordLength} letters)</div>
+                </div>
+                <div>
+                  <div className="text-amber-400 font-medium">{gameStats.highestScoringWord}</div>
+                  <div className="text-slate-400 text-xs">Highest Points</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <button

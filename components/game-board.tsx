@@ -31,6 +31,7 @@ import WordFoundToast from "./word-found-toast"
 import GameNotification from "./game-notification"
 import ObjectiveCompleteNotification from "./objective-complete-notification"
 import ShareResults from "./share-results"
+import MiniAchievement from "./mini-achievement"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -58,6 +59,8 @@ export default function GameBoard() {
   const [isMobile, setIsMobile] = useState(false)
   const [showGameNotification, setShowGameNotification] = useState(false)
   const [viewportHeight, setViewportHeight] = useState(0)
+  // Add state for mini achievements
+  const [miniAchievement, setMiniAchievement] = useState({ title: "", visible: false })
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
@@ -142,9 +145,10 @@ export default function GameBoard() {
 
   // Show toast when a new word is found
   useEffect(() => {
-    if (foundWords.length > 0 && lastFoundWordRef.current !== foundWords[0] && score > lastScoreRef.current) {
+    if (successfulSubmission && foundWords.length > 0) {
       const newWord = foundWords[0]
-      const pointsEarned = score - lastScoreRef.current
+      // Calculate points earned - if we can't determine exactly, use a reasonable estimate
+      const pointsEarned = score - lastScoreRef.current > 0 ? score - lastScoreRef.current : newWord.length * 10 // Fallback calculation
 
       setWordFoundToast({
         word: newWord.toUpperCase(),
@@ -155,7 +159,7 @@ export default function GameBoard() {
       lastFoundWordRef.current = newWord
       lastScoreRef.current = score
     }
-  }, [foundWords, score])
+  }, [successfulSubmission, foundWords, score])
 
   // Handle invalid submission feedback
   useEffect(() => {
@@ -308,6 +312,40 @@ export default function GameBoard() {
   // Calculate game area height
   const gameAreaHeight = useMemo(() => calculateGameAreaHeight(), [calculateGameAreaHeight])
 
+  // Add a function to show mini achievements
+  const showMiniAchievement = useCallback((title: string) => {
+    setMiniAchievement({ title, visible: true })
+  }, [])
+
+  // Add effect to check for achievements
+  useEffect(() => {
+    // Check for word length achievements
+    if (successfulSubmission && foundWords.length > 0) {
+      const newWord = foundWords[0]
+
+      // First word achievement
+      if (foundWords.length === 1) {
+        showMiniAchievement("First Word Found!")
+      }
+
+      // Word length achievements
+      if (newWord.length >= 6) {
+        showMiniAchievement(`${newWord.length}-Letter Word!`)
+      }
+
+      // Combo achievements
+      if (comboCount >= 3) {
+        showMiniAchievement(`${comboCount}x Combo!`)
+      }
+    }
+
+    // Check for objective achievements
+    const completedCount = objectives.filter((obj) => obj.completed).length
+    if (completedCount > 0 && completedCount === objectives.length) {
+      showMiniAchievement("All Objectives Completed!")
+    }
+  }, [successfulSubmission, foundWords, comboCount, objectives, showMiniAchievement])
+
   return (
     <div className="flex flex-col" ref={gameAreaRef}>
       {/* Audio Manager */}
@@ -332,6 +370,13 @@ export default function GameBoard() {
         points={wordFoundToast.points}
         isVisible={wordFoundToast.visible}
         onClose={handleCloseWordFoundToast}
+      />
+
+      {/* Mini Achievement */}
+      <MiniAchievement
+        title={miniAchievement.title}
+        isVisible={miniAchievement.visible}
+        onClose={() => setMiniAchievement((prev) => ({ ...prev, visible: false }))}
       />
 
       {/* Compact Top Bar - Only show during active gameplay */}

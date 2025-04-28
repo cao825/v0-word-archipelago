@@ -650,6 +650,27 @@ export default function IslandMap({
         ctx.fillText(island.letter, island.position.x, island.position.y)
       }
 
+      // Draw multiplier indicator if present
+      if (island.multiplier && island.multiplier > 1) {
+        const multiplierX = island.position.x + island.size * 0.4
+        const multiplierY = island.position.y - island.size * 0.4
+
+        // Draw a small circle for the multiplier
+        ctx.beginPath()
+        ctx.arc(multiplierX, multiplierY, island.size * 0.2, 0, Math.PI * 2)
+
+        // Use a bright color for the multiplier
+        ctx.fillStyle = island.multiplier === 3 ? "rgba(239, 68, 68, 0.9)" : "rgba(249, 115, 22, 0.9)" // Red for 3x, orange for 2x
+        ctx.fill()
+
+        // Draw the multiplier text
+        ctx.font = `bold ${island.size * 0.25}px 'Inter', sans-serif`
+        ctx.fillStyle = "#ffffff"
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillText(`${island.multiplier}x`, multiplierX, multiplierY)
+      }
+
       // Draw a quick flash effect for just-clicked islands
       if (isJustClicked) {
         ctx.save()
@@ -696,7 +717,8 @@ export default function IslandMap({
         const distance = Math.sqrt(Math.pow(x - island.position.x, 2) + Math.pow(y - island.position.y, 2))
 
         // Increase tap target size on mobile for better touch experience
-        const tapTargetSize = isMobile ? Math.max(island.size, 22) : island.size
+        // Ensure minimum tap target of 48px on mobile, 44px on desktop
+        const tapTargetSize = isMobile ? Math.max(island.size, 24) : Math.max(island.size, 22)
 
         if (distance <= tapTargetSize) {
           islandClicked = true
@@ -713,7 +735,7 @@ export default function IslandMap({
           // Clear the animation after a short delay
           setTimeout(() => {
             setLastClickedIsland(null)
-          }, 100) // Shorter flash duration for better responsiveness
+          }, 80) // Shorter flash duration for better responsiveness (reduced from 100ms)
 
           // Handle double tap
           const now = Date.now()

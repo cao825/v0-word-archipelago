@@ -44,7 +44,7 @@ export function generateIslands(seed: () => number): Island[] {
 
   const islands: Island[] = []
   const boardSize = 600 // Size of the game board
-  const minDistance = 70 // Slightly reduced minimum distance to accommodate more islands
+  const minDistance = 85 // Increased from 70 to provide more breathing room (about 20% more)
 
   // Generate islands with positions
   for (let i = 0; i < numIslands; i++) {
@@ -54,8 +54,9 @@ export function generateIslands(seed: () => number): Island[] {
     // Try to find a valid position that's not too close to other islands
     let attempts = 0
     while (!validPosition && attempts < 100) {
-      x = Math.floor(seed() * (boardSize - 100)) + 50
-      y = Math.floor(seed() * (boardSize - 100)) + 50
+      // Add more padding around edges (from 50px to 60px)
+      x = Math.floor(seed() * (boardSize - 120)) + 60
+      y = Math.floor(seed() * (boardSize - 120)) + 60
 
       validPosition = true
       for (const island of islands) {
@@ -80,8 +81,15 @@ export function generateIslands(seed: () => number): Island[] {
     const letterIndex = Math.floor(seed() * weightedLetters.length)
     const letter = weightedLetters[letterIndex]
 
-    // Vary the size slightly for visual interest (slightly smaller to accommodate more islands)
-    const size = Math.floor(seed() * 8) + 30
+    // Increase minimum size to ensure tap targets are at least 44px
+    const size = Math.floor(seed() * 8) + 35 // Increased from 30 to 35
+
+    // Add multiplier to some islands (about 20% chance)
+    let multiplier = 1
+    if (seed() < 0.2) {
+      // 20% chance of having a multiplier
+      multiplier = seed() < 0.05 ? 3 : 2 // 5% chance of 3x, 15% chance of 2x
+    }
 
     islands.push({
       id: `island-${i}`,
@@ -89,6 +97,7 @@ export function generateIslands(seed: () => number): Island[] {
       position: { x, y },
       size,
       connections: [], // Will be filled in later
+      multiplier, // Add the multiplier property
     })
   }
 

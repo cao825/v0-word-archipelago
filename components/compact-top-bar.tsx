@@ -64,31 +64,32 @@ export default memo(function CompactTopBar({
     progressBgColor = "bg-red-800"
   }
 
+  // Reduce the height and font sizes in the CompactTopBar component
   return (
     <div className="sticky top-0 z-30">
-      {/* Main top bar */}
-      <div className={`${bgColor} backdrop-blur-sm shadow-md h-12 flex items-center justify-between px-3`}>
-        {/* Left: Score */}
+      {/* Main top bar - reduced height from h-12 to h-10 */}
+      <div className={`${bgColor} backdrop-blur-sm shadow-md h-10 flex items-center justify-between px-3`}>
+        {/* Left: Score - reduced icon size */}
         <div className="flex items-center gap-1.5">
-          <Trophy size={16} className="text-amber-400" />
-          <span className="font-bold text-amber-400">{score}</span>
+          <Trophy size={14} className="text-amber-400" /> {/* Reduced from 16 to 14 */}
+          <span className="font-bold text-amber-400 text-sm">{score}</span> {/* Added text-sm */}
         </div>
 
-        {/* Center: Time */}
+        {/* Center: Time - reduced font size */}
         <div className="flex items-center gap-1.5">
-          <Clock size={16} className={timeLeft < 30 ? "text-red-400" : "text-white"} />
-          <span className="font-mono font-medium">{formattedTime}</span>
+          <Clock size={14} className={timeLeft < 30 ? "text-red-400" : "text-white"} /> {/* Reduced from 16 to 14 */}
+          <span className="font-mono font-medium text-sm">{formattedTime}</span> {/* Added text-sm */}
         </div>
 
-        {/* Right: Counters and Menu */}
+        {/* Right: Counters and Menu - reduced sizes */}
         <div className="flex items-center gap-3">
           {/* Objectives counter */}
           <button
             onClick={onShowObjectives}
-            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-1 transition-colors"
+            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors"
             aria-label="Show objectives"
           >
-            <Target size={14} className="text-sky-200" />
+            <Target size={12} className="text-sky-200" /> {/* Reduced from 14 to 12 */}
             <span className="text-xs font-medium">
               {objectivesCompleted}/{totalObjectives}
             </span>
@@ -97,21 +98,20 @@ export default memo(function CompactTopBar({
           {/* Words counter */}
           <button
             onClick={onShowFoundWords}
-            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-1 transition-colors"
+            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors"
             aria-label="Show found words"
           >
-            <BookOpen size={14} className="text-sky-200" />
+            <BookOpen size={12} className="text-sky-200" /> {/* Reduced from 14 to 12 */}
             <span className="text-xs font-medium">{foundWordsCount}</span>
           </button>
 
           {/* Menu button */}
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="hover:bg-white/10 rounded p-1.5 transition-colors relative"
+            className="hover:bg-white/10 rounded p-1 transition-colors relative"
             aria-label="Menu"
           >
-            <Menu size={18} />
-
+            <Menu size={16} /> {/* Reduced from 18 to 16 */}
             {/* Dropdown menu */}
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 bg-slate-800 rounded-md shadow-lg py-1 w-36 z-50">
@@ -151,8 +151,8 @@ export default memo(function CompactTopBar({
         </div>
       </div>
 
-      {/* Progress bar for time */}
-      <div className={`h-1 ${progressBgColor} w-full`}>
+      {/* Progress bar for time - reduced height from h-1 to h-0.5 */}
+      <div className={`h-0.5 ${progressBgColor} w-full`}>
         <motion.div
           className={`h-full ${getTimeColor()}`}
           initial={{ width: "100%" }}
