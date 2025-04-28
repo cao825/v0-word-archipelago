@@ -22,6 +22,7 @@ export default function AudioManager() {
   const [audioEnabled, setAudioEnabled] = useState(false)
   const [ambientEnabled, setAmbientEnabled] = useState(false)
   const prevSelectedLength = useRef(0)
+  const prevCompletedObjectives = useRef<string[]>([])
 
   // Audio refs
   const successSoundRef = useRef<HTMLAudioElement | null>(null)
@@ -111,15 +112,21 @@ export default function AudioManager() {
     }
   }, [invalidSubmission, audioEnabled])
 
-  // We're using completedObjectives.length as a dependency to detect when objectives are completed
+  // Track completedObjectives.length to detect when new objectives are completed
   useEffect(() => {
-    if (!audioEnabled) return
+    if (!audioEnabled || !objectiveSoundRef.current) return
 
-    if (completedObjectives.length > 0 && objectiveSoundRef.current) {
+    // Check if any new objectives were completed
+    const newCompletedObjectives = completedObjectives.filter((id) => !prevCompletedObjectives.current.includes(id))
+
+    if (newCompletedObjectives.length > 0) {
       objectiveSoundRef.current.currentTime = 0
       objectiveSoundRef.current.play().catch((e) => console.log("Objective audio playback prevented:", e))
+
+      // Update the ref to the current completed objectives
+      prevCompletedObjectives.current = [...completedObjectives]
     }
-  }, [completedObjectives.length, audioEnabled])
+  }, [completedObjectives, audioEnabled])
 
   // Play a sound when an island is selected
   useEffect(() => {

@@ -1,27 +1,19 @@
 "use client"
 
-import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Play } from "lucide-react"
+import { X } from "lucide-react"
 
 interface GameNotificationProps {
-  isVisible: boolean
+  isVisible?: boolean
   onClose: () => void
-  message: string
-  duration?: number
+  message?: string
 }
 
-export default function GameNotification({ isVisible, onClose, message, duration = 3000 }: GameNotificationProps) {
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => {
-        onClose()
-      }, duration)
-
-      return () => clearTimeout(timer)
-    }
-  }, [isVisible, duration, onClose])
-
+export default function GameNotification({
+  isVisible = false,
+  onClose,
+  message = "Tap the Play button to start a game!",
+}: GameNotificationProps) {
   return (
     <AnimatePresence>
       {isVisible && (
@@ -30,13 +22,17 @@ export default function GameNotification({ isVisible, onClose, message, duration
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
-          className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+          className="fixed top-4 left-0 right-0 mx-auto z-50 w-full max-w-sm"
         >
-          <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
-            <div className="bg-amber-500 rounded-full p-2 flex-shrink-0">
-              <Play size={16} className="text-white" />
-            </div>
-            <p className="text-white text-sm font-medium">{message}</p>
+          <div className="bg-amber-500 text-white px-4 py-3 rounded-lg shadow-lg mx-4 flex items-center justify-between">
+            <p className="text-sm font-medium">{message}</p>
+            <button
+              onClick={onClose}
+              className="ml-2 text-amber-100 hover:text-white focus:outline-none"
+              aria-label="Close notification"
+            >
+              <X size={18} />
+            </button>
           </div>
         </motion.div>
       )}

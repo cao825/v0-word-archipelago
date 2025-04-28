@@ -471,6 +471,7 @@ const commonEnglishWords = new Set([
   "she",
   "shy",
   "sic",
+  "sin", // Added "sin" here
   "sip",
   "sir",
   "sis",

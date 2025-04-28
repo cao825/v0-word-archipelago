@@ -86,9 +86,9 @@ export default function FloatingGameControls({
           >
             <Button
               onClick={() => setIsExpanded(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-white h-10 w-10 rounded-full shadow-lg"
+              className="bg-amber-500 hover:bg-amber-600 text-white h-12 w-12 rounded-full shadow-lg"
             >
-              <Play size={18} />
+              <Play size={20} />
             </Button>
           </motion.div>
         )}

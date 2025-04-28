@@ -30,6 +30,7 @@ import ModalOverlay from "./modal-overlay"
 import WordFoundToast from "./word-found-toast"
 // Add the import for the new component
 import GameNotification from "./game-notification"
+import ObjectiveCompleteNotification from "./objective-complete-notification"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -253,8 +254,10 @@ export default function GameBoard() {
 
   // Add a handler for pre-game clicks
   const handlePreGameClick = useCallback(() => {
-    setShowGameNotification(true)
-  }, [])
+    if (!gameActive) {
+      handleStartGame()
+    }
+  }, [gameActive, handleStartGame])
 
   // Add the handler for closing the notification
   const handleCloseGameNotification = useCallback(() => {
@@ -309,6 +312,9 @@ export default function GameBoard() {
 
       {/* Points Animation */}
       <PointsAnimation />
+
+      {/* Objective Complete Notification */}
+      <ObjectiveCompleteNotification />
 
       {/* Game Notification */}
       <GameNotification
@@ -418,9 +424,6 @@ export default function GameBoard() {
       <ModalOverlay isOpen={showFoundWordsModal} onClose={() => setShowFoundWordsModal(false)} title="Found Words">
         <FoundWordsList foundWords={foundWords} />
       </ModalOverlay>
-
-      {/* Game Notification */}
-      <GameNotification isOpen={showGameNotification} onClose={handleCloseGameNotification} />
     </div>
   )
 }

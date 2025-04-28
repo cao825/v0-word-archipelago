@@ -124,6 +124,7 @@ export const dictionary = [
   "see",
   "set",
   "she",
+  "sin", // Added "sin" here
   "sit",
   "six",
   "son",

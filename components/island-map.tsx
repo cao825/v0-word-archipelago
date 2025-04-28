@@ -511,7 +511,7 @@ export default function IslandMap({
         ctx.moveTo(shape.points[0].x, shape.points[0].y)
 
         for (let i = 1; i < shape.points.length; i++) {
-          ctx.lineTo(shape.points[i].x, shape.beachPoints[i].y)
+          ctx.lineTo(shape.points[i].x, shape.points[i].y)
         }
 
         ctx.closePath()
@@ -684,6 +684,7 @@ export default function IslandMap({
       const y = (e.clientY - rect.top) / scale
 
       // Check if click is within any island
+      let islandClicked = false
       for (const island of islands) {
         const distance = Math.sqrt(Math.pow(x - island.position.x, 2) + Math.pow(y - island.position.y, 2))
 
@@ -691,6 +692,7 @@ export default function IslandMap({
         const tapTargetSize = isMobile ? Math.max(island.size, 22) : island.size
 
         if (distance <= tapTargetSize) {
+          islandClicked = true
           // Set the last clicked island for animation
           setLastClickedIsland(island.id)
 
@@ -698,12 +700,6 @@ export default function IslandMap({
           setTimeout(() => {
             setLastClickedIsland(null)
           }, 100) // Shorter flash duration for better responsiveness
-
-          // If onPreGameClick is provided and we're not in a game, call it
-          if (onPreGameClick && selectedIslands.length === 0) {
-            onPreGameClick()
-            return
-          }
 
           // Handle double tap
           const now = Date.now()
@@ -721,6 +717,11 @@ export default function IslandMap({
 
           break
         }
+      }
+
+      // If no island was clicked and we're not in a game, call onPreGameClick
+      if (!islandClicked && onPreGameClick && selectedIslands.length === 0) {
+        onPreGameClick()
       }
     },
     [
