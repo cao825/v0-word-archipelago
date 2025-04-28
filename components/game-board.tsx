@@ -12,6 +12,7 @@ import {
   setGameTheme,
   checkForNewPuzzle,
   type GameTheme,
+  resetInvalidSubmission,
 } from "@/lib/slices/gameSlice"
 import IslandMap from "./island-map"
 import ObjectivesList from "./objectives-list"
@@ -122,6 +123,18 @@ export default function GameBoard() {
       lastScoreRef.current = score
     }
   }, [foundWords, score])
+
+  // Handle invalid submission feedback
+  useEffect(() => {
+    if (invalidSubmission || duplicateSubmission) {
+      // Reset the invalid submission state after a short delay
+      const timer = setTimeout(() => {
+        dispatch(resetInvalidSubmission())
+      }, 1500)
+
+      return () => clearTimeout(timer)
+    }
+  }, [invalidSubmission, duplicateSubmission, dispatch])
 
   // Memoize event handlers to prevent unnecessary re-renders
   const handleKeyDown = useCallback(

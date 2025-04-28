@@ -44,11 +44,11 @@ export default function IslandMap({
   const [hasShaken, setHasShaken] = useState(false)
   const renderedRef = useRef(false)
 
-  // Reset the hasShaken state when invalidSubmission changes to false
+  // Reset the hasShaken state when invalidSubmission changes
   useEffect(() => {
-    if (!invalidSubmission) {
-      setHasShaken(false)
-    }
+    // When invalidSubmission becomes true, we want to trigger the animation
+    // When it becomes false, we want to reset the state
+    setHasShaken(false)
   }, [invalidSubmission])
 
   // Detect mobile devices

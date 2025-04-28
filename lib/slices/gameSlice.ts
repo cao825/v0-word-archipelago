@@ -356,6 +356,10 @@ export const gameSlice = createSlice({
         }
       }
     },
+    resetInvalidSubmission: (state) => {
+      state.invalidSubmission = false
+      state.duplicateSubmission = false
+    },
   },
 })
 
@@ -369,6 +373,7 @@ export const {
   setGameTheme,
   hidePointsAnimation,
   checkForNewPuzzle,
+  resetInvalidSubmission, // Add this new action
 } = gameSlice.actions
 
 const gameReducer = gameSlice.reducer
