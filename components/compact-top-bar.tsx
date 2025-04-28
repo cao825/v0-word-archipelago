@@ -51,60 +51,64 @@ export default function CompactTopBar({
   return (
     <div className="w-full bg-sky-900/80 backdrop-blur-sm border-b border-sky-800 p-2 sticky top-0 z-10 shadow-md">
       <div className="flex items-center justify-between gap-2 max-w-4xl mx-auto">
-        <GameStatus
-          score={score}
-          timeLeft={timeLeft}
-          message={message}
-          gameActive={gameActive}
-          comboCount={comboCount}
-          isMobile={isMobile}
-        />
+        {/* Game status with flex-shrink to allow it to compress when needed */}
+        <div className="flex-shrink min-w-0">
+          <GameStatus
+            score={score}
+            timeLeft={timeLeft}
+            message={message}
+            gameActive={gameActive}
+            comboCount={comboCount}
+            isMobile={isMobile}
+          />
+        </div>
 
-        <div className="flex items-center gap-1">
+        {/* Right side controls with nowrap and overflow handling */}
+        <div className="flex items-center gap-1 flex-nowrap overflow-x-auto scrollbar-hide">
           <button
             onClick={onShowFoundWords}
-            className="relative flex items-center justify-center h-9 w-9 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
             title="Found Words"
           >
-            <BookOpen size={18} />
-            <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <BookOpen size={16} />
+            <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
               {foundWordsCount}
             </span>
           </button>
 
           <button
             onClick={onShowObjectives}
-            className="relative flex items-center justify-center h-9 w-9 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
             title="Objectives"
           >
-            <Target size={18} />
-            <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <Target size={16} />
+            <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
               {actualObjectivesCompleted}/{totalObjectives}
             </span>
           </button>
 
           <button
             onClick={onShowShareModal}
-            className="flex items-center justify-center h-9 w-9 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
             title="Share"
           >
-            <Share2 size={18} />
+            <Share2 size={16} />
           </button>
 
           <button
             onClick={onResetGame}
-            className="flex items-center justify-center h-9 w-9 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
             title="Reset Game"
           >
-            <RotateCcw size={18} />
+            <RotateCcw size={16} />
           </button>
 
           <button
             onClick={onOpenSettings}
-            className="flex items-center justify-center h-9 w-9 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
+            className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white"
             title="Settings"
           >
-            <Settings size={18} />
+            <Settings size={16} />
           </button>
         </div>
       </div>

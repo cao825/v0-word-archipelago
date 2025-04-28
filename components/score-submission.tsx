@@ -1,9 +1,8 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { Trophy } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Trophy, Check } from "lucide-react"
 
 interface ScoreSubmissionProps {
   score: number
@@ -25,6 +24,15 @@ export default function ScoreSubmission({
   const [initials, setInitials] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [showSuccess, setShowSuccess] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus the input field when component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,64 +50,81 @@ export default function ScoreSubmission({
         window.submitLeaderboardScore(initials, score, wordsFound, objectivesCompleted)
       }
 
-      // Call the onSubmit callback
-      onSubmit()
+      // Show success message before closing
+      setShowSuccess(true)
+
+      // Delay closing to show the success message
+      setTimeout(() => {
+        // Call the onSubmit callback
+        onSubmit()
+      }, 1200)
     } catch (error) {
       console.error("Error submitting score:", error)
       setError("Failed to submit score. Please try again.")
-    } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
     <div className="text-center">
-      <div className="flex justify-center mb-4">
-        <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
-          <Trophy className="w-8 h-8 text-amber-400" />
+      {showSuccess ? (
+        <div className="flex flex-col items-center justify-center py-6 animate-fadeIn">
+          <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+            <Check className="w-8 h-8 text-green-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-1">Score Submitted!</h2>
+          <p className="text-slate-300">Your score has been added to the leaderboard</p>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <Trophy className="w-8 h-8 text-amber-400" />
+            </div>
+          </div>
 
-      <h2 className="text-xl font-bold text-white mb-1">New High Score!</h2>
-      <p className="text-slate-300 mb-4">
-        Your score of <span className="text-amber-400 font-bold">{score}</span> qualifies for the leaderboard
-      </p>
+          <h2 className="text-xl font-bold text-white mb-1">New High Score!</h2>
+          <p className="text-slate-300 mb-4">
+            Your score of <span className="text-amber-400 font-bold">{score}</span> qualifies for the leaderboard
+          </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="initials" className="block text-sm font-medium text-slate-300 mb-1">
-            Enter your initials (3 letters)
-          </label>
-          <input
-            type="text"
-            id="initials"
-            maxLength={3}
-            value={initials}
-            onChange={(e) => setInitials(e.target.value.toUpperCase())}
-            className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-md text-center text-xl font-bold text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 uppercase"
-            autoFocus
-          />
-          {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="initials" className="block text-sm font-medium text-slate-300 mb-1">
+                Enter your initials (3 letters)
+              </label>
+              <input
+                type="text"
+                id="initials"
+                ref={inputRef}
+                maxLength={3}
+                value={initials}
+                onChange={(e) => setInitials(e.target.value.toUpperCase())}
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-md text-center text-xl font-bold text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 uppercase"
+              />
+              {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
+            </div>
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Score"}
-          </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Score"}
+              </button>
 
-          <button
-            type="button"
-            onClick={onSkip}
-            className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg font-medium transition-colors"
-          >
-            Skip
-          </button>
-        </div>
-      </form>
+              <button
+                type="button"
+                onClick={onSkip}
+                className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg font-medium transition-colors"
+              >
+                Skip
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </div>
   )
 }

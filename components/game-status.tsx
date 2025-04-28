@@ -1,59 +1,57 @@
-import { Card, CardContent } from "@/components/ui/card"
+"use client"
+
+import { Clock, Zap } from "lucide-react"
 
 interface GameStatusProps {
   score: number
   timeLeft: number
-  message: string
+  message?: string
   gameActive: boolean
-  comboCount?: number
+  comboCount: number
   isMobile?: boolean
 }
 
 export default function GameStatus({
   score,
   timeLeft,
-  message,
+  message = "",
   gameActive,
-  comboCount = 0,
+  comboCount,
   isMobile = false,
 }: GameStatusProps) {
   // Format time as MM:SS
   const minutes = Math.floor(timeLeft / 60)
   const seconds = timeLeft % 60
-  const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+  const formattedTime = `${minutes}:${seconds.toString().padStart(2, "0")}`
 
   return (
-    <div className={`flex items-center gap-2 ${isMobile ? "flex-wrap" : "flex-1"}`}>
-      <Card className="flex-none bg-sky-800/80 border-sky-700 shadow-lg">
-        <CardContent className={`${isMobile ? "p-1.5" : "p-2"} flex flex-col items-center`}>
-          <span className="text-xs uppercase font-light tracking-wider text-sky-200">Score</span>
-          <span className={`${isMobile ? "text-lg" : "text-xl"} font-bold text-amber-400`}>{score}</span>
-        </CardContent>
-      </Card>
+    <div className="flex items-center gap-2 text-white">
+      {/* Score - always visible */}
+      <div className="flex items-center">
+        <span className="font-bold text-amber-400 text-lg mr-1">{score}</span>
+        <span className="text-xs text-slate-300">pts</span>
+      </div>
 
-      <Card className={`flex-none bg-sky-800/80 border-sky-700 shadow-lg ${timeLeft < 30 ? "border-red-500" : ""}`}>
-        <CardContent className={`${isMobile ? "p-1.5" : "p-2"} flex flex-col items-center`}>
-          <span className="text-xs uppercase font-light tracking-wider text-sky-200">Time</span>
-          <span
-            className={`${isMobile ? "text-lg" : "text-xl"} font-bold font-mono w-[3.5rem] text-center ${timeLeft < 30 ? "text-red-400" : "text-white"}`}
-          >
-            {formattedTime}
-          </span>
-        </CardContent>
-      </Card>
-
-      {gameActive && comboCount >= 2 && (
-        <Card className="flex-none bg-amber-600/80 border-amber-500 shadow-lg animate-pulse">
-          <CardContent className={`${isMobile ? "p-1.5" : "p-2"} flex flex-col items-center`}>
-            <span className="text-xs uppercase font-light tracking-wider text-amber-100">Combo</span>
-            <span className={`${isMobile ? "text-lg" : "text-xl"} font-bold text-white`}>x{comboCount}</span>
-          </CardContent>
-        </Card>
+      {/* Time - only visible during active game */}
+      {gameActive && (
+        <div className="flex items-center gap-1 bg-sky-800/50 px-2 py-0.5 rounded">
+          <Clock className="h-3 w-3 text-sky-300" />
+          <span className="text-sm font-medium tabular-nums">{formattedTime}</span>
+        </div>
       )}
 
-      {!isMobile && (
-        <div className="bg-sky-800/80 backdrop-blur-sm text-white px-3 py-2 rounded-md border border-sky-700 flex-1 text-center shadow-lg text-sm">
-          {message}
+      {/* Combo counter - only visible when combo > 1 */}
+      {comboCount > 1 && (
+        <div className="flex items-center gap-1 bg-amber-500/20 px-2 py-0.5 rounded whitespace-nowrap">
+          <Zap className="h-3 w-3 text-amber-400" />
+          <span className="text-sm font-medium text-amber-300">{comboCount}x</span>
+        </div>
+      )}
+
+      {/* Message - only show on larger screens and when not too long */}
+      {!isMobile && message && (
+        <div className="hidden sm:block max-w-[150px] truncate">
+          <span className="text-xs text-slate-300">{message}</span>
         </div>
       )}
     </div>
