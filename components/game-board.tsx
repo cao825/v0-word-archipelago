@@ -422,13 +422,11 @@ export default function GameBoard() {
           </div>
         )}
 
-        {/* Island Map with dynamic sizing */}
+        {/* Island Map with consistent sizing */}
         <div
           className="w-full mx-auto"
           style={{
-            height: gameActive ? `${gameAreaHeight}px` : "auto",
-            maxHeight: gameActive ? `${gameAreaHeight}px` : "none",
-            aspectRatio: gameActive ? "auto" : "1/1",
+            aspectRatio: "1/1", // Always maintain square aspect ratio
             maxWidth: "600px",
           }}
         >
