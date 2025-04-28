@@ -1,5 +1,4 @@
 import {
-  isPalindrome,
   hasAtLeastNVowels,
   checkWordAgainstObjective,
   checkObjectives,
@@ -9,52 +8,6 @@ import {
 } from "../lib/utils/objectiveGenerator"
 
 describe("Objective System", () => {
-  describe("isPalindrome", () => {
-    test("correctly identifies palindromes", () => {
-      expect(isPalindrome("level")).toBe(true)
-      expect(isPalindrome("radar")).toBe(true)
-      expect(isPalindrome("madam")).toBe(true)
-      expect(isPalindrome("racecar")).toBe(true)
-      expect(isPalindrome("kayak")).toBe(true)
-      expect(isPalindrome("deified")).toBe(true)
-      expect(isPalindrome("rotator")).toBe(true)
-      expect(isPalindrome("noon")).toBe(true)
-    })
-
-    test("rejects non-palindromes", () => {
-      expect(isPalindrome("hello")).toBe(false)
-      expect(isPalindrome("world")).toBe(false)
-      expect(isPalindrome("test")).toBe(false)
-      expect(isPalindrome("ton")).toBe(false)
-      expect(isPalindrome("toys")).toBe(false)
-      expect(isPalindrome("apple")).toBe(false)
-      expect(isPalindrome("banana")).toBe(false)
-      expect(isPalindrome("orange")).toBe(false)
-    })
-
-    test("requires at least 3 characters", () => {
-      expect(isPalindrome("a")).toBe(false)
-      expect(isPalindrome("aa")).toBe(false)
-      expect(isPalindrome("aba")).toBe(true)
-      expect(isPalindrome("bb")).toBe(false)
-    })
-
-    test("is case insensitive", () => {
-      expect(isPalindrome("Level")).toBe(true)
-      expect(isPalindrome("Radar")).toBe(true)
-      expect(isPalindrome("Kayak")).toBe(true)
-      expect(isPalindrome("Madam")).toBe(true)
-      expect(isPalindrome("RaceCar")).toBe(true)
-    })
-
-    test("handles edge cases", () => {
-      expect(isPalindrome("")).toBe(false)
-      expect(isPalindrome(null as any)).toBe(false)
-      expect(isPalindrome(undefined as any)).toBe(false)
-      expect(isPalindrome(123 as any)).toBe(false)
-    })
-  })
-
   describe("hasAtLeastNVowels", () => {
     test("correctly counts vowels", () => {
       expect(hasAtLeastNVowels("hello", 2)).toBe(true) // 2 vowels
@@ -261,34 +214,6 @@ describe("Objective System", () => {
         expect(checkWordAgainstObjective("test", invalidObjective)).toBe(false)
       })
     })
-
-    describe("palindrome objective", () => {
-      test("matches palindrome words", () => {
-        const objective = createObjective("palindrome", "palindrome")
-
-        expect(checkWordAgainstObjective("level", objective)).toBe(true)
-        expect(checkWordAgainstObjective("radar", objective)).toBe(true)
-        expect(checkWordAgainstObjective("madam", objective)).toBe(true)
-        expect(checkWordAgainstObjective("racecar", objective)).toBe(true)
-      })
-
-      test("rejects non-palindrome words", () => {
-        const objective = createObjective("palindrome", "palindrome")
-
-        expect(checkWordAgainstObjective("ton", objective)).toBe(false)
-        expect(checkWordAgainstObjective("cat", objective)).toBe(false)
-        expect(checkWordAgainstObjective("toys", objective)).toBe(false)
-        expect(checkWordAgainstObjective("hello", objective)).toBe(false)
-      })
-
-      test("is case insensitive", () => {
-        const objective = createObjective("palindrome", "palindrome")
-
-        expect(checkWordAgainstObjective("Level", objective)).toBe(true)
-        expect(checkWordAgainstObjective("Radar", objective)).toBe(true)
-        expect(checkWordAgainstObjective("MADAM", objective)).toBe(true)
-      })
-    })
   })
 
   describe("checkObjectives", () => {
@@ -315,13 +240,6 @@ describe("Objective System", () => {
           parameter: "s",
           completed: false,
         },
-        {
-          id: "palindrome",
-          type: "palindrome",
-          description: "Find a palindrome",
-          parameter: "palindrome",
-          completed: false,
-        },
       ]
 
       // Test with "ton" - should complete length-3 and startsWith-t
@@ -329,7 +247,6 @@ describe("Objective System", () => {
       expect(completedWithTon).toContain("length-3")
       expect(completedWithTon).toContain("startsWith-t")
       expect(completedWithTon).not.toContain("endsWith-s")
-      expect(completedWithTon).not.toContain("palindrome")
       expect(completedWithTon.length).toBe(2)
 
       // Test with "toys" - should complete startsWith-t and endsWith-s
@@ -337,16 +254,7 @@ describe("Objective System", () => {
       expect(completedWithToys).not.toContain("length-3")
       expect(completedWithToys).toContain("startsWith-t")
       expect(completedWithToys).toContain("endsWith-s")
-      expect(completedWithToys).not.toContain("palindrome")
       expect(completedWithToys.length).toBe(2)
-
-      // Test with "level" - should complete palindrome
-      const completedWithLevel = checkObjectives("level", objectives, [])
-      expect(completedWithLevel).not.toContain("length-3")
-      expect(completedWithLevel).not.toContain("startsWith-t")
-      expect(completedWithLevel).not.toContain("endsWith-s")
-      expect(completedWithLevel).toContain("palindrome")
-      expect(completedWithLevel.length).toBe(1)
     })
 
     test("skips already completed objectives", () => {

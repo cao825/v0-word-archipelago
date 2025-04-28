@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useSelector } from "react-redux"
 import type { RootState } from "../lib/store"
-import { checkWordAgainstObjective, isPalindrome } from "../lib/utils/objectiveGenerator"
+import { checkWordAgainstObjective } from "../lib/utils/objectiveGenerator"
 
 /**
  * Debug component for testing words against objectives
@@ -19,10 +19,7 @@ export default function ObjectiveDebug() {
   const testObjectives = () => {
     if (!testWord) return
 
-    const newResults: Record<string, boolean> = {
-      // Test if the word is a palindrome
-      isPalindrome: isPalindrome(testWord),
-    }
+    const newResults: Record<string, boolean> = {}
 
     // Test against each objective
     objectives.forEach((objective) => {
@@ -55,13 +52,6 @@ export default function ObjectiveDebug() {
       {Object.keys(results).length > 0 && (
         <div className="space-y-2">
           <h4 className="text-white font-semibold">Results for "{testWord}":</h4>
-
-          <div className={`p-2 rounded ${results["isPalindrome"] ? "bg-green-800" : "bg-red-800"}`}>
-            <div className="text-white">
-              <span className="font-medium">Is Palindrome</span>
-              <span className="ml-2">{results["isPalindrome"] ? "✓ Yes" : "✗ No"}</span>
-            </div>
-          </div>
 
           {objectives.map((objective) => (
             <div key={objective.id} className={`p-2 rounded ${results[objective.id] ? "bg-green-800" : "bg-red-800"}`}>

@@ -15,25 +15,9 @@ export interface Objective {
 }
 
 /**
- * Valid objective types
+ * Valid objective types - simplified to make more reliable
  */
-export type ObjectiveType = "length" | "startsWith" | "endsWith" | "contains" | "palindrome"
-
-/**
- * Checks if a word is a palindrome (reads the same backward as forward)
- * @param word - The word to check
- * @returns True if the word is a palindrome, false otherwise
- */
-export function isPalindrome(word: string): boolean {
-  // Validate input
-  if (!word || typeof word !== "string" || word.length < 3) return false
-
-  // Normalize and check
-  const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, "")
-  const reversed = normalized.split("").reverse().join("")
-
-  return normalized === reversed
-}
+export type ObjectiveType = "length" | "startsWith" | "endsWith" | "contains"
 
 /**
  * Checks if a word has at least N vowels
@@ -129,14 +113,6 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
         checkCompletion: (word: string, parameter: string | number): boolean => {
           if (!parameter || typeof parameter !== "string") return false
           return word.toLowerCase().includes(parameter.toString().toLowerCase())
-        },
-      },
-      {
-        type: "palindrome" as ObjectiveType,
-        description: "Find a palindrome (reads the same forwards and backwards)",
-        generateParameter: () => "palindrome",
-        checkCompletion: (word: string): boolean => {
-          return isPalindrome(word)
         },
       },
     ]
@@ -291,11 +267,6 @@ export function checkWordAgainstObjective(word: string, objective: Objective): b
       console.debug(`[contains] ${normalizedWord}.includes(${param}): ${result}`)
       return result
     }
-    case "palindrome": {
-      const result = isPalindrome(normalizedWord)
-      console.debug(`[palindrome] isPalindrome(${normalizedWord}): ${result}`)
-      return result
-    }
     default:
       console.warn(`Unknown objective type: ${objective.type}`)
       return false
@@ -303,4 +274,4 @@ export function checkWordAgainstObjective(word: string, objective: Objective): b
 }
 
 // Export objective types for testing
-export const objectiveTypes: ObjectiveType[] = ["length", "startsWith", "endsWith", "contains", "palindrome"]
+export const objectiveTypes: ObjectiveType[] = ["length", "startsWith", "endsWith", "contains"]

@@ -1,43 +1,7 @@
-import {
-  isPalindrome,
-  hasAtLeastNVowels,
-  checkWordAgainstObjective,
-  generateObjectives,
-} from "../lib/utils/objectiveGenerator"
+import { hasAtLeastNVowels, checkWordAgainstObjective, generateObjectives } from "../lib/utils/objectiveGenerator"
 import { describe, it, expect } from "@jest/globals"
 
 describe("Objective Generator", () => {
-  describe("isPalindrome", () => {
-    it("should correctly identify palindromes", () => {
-      expect(isPalindrome("level")).toBe(true)
-      expect(isPalindrome("radar")).toBe(true)
-      expect(isPalindrome("madam")).toBe(true)
-      expect(isPalindrome("racecar")).toBe(true)
-      expect(isPalindrome("A man a plan a canal Panama")).toBe(false) // Contains spaces
-      expect(isPalindrome("Able was I ere I saw Elba")).toBe(false) // Contains spaces
-    })
-
-    it("should be case insensitive", () => {
-      expect(isPalindrome("Level")).toBe(true)
-      expect(isPalindrome("Radar")).toBe(true)
-      expect(isPalindrome("Madam")).toBe(true)
-    })
-
-    it("should reject non-palindromes", () => {
-      expect(isPalindrome("hello")).toBe(false)
-      expect(isPalindrome("world")).toBe(false)
-      expect(isPalindrome("test")).toBe(false)
-    })
-
-    it("should reject short words that are technically palindromes", () => {
-      expect(isPalindrome("a")).toBe(false) // Single letter
-      expect(isPalindrome("aa")).toBe(false) // Two letters
-      expect(isPalindrome("bb")).toBe(false) // Two letters
-      expect(isPalindrome("ton")).toBe(false) // Not a palindrome
-      expect(isPalindrome("no")).toBe(false) // Not a palindrome
-    })
-  })
-
   describe("hasAtLeastNVowels", () => {
     it("should correctly count vowels", () => {
       expect(hasAtLeastNVowels("hello", 2)).toBe(true) // 2 vowels
@@ -56,35 +20,49 @@ describe("Objective Generator", () => {
     it("should check long word objective", () => {
       const objective = {
         id: "find-long-word",
+        type: "length",
         description: "Find a word with 5 or more letters",
-        points: 50,
+        parameter: 5,
         completed: false,
       }
       expect(checkWordAgainstObjective("hello", objective)).toBe(true)
       expect(checkWordAgainstObjective("hi", objective)).toBe(false)
     })
 
-    it("should check palindrome objective", () => {
+    it("should check startsWith objective", () => {
       const objective = {
-        id: "find-palindrome",
-        description: "Find a palindrome word",
-        points: 75,
-        completed: false,
-      }
-      expect(checkWordAgainstObjective("level", objective)).toBe(true)
-      expect(checkWordAgainstObjective("hello", objective)).toBe(false)
-      expect(checkWordAgainstObjective("ton", objective)).toBe(false) // Not a palindrome
-    })
-
-    it("should check vowel word objective", () => {
-      const objective = {
-        id: "find-vowel-word",
-        description: "Find a word with at least 2 vowels",
-        points: 30,
-        completed: false,
+        id: "starts-with-h",
+        type: "startsWith",
+        description: "Find a word starting with 'h'",
+        parameter: "h",
+        ompleted: false,
       }
       expect(checkWordAgainstObjective("hello", objective)).toBe(true)
-      expect(checkWordAgainstObjective("sky", objective)).toBe(false)
+      expect(checkWordAgainstObjective("world", objective)).toBe(false)
+    })
+
+    it("should check endsWith objective", () => {
+      const objective = {
+        id: "ends-with-d",
+        type: "endsWith",
+        description: "Find a word ending with 'd'",
+        parameter: "d",
+        completed: false,
+      }
+      expect(checkWordAgainstObjective("world", objective)).toBe(true)
+      expect(checkWordAgainstObjective("hello", objective)).toBe(false)
+    })
+
+    it("should check contains objective", () => {
+      const objective = {
+        id: "contains-o",
+        type: "contains",
+        description: "Find a word containing 'o'",
+        parameter: "o",
+        completed: false,
+      }
+      expect(checkWordAgainstObjective("world", objective)).toBe(true)
+      expect(checkWordAgainstObjective("hi", objective)).toBe(false)
     })
   })
 
@@ -97,7 +75,7 @@ describe("Objective Generator", () => {
         { id: "4", letter: "E", position: { x: 0, y: 0 }, size: 40, connections: [] },
         { id: "5", letter: "L", position: { x: 0, y: 0 }, size: 40, connections: [] },
       ]
-      const objectives = generateObjectives(islands)
+      const objectives = generateObjectives(() => 0.5, islands)
       expect(objectives.length).toBeGreaterThan(0)
       expect(objectives.length).toBeLessThanOrEqual(3)
     })
