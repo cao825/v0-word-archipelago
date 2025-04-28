@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install --no-audit --no-fund",
+  "installCommand": "npm install --legacy-peer-deps --force --no-audit --no-fund",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "regions": ["sfo1"],
