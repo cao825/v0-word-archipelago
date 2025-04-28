@@ -29,10 +29,18 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   const [currentHour, setCurrentHour] = useState<string>(getCurrentHourTimestamp())
   const [activeTab, setActiveTab] = useState<string>("hourly")
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [hourlyLoading, setHourlyLoading] = useState<boolean>(true)
+  const [dailyLoading, setDailyLoading] = useState<boolean>(true)
+  const [allTimeLoading, setAllTimeLoading] = useState<boolean>(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   // Function to refresh leaderboard data
   const refreshLeaderboards = useCallback(async () => {
     setIsLoading(true)
+    setHourlyLoading(true)
+    setDailyLoading(true)
+    setAllTimeLoading(true)
+    setFetchError(null)
 
     try {
       // Get initial data from local storage for immediate display
@@ -41,19 +49,38 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       setAllTimeLeaderboard(getAllTimeLeaderboard())
 
       // Then fetch fresh data from Supabase
-      const [hourly, daily, allTime] = await Promise.all([
-        fetchHourlyLeaderboard(),
-        fetchDailyLeaderboard(),
-        fetchAllTimeLeaderboard(),
-      ])
+      try {
+        const hourly = await fetchHourlyLeaderboard()
+        setHourlyLeaderboard(hourly)
+        setHourlyLoading(false)
+      } catch (error) {
+        console.error("Error fetching hourly leaderboard:", error)
+        setHourlyLoading(false)
+      }
 
-      setHourlyLeaderboard(hourly)
-      setDailyLeaderboard(daily)
-      setAllTimeLeaderboard(allTime)
+      try {
+        const daily = await fetchDailyLeaderboard()
+        setDailyLeaderboard(daily)
+        setDailyLoading(false)
+      } catch (error) {
+        console.error("Error fetching daily leaderboard:", error)
+        setDailyLoading(false)
+      }
+
+      try {
+        const allTime = await fetchAllTimeLeaderboard()
+        setAllTimeLeaderboard(allTime)
+        setAllTimeLoading(false)
+      } catch (error) {
+        console.error("Error fetching all-time leaderboard:", error)
+        setAllTimeLoading(false)
+      }
+
       setLastRefreshed(new Date())
       setCurrentHour(getCurrentHourTimestamp())
     } catch (error) {
       console.error("Error refreshing leaderboards:", error)
+      setFetchError("Failed to load leaderboard data. Please try again later.")
     } finally {
       setIsLoading(false)
     }
@@ -136,8 +163,16 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
   // Memoize the renderLeaderboard function to avoid recreating it on every render
   const renderLeaderboard = useCallback(
-    (entries: LeaderboardEntry[]) => {
-      if (isLoading && entries.length === 0) {
+    (entries: LeaderboardEntry[], isLoadingState: boolean) => {
+      if (fetchError) {
+        return (
+          <div className="flex items-center justify-center py-8 text-red-400">
+            <p>{fetchError}</p>
+          </div>
+        )
+      }
+
+      if (isLoadingState && entries.length === 0) {
         return (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-sky-400" />
@@ -158,7 +193,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
             return (
               <div
-                key={index}
+                key={`${entry.playerInitials}-${entry.timestamp}-${index}`}
                 className={`bg-sky-900 rounded-md p-1.5 flex items-center border ${
                   isHighlighted ? "border-amber-400 shadow-lg shadow-amber-400/20 animate-pulse" : "border-sky-700"
                 }`}
@@ -202,7 +237,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
         </div>
       )
     },
-    [highlightInitials, isLoading],
+    [highlightInitials, fetchError],
   )
 
   return (
@@ -230,7 +265,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(hourlyLeaderboard)}
+        {renderLeaderboard(hourlyLeaderboard, hourlyLoading)}
       </TabsContent>
       <TabsContent value="daily" className="mt-2">
         <div className="flex justify-between items-center mb-2">
@@ -244,7 +279,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(dailyLeaderboard)}
+        {renderLeaderboard(dailyLeaderboard, dailyLoading)}
       </TabsContent>
       <TabsContent value="alltime" className="mt-2">
         <div className="flex justify-between items-center mb-2">
@@ -258,7 +293,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(allTimeLeaderboard)}
+        {renderLeaderboard(allTimeLeaderboard, allTimeLoading)}
       </TabsContent>
     </Tabs>
   )

@@ -7,18 +7,21 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const timeframe = searchParams.get("timeframe") || "all"
 
-    let query = supabase.from("leaderboard").select("*").order("score", { ascending: false })
+    let query = supabase.from("leaderboard").select("*")
 
     // Apply timeframe filters
     if (timeframe === "hourly") {
       const hourAgo = new Date()
-      hourAgo.setHours(hourAgo.getHours() - 1)
+      hourAgo.setMinutes(0, 0, 0) // Start of current hour
       query = query.gte("timestamp", hourAgo.toISOString())
     } else if (timeframe === "daily") {
       const dayAgo = new Date()
       dayAgo.setDate(dayAgo.getDate() - 1)
       query = query.gte("timestamp", dayAgo.toISOString())
     }
+
+    // Order by score descending
+    query = query.order("score", { ascending: false })
 
     // Limit results
     query = query.limit(100)

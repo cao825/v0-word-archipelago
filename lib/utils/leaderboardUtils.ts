@@ -51,6 +51,10 @@ export async function fetchLeaderboardEntries(): Promise<LeaderboardEntry[]> {
       return getLocalLeaderboardEntries()
     }
 
+    if (!data || data.length === 0) {
+      return []
+    }
+
     // Convert Supabase records to LeaderboardEntry objects
     return data.map(recordToEntry)
   } catch (error) {
@@ -209,13 +213,17 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
 // Get hourly leaderboard (top scores from the current hour)
 export async function fetchHourlyLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const hourAgo = new Date()
-    hourAgo.setHours(hourAgo.getHours() - 1)
+    // Calculate the start of the current hour
+    const now = new Date()
+    const hourStart = new Date(now)
+    hourStart.setMinutes(0, 0, 0)
+
+    console.log("Fetching hourly leaderboard from:", hourStart.toISOString())
 
     const { data, error } = await supabase
       .from("leaderboard")
       .select("*")
-      .gte("timestamp", hourAgo.toISOString())
+      .gte("timestamp", hourStart.toISOString())
       .order("score", { ascending: false })
       .limit(10)
 
@@ -224,6 +232,12 @@ export async function fetchHourlyLeaderboard(): Promise<LeaderboardEntry[]> {
       return []
     }
 
+    if (!data || data.length === 0) {
+      console.log("No hourly leaderboard data found")
+      return []
+    }
+
+    console.log(`Found ${data.length} hourly leaderboard entries`)
     return data.map(recordToEntry)
   } catch (error) {
     console.error("Error in fetchHourlyLeaderboard:", error)
@@ -257,6 +271,8 @@ export async function fetchDailyLeaderboard(): Promise<LeaderboardEntry[]> {
     const dayAgo = new Date()
     dayAgo.setDate(dayAgo.getDate() - 1)
 
+    console.log("Fetching daily leaderboard from:", dayAgo.toISOString())
+
     const { data, error } = await supabase
       .from("leaderboard")
       .select("*")
@@ -269,6 +285,12 @@ export async function fetchDailyLeaderboard(): Promise<LeaderboardEntry[]> {
       return []
     }
 
+    if (!data || data.length === 0) {
+      console.log("No daily leaderboard data found")
+      return []
+    }
+
+    console.log(`Found ${data.length} daily leaderboard entries`)
     return data.map(recordToEntry)
   } catch (error) {
     console.error("Error in fetchDailyLeaderboard:", error)
@@ -296,6 +318,8 @@ export function getDailyLeaderboard(): LeaderboardEntry[] {
 // Get all-time leaderboard (top 10 scores)
 export async function fetchAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
+    console.log("Fetching all-time leaderboard")
+
     const { data, error } = await supabase
       .from("leaderboard")
       .select("*")
@@ -307,6 +331,12 @@ export async function fetchAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
       return []
     }
 
+    if (!data || data.length === 0) {
+      console.log("No all-time leaderboard data found")
+      return []
+    }
+
+    console.log(`Found ${data.length} all-time leaderboard entries`)
     return data.map(recordToEntry)
   } catch (error) {
     console.error("Error in fetchAllTimeLeaderboard:", error)
