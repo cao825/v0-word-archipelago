@@ -1,69 +1,46 @@
 "use client"
 
+import type React from "react"
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, Clock, AlertTriangle } from "lucide-react"
-
-type NotificationType = "success" | "warning" | "info"
 
 interface SlideNotificationProps {
-  message: string
-  type?: NotificationType
+  message: string | null
+  type?: "success" | "error" | "info"
   duration?: number
-  isVisible: boolean
-  onClose: () => void
+  onComplete: () => void
 }
 
-export default function SlideNotification({
+export const SlideNotification: React.FC<SlideNotificationProps> = ({
   message,
   type = "info",
-  duration = 3000,
-  isVisible,
-  onClose,
-}: SlideNotificationProps) {
+  duration = 2000,
+  onComplete,
+}) => {
   useEffect(() => {
-    if (isVisible) {
+    if (message) {
       const timer = setTimeout(() => {
-        onClose()
+        onComplete()
       }, duration)
-
       return () => clearTimeout(timer)
     }
-  }, [isVisible, duration, onClose])
+  }, [message, duration, onComplete])
 
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return <CheckCircle size={14} className="text-green-400" />
-      case "warning":
-        return <AlertTriangle size={14} className="text-amber-400" />
-      case "info":
-        return <Clock size={14} className="text-sky-400" />
-      default:
-        return <CheckCircle size={14} className="text-green-400" />
-    }
-  }
+  if (!message) return null
+
+  const bgColor = type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-blue-600"
 
   return (
     <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-          className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
-        >
-          <div
-            className={`mt-2 px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-xs font-medium ${
-              type === "success" ? "bg-green-600/90" : type === "warning" ? "bg-amber-600/90" : "bg-sky-600/90"
-            } text-white backdrop-blur-sm`}
-          >
-            {getIcon()}
-            <span>{message}</span>
-          </div>
-        </motion.div>
-      )}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 50 }}
+        transition={{ duration: 0.3 }}
+        className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 ${bgColor} text-white px-4 py-2 rounded-lg shadow-lg max-w-xs text-center`}
+      >
+        {message}
+      </motion.div>
     </AnimatePresence>
   )
 }

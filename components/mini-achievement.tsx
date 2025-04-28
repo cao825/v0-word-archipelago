@@ -1,8 +1,6 @@
 "use client"
-
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Award } from "lucide-react"
 
 interface MiniAchievementProps {
   title: string
@@ -16,24 +14,24 @@ export default function MiniAchievement({ title, isVisible, onClose }: MiniAchie
       const timer = setTimeout(() => {
         onClose()
       }, 3000)
-
       return () => clearTimeout(timer)
     }
   }, [isVisible, onClose])
+
+  if (!title || !isVisible) return null
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 20, x: "-50%" }}
-          animate={{ opacity: 1, y: 0, x: "-50%" }}
-          exit={{ opacity: 0, y: -10, x: "-50%" }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="fixed bottom-28 left-1/2 z-40 pointer-events-none"
+          className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg"
         >
-          <div className="bg-amber-500/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
-            <Award size={18} className="text-white" />
-            <span className="font-medium">{title}</span>
+          <div className="flex flex-col items-center">
+            <h3 className="font-bold text-sm">{title}</h3>
           </div>
         </motion.div>
       )}

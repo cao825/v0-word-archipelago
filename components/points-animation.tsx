@@ -1,80 +1,45 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import type React from "react"
+import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useAppSelector, useAppDispatch } from "@/lib/hooks/hooks"
-import { hidePointsAnimation } from "@/lib/slices/gameSlice"
 
-export default function PointsAnimation() {
-  const { pointsAnimation, comboCount, selectedIslands, islands } = useAppSelector((state) => state.game)
-  const dispatch = useAppDispatch()
-  const [lastIslandPosition, setLastIslandPosition] = useState({ x: 0, y: 0 })
+interface PointsAnimationProps {
+  points: number
+  isVisible: boolean
+  onComplete: () => void
+}
 
+export const PointsAnimation: React.FC<PointsAnimationProps> = ({ points, isVisible, onComplete }) => {
   useEffect(() => {
-    if (pointsAnimation.isVisible) {
+    if (isVisible) {
       const timer = setTimeout(() => {
-        dispatch(hidePointsAnimation())
-      }, 1000) // Reduced from 1500ms
-
+        onComplete()
+      }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [pointsAnimation.isVisible, dispatch])
-
-  // Calculate the position of the last selected island
-  useEffect(() => {
-    if (selectedIslands.length > 0) {
-      const lastIslandId = selectedIslands[selectedIslands.length - 1]
-      const lastIsland = islands.find((island) => island.id === lastIslandId)
-
-      if (lastIsland) {
-        setLastIslandPosition({
-          x: lastIsland.position.x,
-          y: lastIsland.position.y,
-        })
-      }
-    }
-  }, [selectedIslands, islands])
+  }, [onComplete, isVisible])
 
   return (
     <AnimatePresence>
-      {pointsAnimation.isVisible && (
+      {isVisible && (
         <motion.div
-          className="fixed top-0 left-0 w-full h-full pointer-events-none z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 0 }}
+          animate={{ opacity: 1, y: -30 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 1 }}
+          className="absolute pointer-events-none z-50 font-bold text-lg"
+          style={{
+            color: points > 5 ? "#10b981" : points > 3 ? "#3b82f6" : "#ffffff",
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
         >
-          <motion.div
-            className="absolute transform -translate-x-1/2"
-            style={{
-              left: `${lastIslandPosition.x}px`,
-              top: `${lastIslandPosition.y - 40}px`,
-            }}
-            initial={{ scale: 0.5, opacity: 0, y: 0 }}
-            animate={{ scale: 1, opacity: 1, y: -30 }} // Animate upward
-            exit={{ scale: 1.2, opacity: 0, y: -50 }}
-            transition={{ duration: 0.4, type: "spring", damping: 15 }} // Faster animation
-          >
-            <div className="text-center">
-              <div className="text-3xl font-bold text-amber-400 drop-shadow-lg">+{pointsAnimation.points}</div>
-              {comboCount >= 3 && (
-                <motion.div
-                  className="text-base font-bold text-white mt-1 bg-amber-600/80 px-2 py-0.5 rounded-md"
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1.05 }}
-                  transition={{
-                    repeat: 1, // Reduced from 2
-                    repeatType: "reverse",
-                    duration: 0.2, // Faster animation
-                  }}
-                >
-                  COMBO x{comboCount}!
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
+          +{points}
         </motion.div>
       )}
     </AnimatePresence>
   )
 }
+
+export default PointsAnimation

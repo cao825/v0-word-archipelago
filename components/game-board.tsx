@@ -276,6 +276,11 @@ export default function GameBoard() {
     setShowGameNotification(false)
   }, [])
 
+  // Add handler for closing mini achievement
+  const handleCloseMiniAchievement = useCallback(() => {
+    setMiniAchievement((prev) => ({ ...prev, visible: false }))
+  }, [])
+
   // Memoize the current word to avoid recalculating on every render
   const currentWord = useMemo(() => {
     return selectedIslands
@@ -376,7 +381,7 @@ export default function GameBoard() {
       <MiniAchievement
         title={miniAchievement.title}
         isVisible={miniAchievement.visible}
-        onClose={() => setMiniAchievement((prev) => ({ ...prev, visible: false }))}
+        onClose={handleCloseMiniAchievement}
       />
 
       {/* Compact Top Bar - Only show during active gameplay */}
@@ -386,7 +391,6 @@ export default function GameBoard() {
           timeLeft={timeLeft}
           comboCount={comboCount}
           onOpenSettings={handleToggleSettings}
-          onResetGame={handleResetGame}
           gameActive={gameActive}
           theme={theme}
           objectivesCompleted={completedObjectivesCount}
@@ -395,6 +399,7 @@ export default function GameBoard() {
           onShowObjectives={handleShowObjectives}
           onShowFoundWords={handleShowFoundWords}
           onShowShareModal={handleShowShareModal}
+          onResetGame={handleResetGame}
         />
       )}
 

@@ -1,8 +1,7 @@
 {
-  "version": 2,
-  "buildCommand": "next build",
-  "installCommand": "npm install --no-optional",
-  "framework": "nextjs",
+  "installCommand": "npm install --no-optional --legacy-peer-deps",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
   "regions": ["sfo1"],
   "github": {
     "silent": true
