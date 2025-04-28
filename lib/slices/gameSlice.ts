@@ -242,6 +242,9 @@ export const gameSlice = createSlice({
       } else {
         state.message = "Not a valid word!"
         state.invalidSubmission = true
+        // Reset combo count on invalid submission
+        state.comboCount = 0
+        state.lastWordTime = 0
       }
 
       state.selectedIslands = []

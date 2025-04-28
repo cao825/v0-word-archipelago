@@ -10,13 +10,68 @@ export interface LeaderboardEntry {
 // Maximum number of entries to store
 const MAX_ENTRIES = 1000
 
-// Get leaderboard entries from localStorage with error handling
+// Generate realistic leaderboard data if none exists
+function generateInitialLeaderboardData(): LeaderboardEntry[] {
+  const names = [
+    "ACE",
+    "BEN",
+    "CAT",
+    "DAN",
+    "EVA",
+    "FIN",
+    "GUS",
+    "HAL",
+    "IVY",
+    "JAY",
+    "KIM",
+    "LEO",
+    "MAX",
+    "NOA",
+    "PAM",
+  ]
+  const entries: LeaderboardEntry[] = []
+
+  // Generate 20 realistic entries
+  for (let i = 0; i < 20; i++) {
+    const nameIndex = Math.floor(Math.random() * names.length)
+    const score = Math.floor(Math.random() * 500) + 200 // Scores between 200-700
+    const wordsFound = Math.floor(Math.random() * 20) + 5 // 5-25 words
+    const objectivesCompleted = Math.floor(Math.random() * 5) + 1 // 1-5 objectives
+
+    // Create timestamps within the last week
+    const daysAgo = Math.floor(Math.random() * 7)
+    const hoursAgo = Math.floor(Math.random() * 24)
+    const timestamp = Date.now() - daysAgo * 24 * 60 * 60 * 1000 - hoursAgo * 60 * 60 * 1000
+
+    entries.push({
+      playerInitials: names[nameIndex],
+      score,
+      timestamp,
+      objectivesCompleted,
+      wordsFound,
+    })
+  }
+
+  // Sort by score (highest first)
+  return entries.sort((a, b) => b.score - a.score)
+}
+
+// Modify the getLeaderboardEntries function to initialize with data if empty
 export function getLeaderboardEntries(): LeaderboardEntry[] {
   if (typeof window === "undefined") return []
 
   try {
     const entries = localStorage.getItem("wordArchipelago_leaderboard")
-    return entries ? JSON.parse(entries) : []
+    const parsedEntries = entries ? JSON.parse(entries) : []
+
+    // If no entries exist, generate initial data
+    if (parsedEntries.length === 0) {
+      const initialData = generateInitialLeaderboardData()
+      localStorage.setItem("wordArchipelago_leaderboard", JSON.stringify(initialData))
+      return initialData
+    }
+
+    return parsedEntries
   } catch (error) {
     console.error("Error retrieving leaderboard entries:", error)
     return []

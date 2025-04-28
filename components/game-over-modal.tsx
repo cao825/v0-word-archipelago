@@ -184,6 +184,9 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                       {isSubmitting ? "Submitting..." : "Submit"}
                     </Button>
                   </div>
+                  <p className="text-xs text-sky-300 mt-2 text-center">
+                    Leaderboard data is stored locally in your browser and simulates a global leaderboard experience.
+                  </p>
                 </div>
               )}
             </CardContent>

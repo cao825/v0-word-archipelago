@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   getHourlyLeaderboard,
@@ -14,13 +14,25 @@ export default function LeaderboardDisplay() {
   const [hourlyLeaderboard, setHourlyLeaderboard] = useState<LeaderboardEntry[]>([])
   const [dailyLeaderboard, setDailyLeaderboard] = useState<LeaderboardEntry[]>([])
   const [allTimeLeaderboard, setAllTimeLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
 
-  useEffect(() => {
-    // Load leaderboards
+  // Function to refresh leaderboard data
+  const refreshLeaderboards = useCallback(() => {
     setHourlyLeaderboard(getHourlyLeaderboard())
     setDailyLeaderboard(getDailyLeaderboard())
     setAllTimeLeaderboard(getAllTimeLeaderboard())
+    setLastRefreshed(new Date())
   }, [])
+
+  useEffect(() => {
+    // Load leaderboards initially
+    refreshLeaderboards()
+
+    // Refresh leaderboards every 30 seconds to simulate real-time updates
+    const refreshInterval = setInterval(refreshLeaderboards, 30000)
+
+    return () => clearInterval(refreshInterval)
+  }, [refreshLeaderboards])
 
   const renderLeaderboard = (entries: LeaderboardEntry[]) => {
     if (entries.length === 0) {
@@ -66,15 +78,42 @@ export default function LeaderboardDisplay() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="hourly" className="mt-2">
-        <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">HOURLY TOP SCORES</h3>
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-lg font-light tracking-wide text-sky-100">HOURLY TOP SCORES</h3>
+          <button
+            onClick={refreshLeaderboards}
+            className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
+          >
+            <span>Refresh</span>
+            <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
+          </button>
+        </div>
         {renderLeaderboard(hourlyLeaderboard)}
       </TabsContent>
       <TabsContent value="daily" className="mt-2">
-        <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">DAILY TOP SCORES</h3>
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-lg font-light tracking-wide text-sky-100">DAILY TOP SCORES</h3>
+          <button
+            onClick={refreshLeaderboards}
+            className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
+          >
+            <span>Refresh</span>
+            <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
+          </button>
+        </div>
         {renderLeaderboard(dailyLeaderboard)}
       </TabsContent>
       <TabsContent value="alltime" className="mt-2">
-        <h3 className="text-lg font-light tracking-wide text-sky-100 mb-2">ALL-TIME TOP SCORES</h3>
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-lg font-light tracking-wide text-sky-100">ALL-TIME TOP SCORES</h3>
+          <button
+            onClick={refreshLeaderboards}
+            className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
+          >
+            <span>Refresh</span>
+            <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
+          </button>
+        </div>
         {renderLeaderboard(allTimeLeaderboard)}
       </TabsContent>
     </Tabs>
