@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": "next build",
+  "installCommand": "npm install --no-optional",
+  "framework": "nextjs",
+  "regions": ["sfo1"],
+  "github": {
+    "silent": true
+  }
+}

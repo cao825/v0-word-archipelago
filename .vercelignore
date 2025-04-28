@@ -1,0 +1,17 @@
+# Tests
+__tests__
+jest.config.js
+jest.setup.js
+
+# Development files
+.vscode
+.github
+.husky
+.eslintrc
+.prettierrc
+*.log
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
