@@ -353,7 +353,15 @@ export const gameSlice = createSlice({
           state.selectedIslands = []
           state.completedObjectives = []
           state.message = "New puzzle available! Press Start to play."
+        } else {
+          // If game is active, show a message but don't interrupt gameplay
+          state.message = "A new puzzle is available after this game!"
         }
+
+        // Force a refresh of the UI by toggling a state
+        state.invalidSubmission = false
+        state.duplicateSubmission = false
+        state.successfulSubmission = false
       }
     },
     resetInvalidSubmission: (state) => {

@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Clock } from "lucide-react"
+import { useAppDispatch } from "@/lib/hooks/hooks"
+import { checkForNewPuzzle } from "@/lib/slices/gameSlice"
 
 export default function NextPuzzleCountdown() {
+  const dispatch = useAppDispatch()
   const [timeRemaining, setTimeRemaining] = useState<{
     minutes: string
     seconds: string
@@ -27,6 +30,12 @@ export default function NextPuzzleCountdown() {
         minutes: String(diffMinutes).padStart(2, "0"),
         seconds: String(diffSeconds).padStart(2, "0"),
       })
+
+      // Check if we've reached the next hour (countdown reached zero)
+      if (diffMinutes === 0 && diffSeconds === 0) {
+        // Dispatch action to refresh the puzzle
+        dispatch(checkForNewPuzzle())
+      }
     }
 
     // Calculate immediately
@@ -36,7 +45,7 @@ export default function NextPuzzleCountdown() {
     const interval = setInterval(calculateTimeRemaining, 1000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [dispatch])
 
   return (
     <Card className="border-sky-700 bg-sky-800/80 shadow-sm">

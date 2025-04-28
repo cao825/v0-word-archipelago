@@ -53,6 +53,12 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
         minutes: String(diffMinutes).padStart(2, "0"),
         seconds: String(diffSeconds).padStart(2, "0"),
       })
+
+      // Check if we've reached the next hour (countdown reached zero)
+      if (diffMinutes === 0 && diffSeconds === 0) {
+        // Refresh the page to get the new puzzle
+        window.location.reload()
+      }
     }
 
     // Calculate immediately

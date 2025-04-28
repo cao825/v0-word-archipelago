@@ -95,14 +95,38 @@ export default function GameBoard() {
     // Check immediately on component mount
     dispatch(checkForNewPuzzle())
 
-    // Then check every minute
-    puzzleCheckRef.current = setInterval(() => {
+    // Function to determine check interval based on time
+    const getCheckInterval = () => {
+      const now = new Date()
+      const minutes = now.getMinutes()
+      const seconds = now.getSeconds()
+
+      // Check more frequently near the hour change
+      if (minutes >= 59 && seconds >= 45) {
+        return 1000 // Every second in the last 15 seconds of the hour
+      } else if (minutes >= 59) {
+        return 5000 // Every 5 seconds in the last minute of the hour
+      } else if (minutes >= 58) {
+        return 15000 // Every 15 seconds in the second-to-last minute
+      } else {
+        return 60000 // Every minute otherwise
+      }
+    }
+
+    // Set up the interval checker that adjusts its frequency
+    const setupChecker = () => {
       dispatch(checkForNewPuzzle())
-    }, 60000)
+      const interval = getCheckInterval()
+      puzzleCheckRef.current = setTimeout(() => {
+        setupChecker()
+      }, interval)
+    }
+
+    setupChecker()
 
     return () => {
       if (puzzleCheckRef.current) {
-        clearInterval(puzzleCheckRef.current)
+        clearTimeout(puzzleCheckRef.current)
       }
     }
   }, [dispatch])
