@@ -52,7 +52,7 @@ export async function GET() {
               textAlign: "center",
             }}
           >
-            <span style={{ color: "#fbbf24" }}>WORD</span> ISLANDS
+            <span style={{ color: "#fbbf24" }}>WORD</span> ISLES
           </h1>
         </div>
 
@@ -241,7 +241,7 @@ export async function GET() {
             textAlign: "center",
           }}
         >
-          Navigate islands, form words, complete objectives
+          Navigate isles, form words, complete objectives
         </p>
 
         {/* Call to action */}
@@ -262,7 +262,7 @@ export async function GET() {
               margin: 0,
             }}
           >
-            Play the daily puzzle at word-islands.vercel.app
+            Play the daily puzzle at word-isles.vercel.app
           </p>
         </div>
       </div>,

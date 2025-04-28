@@ -7,22 +7,22 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Word Islands | Hourly Word Puzzle Game",
+  title: "Word Isles | Hourly Word Puzzle Game",
   description:
-    "Navigate between tropical islands to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
-  keywords: "word game, puzzle game, word islands, hourly puzzle, word challenge, island game",
+    "Navigate between tropical isles to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
+  keywords: "word game, puzzle game, word isles, hourly puzzle, word challenge, isle game",
   openGraph: {
-    title: "Word Islands | Hourly Word Puzzle Game",
+    title: "Word Isles | Hourly Word Puzzle Game",
     description:
-      "Navigate between tropical islands to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
-    url: "https://word-islands.vercel.app",
-    siteName: "Word Islands",
+      "Navigate between tropical isles to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
+    url: "https://word-isles.vercel.app",
+    siteName: "Word Isles",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Word Islands Game",
+        alt: "Word Isles Game",
       },
     ],
     locale: "en_US",
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Word Islands | Hourly Word Puzzle Game",
+    title: "Word Isles | Hourly Word Puzzle Game",
     description:
-      "Navigate between tropical islands to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
+      "Navigate between tropical isles to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
     images: ["/og-image.png"],
   },
   robots: {
