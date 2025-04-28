@@ -201,7 +201,12 @@ export const gameSlice = createSlice({
         // Check if any objectives were completed
         const newCompletedObjectives = checkObjectives(word, state.objectives, state.completedObjectives)
 
+        let objectiveCompleted = false
+
         if (newCompletedObjectives.length > 0) {
+          objectiveCompleted = true
+
+          // Add newly completed objectives to state
           newCompletedObjectives.forEach((objId) => {
             if (!state.completedObjectives.includes(objId)) {
               state.completedObjectives.push(objId)
@@ -209,6 +214,15 @@ export const gameSlice = createSlice({
             }
           })
 
+          // Update objectives completion status immediately
+          state.objectives = state.objectives.map((obj) => ({
+            ...obj,
+            completed: state.completedObjectives.includes(obj.id),
+          }))
+        }
+
+        // Set appropriate message
+        if (objectiveCompleted) {
           if (state.comboCount >= 3) {
             state.message = `Word found! +${wordScore} points (${comboBonus.toFixed(0)} combo bonus) and objective completed!`
           } else {
@@ -222,28 +236,25 @@ export const gameSlice = createSlice({
           }
         }
 
-        // Update objectives completion status
-        state.objectives = state.objectives.map((obj) => ({
-          ...obj,
-          completed: state.completedObjectives.includes(obj.id),
-        }))
+        // Only generate new objectives to replace completed ones AFTER updating the UI
+        if (objectiveCompleted) {
+          // Find indices of completed objectives
+          const completedObjectiveIndices = state.objectives
+            .map((obj, index) => (obj.completed ? index : -1))
+            .filter((index) => index !== -1)
 
-        // Replace completed objectives with new ones
-        const completedObjectiveIndices = state.objectives
-          .map((obj, index) => (obj.completed ? index : -1))
-          .filter((index) => index !== -1)
+          if (completedObjectiveIndices.length > 0) {
+            // Generate new objectives to replace completed ones
+            const newSeed = () => Math.random() // Simple random for new objectives
+            const newObjectives = generateObjectives(newSeed, state.islands)
 
-        if (completedObjectiveIndices.length > 0) {
-          // Generate new objectives to replace completed ones
-          const newSeed = () => Math.random() // Simple random for new objectives
-          const newObjectives = generateObjectives(newSeed, state.islands)
-
-          // Replace completed objectives with new ones
-          completedObjectiveIndices.forEach((index, i) => {
-            if (i < newObjectives.length) {
-              state.objectives[index] = newObjectives[i]
-            }
-          })
+            // Replace completed objectives with new ones
+            completedObjectiveIndices.forEach((index, i) => {
+              if (i < newObjectives.length) {
+                state.objectives[index] = newObjectives[i]
+              }
+            })
+          }
         }
       } else {
         state.message = "Not a valid word!"

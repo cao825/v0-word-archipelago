@@ -14,9 +14,14 @@ export default function ObjectiveCompleteNotification() {
   useEffect(() => {
     // Check if a new objective was completed
     if (completedObjectives.length > prevCompletedCount) {
-      // Find the newly completed objective
-      const newlyCompletedId = completedObjectives[completedObjectives.length - 1]
+      // Find the newly completed objective(s)
+      const newlyCompletedIds = completedObjectives.slice(prevCompletedCount)
+
+      // Get the most recently completed objective
+      const newlyCompletedId = newlyCompletedIds[newlyCompletedIds.length - 1]
       const objective = objectives.find((obj) => obj.id === newlyCompletedId)
+
+      console.log("New objective completed:", newlyCompletedId, objective)
 
       if (objective) {
         setLastCompletedObjective(objective.description)

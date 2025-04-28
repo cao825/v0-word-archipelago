@@ -79,8 +79,13 @@ export function generateObjectives(seed: () => number, islands: Island[]): Objec
   return objectives
 }
 
+// Let's add some debug logging to help identify the issue
 export function checkObjectives(word: string, objectives: Objective[], completedObjectives: string[]): string[] {
   const newCompletedObjectives: string[] = []
+  const lowerWord = word.toLowerCase()
+
+  console.log(`Checking word "${lowerWord}" against objectives:`, objectives)
+  console.log(`Already completed objectives:`, completedObjectives)
 
   objectives.forEach((objective) => {
     // Skip already completed objectives
@@ -89,31 +94,46 @@ export function checkObjectives(word: string, objectives: Objective[], completed
     }
 
     let completed = false
+    let reason = ""
 
     switch (objective.type) {
       case "length":
         // Ensure we're comparing numbers to handle both string and number parameter types
-        completed = word.length === Number.parseInt(objective.parameter.toString(), 10)
+        const targetLength = Number.parseInt(objective.parameter.toString(), 10)
+        completed = lowerWord.length === targetLength
+        reason = `Word length ${lowerWord.length}, target ${targetLength}`
         break
       case "startsWith":
-        completed = word.toUpperCase().startsWith(objective.parameter.toString())
+        const targetStart = objective.parameter.toString().toLowerCase()
+        completed = lowerWord.startsWith(targetStart)
+        reason = `Word starts with "${lowerWord[0]}", target "${targetStart}"`
         break
       case "endsWith":
-        completed = word.toUpperCase().endsWith(objective.parameter.toString())
+        const targetEnd = objective.parameter.toString().toLowerCase()
+        completed = lowerWord.endsWith(targetEnd)
+        reason = `Word ends with "${lowerWord[lowerWord.length - 1]}", target "${targetEnd}"`
         break
       case "contains":
-        completed = word.toUpperCase().includes(objective.parameter.toString())
+        const targetChar = objective.parameter.toString().toLowerCase()
+        completed = lowerWord.includes(targetChar)
+        reason = `Word contains chars "${[...new Set(lowerWord.split(""))].join("")}", target "${targetChar}"`
         break
       case "palindrome":
-        const reversed = word.split("").reverse().join("")
-        completed = word.toLowerCase() === reversed.toLowerCase() && word.length > 1
+        const reversed = lowerWord.split("").reverse().join("")
+        completed = lowerWord === reversed && lowerWord.length > 1
+        reason = `Word "${lowerWord}" reversed is "${reversed}"`
         break
     }
+
+    console.log(
+      `Objective ${objective.id} (${objective.type}): ${completed ? "COMPLETED" : "not completed"} - ${reason}`,
+    )
 
     if (completed) {
       newCompletedObjectives.push(objective.id)
     }
   })
 
+  console.log(`Newly completed objectives:`, newCompletedObjectives)
   return newCompletedObjectives
 }
