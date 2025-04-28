@@ -27,17 +27,18 @@ const AppContent = memo(function AppContent() {
     bgGradient = "bg-gradient-to-b from-blue-900 via-orange-900 to-blue-950"
   } else if (theme === "stormy") {
     bgGradient = "bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950"
+  } else if (theme === "volcanic") {
+    bgGradient = "bg-gradient-to-b from-red-950 via-red-900 to-slate-950"
   }
 
   return (
     <main className={`min-h-screen ${bgGradient} text-white pb-6 font-sans`}>
       <header className="pt-4 px-4 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-white">
+        <h1 className="text-2xl font-light tracking-tight text-white">
           <span className="font-bold text-amber-400">WORD</span> ARCHIPELAGO
         </h1>
-        <p className="text-sky-200 text-xs tracking-wide uppercase mt-2 mb-4">Navigate between islands to form words</p>
       </header>
-      <div className="px-4 max-w-6xl mx-auto">
+      <div className="px-3 max-w-6xl mx-auto">
         <GameBoard />
       </div>
     </main>

@@ -13,21 +13,19 @@ import {
   checkForNewPuzzle,
   type GameTheme,
 } from "@/lib/slices/gameSlice"
-import GameControls from "./game-controls"
-import GameStatus from "./game-status"
 import IslandMap from "./island-map"
 import ObjectivesList from "./objectives-list"
 import FoundWordsList from "./found-words-list"
 import GameOverModal from "./game-over-modal"
 import WordControls from "./word-controls"
 import LiveWordDisplay from "./live-word-display"
-import GameSettings from "./game-settings"
-import PointsAnimation from "./points-animation"
 import AudioManager from "./audio-manager"
+import PointsAnimation from "./points-animation"
 import NextPuzzleCountdown from "./next-puzzle-countdown"
 import MobileSettingsSheet from "./mobile-settings-sheet"
-import { Button } from "./ui/button"
-import { Settings } from "lucide-react"
+import CompactTopBar from "./compact-top-bar"
+import CollapsiblePanel from "./collapsible-panel"
+import FloatingGameControls from "./floating-game-controls"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -51,6 +49,7 @@ export default function GameBoard() {
   const [isMobile, setIsMobile] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
+  const gameAreaRef = useRef<HTMLDivElement>(null)
 
   // Detect mobile devices
   useEffect(() => {
@@ -188,117 +187,121 @@ export default function GameBoard() {
     return currentWord.length >= 2 && !foundWords.includes(currentWord.toLowerCase())
   }, [currentWord, foundWords])
 
+  // Count completed objectives
+  const completedObjectivesCount = objectives.filter((obj) => obj.completed).length
+
+  // Maintain a fixed height for the game area to prevent layout shifts
+  useEffect(() => {
+    if (gameAreaRef.current) {
+      const setFixedHeight = () => {
+        const gameArea = gameAreaRef.current
+        if (gameArea) {
+          // Set a minimum height based on content
+          const minHeight = gameActive ? "600px" : "400px"
+          gameArea.style.minHeight = minHeight
+        }
+      }
+
+      setFixedHeight()
+      window.addEventListener("resize", setFixedHeight)
+
+      return () => {
+        window.removeEventListener("resize", setFixedHeight)
+      }
+    }
+  }, [gameActive])
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2" ref={gameAreaRef}>
       {/* Audio Manager */}
       <AudioManager />
 
       {/* Points Animation */}
       <PointsAnimation />
 
-      {/* Mobile-optimized layout */}
+      {/* Compact Top Bar */}
+      {gameActive && (
+        <CompactTopBar
+          score={score}
+          timeLeft={timeLeft}
+          comboCount={comboCount}
+          onOpenSettings={handleToggleSettings}
+          gameActive={gameActive}
+          theme={theme}
+        />
+      )}
+
+      {/* Live Word Display - always show when game is active to maintain layout */}
+      {gameActive && (
+        <LiveWordDisplay
+          currentWord={currentWord}
+          isValid={isWordValid}
+          invalidSubmission={invalidSubmission}
+          duplicateSubmission={duplicateSubmission}
+        />
+      )}
+
+      {/* Main game area with fixed height container */}
       <div className="flex flex-col gap-2">
-        {/* Sticky header with game status */}
-        <div className="sticky top-0 z-10 bg-sky-900/90 backdrop-blur-md p-2 rounded-lg shadow-lg">
-          <div className="flex justify-between items-center">
-            <div className="flex-1">
-              <GameStatus
-                score={score}
-                timeLeft={timeLeft}
-                message={message}
-                gameActive={gameActive}
-                comboCount={comboCount}
-                isMobile={isMobile}
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleToggleSettings}
-              className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 hover:text-white ml-2 flex-shrink-0"
-            >
-              <Settings size={18} />
-            </Button>
-          </div>
-
-          {gameActive && (
-            <div className="text-center text-sky-200 text-xs tracking-wide uppercase mt-1">
-              Select islands to form words
-            </div>
-          )}
-
-          {!gameActive && isMobile && (
-            <div className="mt-2">
-              <NextPuzzleCountdown />
-            </div>
-          )}
+        {/* Island Map */}
+        <div className="aspect-square w-full max-w-xl mx-auto">
+          <IslandMap
+            islands={islands}
+            selectedIslands={selectedIslands}
+            onIslandClick={handleIslandClick}
+            onIslandDoubleTap={handleIslandDoubleTap}
+            theme={theme}
+            invalidSubmission={invalidSubmission}
+            successfulSubmission={successfulSubmission}
+          />
         </div>
 
-        {/* Live Word Display - only show when game is active */}
+        {/* Word Controls - Directly below the map */}
         {gameActive && (
-          <LiveWordDisplay
+          <WordControls
             currentWord={currentWord}
-            isValid={isWordValid}
-            invalidSubmission={invalidSubmission}
-            duplicateSubmission={duplicateSubmission}
+            selectedIslands={selectedIslands}
+            onSubmitWord={handleSubmitWord}
+            onResetSelection={handleResetSelection}
+            isMobile={isMobile}
           />
         )}
 
-        {/* Main game area */}
-        <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-4"} gap-3`}>
-          <div className={isMobile ? "" : "lg:col-span-3"}>
-            <div className="flex flex-col gap-3">
-              {/* Island Map */}
-              <div className="aspect-square w-full max-w-xl mx-auto">
-                <IslandMap
-                  islands={islands}
-                  selectedIslands={selectedIslands}
-                  onIslandClick={handleIslandClick}
-                  onIslandDoubleTap={handleIslandDoubleTap}
-                  theme={theme}
-                  invalidSubmission={invalidSubmission}
-                  successfulSubmission={successfulSubmission}
-                />
+        {/* Collapsible Panels for Objectives and Found Words - Fixed height container */}
+        {gameActive && (
+          <div className="space-y-2 mt-1 overflow-hidden">
+            <CollapsiblePanel
+              title="OBJECTIVES"
+              badge={completedObjectivesCount > 0 ? `${completedObjectivesCount}/${objectives.length}` : undefined}
+              defaultOpen={false}
+            >
+              <div className="max-h-40 overflow-y-auto">
+                <ObjectivesList objectives={objectives} />
               </div>
+            </CollapsiblePanel>
 
-              {/* Word Controls - Directly below the map */}
-              {gameActive ? (
-                <WordControls
-                  currentWord={currentWord}
-                  selectedIslands={selectedIslands}
-                  onSubmitWord={handleSubmitWord}
-                  onResetSelection={handleResetSelection}
-                  isMobile={isMobile}
-                />
-              ) : (
-                <GameControls onStartGame={handleStartGame} onResetGame={handleResetGame} />
-              )}
-            </div>
+            <CollapsiblePanel
+              title="FOUND WORDS"
+              badge={foundWords.length > 0 ? foundWords.length : undefined}
+              defaultOpen={false}
+            >
+              <div className="max-h-40 overflow-y-auto">
+                <FoundWordsList foundWords={foundWords} />
+              </div>
+            </CollapsiblePanel>
           </div>
+        )}
 
-          {/* Objectives and Found Words - Collapsed on mobile */}
-          {!isMobile && (
-            <div className="flex flex-col gap-3">
-              <ObjectivesList objectives={objectives} />
-              <FoundWordsList foundWords={foundWords} />
-            </div>
-          )}
-
-          {/* Mobile accordion for objectives and found words */}
-          {isMobile && gameActive && (
-            <div className="mt-2">
-              <details className="bg-sky-800/80 rounded-lg border border-sky-700 shadow-lg">
-                <summary className="p-2 font-medium text-white cursor-pointer">Objectives & Found Words</summary>
-                <div className="p-2 space-y-3">
-                  <ObjectivesList objectives={objectives} />
-                  <FoundWordsList foundWords={foundWords} />
-                </div>
-              </details>
-            </div>
-          )}
-        </div>
+        {/* Next Puzzle Countdown - only show when game is not active */}
+        {!gameActive && (
+          <div className="mt-2">
+            <NextPuzzleCountdown />
+          </div>
+        )}
       </div>
+
+      {/* Floating Game Controls */}
+      <FloatingGameControls onStartGame={handleStartGame} onResetGame={handleResetGame} gameActive={gameActive} />
 
       {/* Game Over Modal */}
       {!gameActive && timeLeft === 0 && (
@@ -306,19 +309,12 @@ export default function GameBoard() {
       )}
 
       {/* Mobile Settings Sheet */}
-      {isMobile ? (
-        <MobileSettingsSheet
-          isOpen={showSettings}
-          onClose={handleToggleSettings}
-          currentTheme={theme}
-          onSetTheme={handleSetGameTheme}
-        />
-      ) : (
-        showSettings &&
-        !gameActive && (
-          <GameSettings currentTheme={theme} onSetTheme={handleSetGameTheme} onClose={handleToggleSettings} />
-        )
-      )}
+      <MobileSettingsSheet
+        isOpen={showSettings}
+        onClose={handleToggleSettings}
+        currentTheme={theme}
+        onSetTheme={handleSetGameTheme}
+      />
     </div>
   )
 }
