@@ -1,6 +1,6 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
+  "installCommand": "yarn install --frozen-lockfile",
+  "buildCommand": "yarn build",
   "outputDirectory": ".next",
   "regions": ["sfo1"],
   "github": {
