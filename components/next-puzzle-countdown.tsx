@@ -1,13 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Clock } from "lucide-react"
-import { useAppDispatch } from "@/lib/hooks/hooks"
-import { checkForNewPuzzle } from "@/lib/slices/gameSlice"
 
 export default function NextPuzzleCountdown() {
-  const dispatch = useAppDispatch()
   const [timeRemaining, setTimeRemaining] = useState<{
     minutes: string
     seconds: string
@@ -16,6 +12,7 @@ export default function NextPuzzleCountdown() {
     seconds: "00",
   })
 
+  // Calculate time until next puzzle
   useEffect(() => {
     const calculateTimeRemaining = () => {
       const now = new Date()
@@ -33,8 +30,8 @@ export default function NextPuzzleCountdown() {
 
       // Check if we've reached the next hour (countdown reached zero)
       if (diffMinutes === 0 && diffSeconds === 0) {
-        // Dispatch action to refresh the puzzle
-        dispatch(checkForNewPuzzle())
+        // Refresh the page to get the new puzzle
+        window.location.reload()
       }
     }
 
@@ -45,19 +42,17 @@ export default function NextPuzzleCountdown() {
     const interval = setInterval(calculateTimeRemaining, 1000)
 
     return () => clearInterval(interval)
-  }, [dispatch])
+  }, [])
 
   return (
-    <Card className="border-sky-700 bg-sky-800/80 shadow-sm">
-      <CardContent className="p-2 flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <Clock size={14} className="text-amber-400" />
-          <span className="text-xs uppercase font-light tracking-wider text-amber-200">Next Puzzle</span>
-        </div>
-        <span className="text-sm font-mono font-medium text-amber-100">
+    <div className="flex flex-col items-center justify-center py-4">
+      <div className="flex items-center gap-2 text-amber-400 mb-1">
+        <Clock size={18} />
+        <span className="text-lg font-mono font-bold">
           {timeRemaining.minutes}:{timeRemaining.seconds}
         </span>
-      </CardContent>
-    </Card>
+      </div>
+      <p className="text-sm text-slate-300">until next puzzle</p>
+    </div>
   )
 }

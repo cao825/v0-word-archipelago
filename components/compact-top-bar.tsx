@@ -1,15 +1,15 @@
 "use client"
 
-import { Share2, Clock, BookOpen, Settings, RotateCcw } from "lucide-react"
-import { memo } from "react"
+import { useState, memo } from "react"
+import { Trophy, Clock, Target, BookOpen, Menu } from "lucide-react"
 import type { GameTheme } from "@/lib/slices/gameSlice"
+import { motion } from "framer-motion"
 
 interface CompactTopBarProps {
   score: number
   timeLeft: number
   comboCount: number
   onOpenSettings: () => void
-  onResetGame: () => void
   gameActive: boolean
   theme: GameTheme
   objectivesCompleted: number
@@ -25,7 +25,6 @@ export default memo(function CompactTopBar({
   timeLeft,
   comboCount,
   onOpenSettings,
-  onResetGame,
   gameActive,
   theme,
   objectivesCompleted,
@@ -33,102 +32,133 @@ export default memo(function CompactTopBar({
   foundWordsCount,
   onShowObjectives,
   onShowFoundWords,
-  onShowShareModal,
 }: CompactTopBarProps) {
+  const [showMenu, setShowMenu] = useState(false)
+
   // Format time as MM:SS
   const minutes = Math.floor(timeLeft / 60)
   const seconds = timeLeft % 60
   const formattedTime = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
 
+  // Calculate time percentage for progress bar
+  const timePercentage = (timeLeft / 120) * 100
+
+  // Determine color for time indicator
+  const getTimeColor = () => {
+    if (timeLeft < 10) return "bg-red-500"
+    if (timeLeft < 30) return "bg-amber-500"
+    return "bg-emerald-500"
+  }
+
   // Determine background color based on theme
-  let bgColor = "bg-sky-800/80"
+  let bgColor = "bg-sky-900/90"
+  let progressBgColor = "bg-sky-800"
   if (theme === "sunset") {
-    bgColor = "bg-orange-900/80"
+    bgColor = "bg-orange-900/90"
+    progressBgColor = "bg-orange-800"
   } else if (theme === "stormy") {
-    bgColor = "bg-slate-800/80"
+    bgColor = "bg-slate-800/90"
+    progressBgColor = "bg-slate-700"
   } else if (theme === "volcanic") {
-    bgColor = "bg-red-900/80"
+    bgColor = "bg-red-900/90"
+    progressBgColor = "bg-red-800"
   }
 
   return (
-    <div
-      className={`${bgColor} backdrop-blur-sm text-white rounded-lg p-2 shadow-lg flex flex-wrap justify-between items-center gap-2 sticky top-0 z-10`}
-    >
-      {/* Left side - Score and Time */}
-      <div className="flex items-center gap-4">
-        <div className="flex flex-col items-center">
-          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Score</div>
-          <div className="text-xl font-bold">{score}</div>
+    <div className="sticky top-0 z-30">
+      {/* Main top bar */}
+      <div className={`${bgColor} backdrop-blur-sm shadow-md h-12 flex items-center justify-between px-3`}>
+        {/* Left: Score */}
+        <div className="flex items-center gap-1.5">
+          <Trophy size={16} className="text-amber-400" />
+          <span className="font-bold text-amber-400">{score}</span>
         </div>
 
-        <div className="flex flex-col items-center">
-          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Time</div>
-          <div className="text-xl font-bold flex items-center gap-1">
-            <Clock size={16} />
-            {formattedTime}
-          </div>
+        {/* Center: Time */}
+        <div className="flex items-center gap-1.5">
+          <Clock size={16} className={timeLeft < 30 ? "text-red-400" : "text-white"} />
+          <span className="font-mono font-medium">{formattedTime}</span>
         </div>
 
-        {comboCount > 1 && (
-          <div className="flex flex-col items-center">
-            <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Combo</div>
-            <div className="text-xl font-bold">x{comboCount}</div>
-          </div>
-        )}
+        {/* Right: Counters and Menu */}
+        <div className="flex items-center gap-3">
+          {/* Objectives counter */}
+          <button
+            onClick={onShowObjectives}
+            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-1 transition-colors"
+            aria-label="Show objectives"
+          >
+            <Target size={14} className="text-sky-200" />
+            <span className="text-xs font-medium">
+              {objectivesCompleted}/{totalObjectives}
+            </span>
+          </button>
+
+          {/* Words counter */}
+          <button
+            onClick={onShowFoundWords}
+            className="flex items-center gap-1 hover:bg-white/10 rounded px-1.5 py-1 transition-colors"
+            aria-label="Show found words"
+          >
+            <BookOpen size={14} className="text-sky-200" />
+            <span className="text-xs font-medium">{foundWordsCount}</span>
+          </button>
+
+          {/* Menu button */}
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="hover:bg-white/10 rounded p-1.5 transition-colors relative"
+            aria-label="Menu"
+          >
+            <Menu size={18} />
+
+            {/* Dropdown menu */}
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-slate-800 rounded-md shadow-lg py-1 w-36 z-50">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMenu(false)
+                    onOpenSettings()
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-700 text-sm"
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMenu(false)
+                    onShowObjectives()
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-700 text-sm"
+                >
+                  Objectives
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMenu(false)
+                    onShowFoundWords()
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-700 text-sm"
+                >
+                  Found Words
+                </button>
+              </div>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Right side - Objectives, Words, Settings */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onShowObjectives}
-          className="flex flex-col items-center p-1 hover:bg-white/10 rounded transition-colors"
-          aria-label="Show objectives"
-        >
-          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Objectives</div>
-          <div className="text-sm font-bold">
-            {objectivesCompleted}/{totalObjectives}
-          </div>
-        </button>
-
-        <button
-          onClick={onShowFoundWords}
-          className="flex flex-col items-center p-1 hover:bg-white/10 rounded transition-colors"
-          aria-label="Show found words"
-        >
-          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Words</div>
-          <div className="text-sm font-bold flex items-center gap-1">
-            <BookOpen size={14} />
-            {foundWordsCount}
-          </div>
-        </button>
-
-        <button
-          onClick={onShowShareModal}
-          className="flex flex-col items-center p-1 hover:bg-white/10 rounded transition-colors"
-          aria-label="Share results"
-        >
-          <div className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Share</div>
-          <div className="text-sm font-bold flex items-center gap-1">
-            <Share2 size={14} />
-          </div>
-        </button>
-
-        <div className="flex gap-1">
-          <button
-            onClick={onOpenSettings}
-            className="p-2 hover:bg-white/10 rounded transition-colors"
-            aria-label="Settings"
-          >
-            <Settings size={20} />
-          </button>
-          <button
-            onClick={onResetGame}
-            className="p-2 hover:bg-white/10 rounded transition-colors"
-            aria-label="Reset game"
-          >
-            <RotateCcw size={20} />
-          </button>
-        </div>
+      {/* Progress bar for time */}
+      <div className={`h-1 ${progressBgColor} w-full`}>
+        <motion.div
+          className={`h-full ${getTimeColor()}`}
+          initial={{ width: "100%" }}
+          animate={{ width: `${timePercentage}%` }}
+          transition={{ duration: 0.5, ease: "linear" }}
+        ></motion.div>
       </div>
     </div>
   )

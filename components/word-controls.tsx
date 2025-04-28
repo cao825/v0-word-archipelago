@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { Check, X } from "lucide-react"
 
 interface WordControlsProps {
@@ -18,27 +17,35 @@ export default function WordControls({
   onResetSelection,
   isMobile = false,
 }: WordControlsProps) {
+  const hasSelection = selectedIslands.length > 0
+
   return (
-    <div className="flex justify-center gap-2 mt-1">
-      <Button
+    <div className="flex justify-center gap-4 h-12">
+      <button
         onClick={onSubmitWord}
-        disabled={selectedIslands.length < 2}
-        className="bg-amber-500 hover:bg-amber-600 text-white shadow-md h-8 px-3 rounded-full"
-        size="sm"
+        disabled={!hasSelection}
+        className={`flex items-center justify-center gap-1 px-4 rounded-full transition-colors ${
+          hasSelection
+            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+            : "bg-slate-700/50 text-slate-400 cursor-not-allowed"
+        }`}
+        aria-label="Submit word"
       >
-        <Check size={14} className="mr-1" />
-        <span className="text-xs">Submit</span>
-      </Button>
-      <Button
+        <Check size={isMobile ? 16 : 18} />
+        <span className={isMobile ? "text-sm" : ""}>Submit</span>
+      </button>
+
+      <button
         onClick={onResetSelection}
-        variant="outline"
-        disabled={selectedIslands.length === 0}
-        className="border-sky-300 bg-sky-700 text-white hover:bg-sky-600 h-8 px-3 rounded-full"
-        size="sm"
+        disabled={!hasSelection}
+        className={`flex items-center justify-center gap-1 px-4 rounded-full transition-colors ${
+          hasSelection ? "bg-red-600 hover:bg-red-700 text-white" : "bg-slate-700/50 text-slate-400 cursor-not-allowed"
+        }`}
+        aria-label="Clear selection"
       >
-        <X size={14} className="mr-1" />
-        <span className="text-xs">Clear</span>
-      </Button>
+        <X size={isMobile ? 16 : 18} />
+        <span className={isMobile ? "text-sm" : ""}>Clear</span>
+      </button>
     </div>
   )
 }

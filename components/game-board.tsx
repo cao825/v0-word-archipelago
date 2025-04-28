@@ -28,10 +28,8 @@ import CompactTopBar from "./compact-top-bar"
 import FloatingGameControls from "./floating-game-controls"
 import ModalOverlay from "./modal-overlay"
 import WordFoundToast from "./word-found-toast"
-// Add the import for the new component
 import GameNotification from "./game-notification"
 import ObjectiveCompleteNotification from "./objective-complete-notification"
-// Add this import at the top
 import ShareResults from "./share-results"
 
 export default function GameBoard() {
@@ -44,14 +42,13 @@ export default function GameBoard() {
   const score = useAppSelector((state) => state.game.score)
   const timeLeft = useAppSelector((state) => state.game.timeLeft)
   const gameActive = useAppSelector((state) => state.game.gameActive)
-  // Add a console log to track objective state changes
   const objectives = useAppSelector((state) => state.game.objectives)
   const theme = useAppSelector((state) => state.game.theme)
   const invalidSubmission = useAppSelector((state) => state.game.invalidSubmission)
   const duplicateSubmission = useAppSelector((state) => state.game.duplicateSubmission)
   const successfulSubmission = useAppSelector((state) => state.game.successfulSubmission)
   const comboCount = useAppSelector((state) => state.game.comboCount)
-  const puzzleDate = useAppSelector((state) => state.game.puzzleDate)
+  const puzzleDate = useAppSelector((state) => state.game.gameTimestamp)
 
   const [showSettings, setShowSettings] = useState(false)
   const [showObjectivesModal, setShowObjectivesModal] = useState(false)
@@ -59,19 +56,21 @@ export default function GameBoard() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [wordFoundToast, setWordFoundToast] = useState({ word: "", points: 0, visible: false })
   const [isMobile, setIsMobile] = useState(false)
-  // Add state for the notification
   const [showGameNotification, setShowGameNotification] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState(0)
+
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
   const gameAreaRef = useRef<HTMLDivElement>(null)
   const lastFoundWordRef = useRef<string>("")
   const lastScoreRef = useRef<number>(0)
 
-  // Detect mobile devices
+  // Detect mobile devices and set viewport height
   useEffect(() => {
     if (typeof window !== "undefined") {
       const checkMobile = () => {
         setIsMobile(window.innerWidth < 768)
+        setViewportHeight(window.innerHeight)
       }
 
       checkMobile()
@@ -293,29 +292,24 @@ export default function GameBoard() {
     return objectives.filter((obj) => obj.completed).length
   }, [objectives])
 
-  // Maintain a fixed height for the game area to prevent layout shifts
-  useEffect(() => {
-    if (gameAreaRef.current) {
-      const setFixedHeight = () => {
-        const gameArea = gameAreaRef.current
-        if (gameArea) {
-          // Set a minimum height based on content
-          const minHeight = gameActive ? "600px" : "400px"
-          gameArea.style.minHeight = minHeight
-        }
-      }
+  // Calculate available height for the game area
+  const calculateGameAreaHeight = useCallback(() => {
+    if (!gameActive) return "auto"
 
-      setFixedHeight()
-      window.addEventListener("resize", setFixedHeight)
+    // Top bar height (12) + progress bar (1) + word display (10) + word controls (12) + margins/padding (4)
+    const uiElementsHeight = 39
 
-      return () => {
-        window.removeEventListener("resize", setFixedHeight)
-      }
-    }
-  }, [gameActive])
+    // Calculate remaining height in viewport units
+    const remainingHeight = viewportHeight - uiElementsHeight * 16 // Convert rem to px (assuming 1rem = 16px)
+
+    return remainingHeight > 300 ? remainingHeight : 300 // Minimum height of 300px
+  }, [gameActive, viewportHeight])
+
+  // Calculate game area height
+  const gameAreaHeight = useMemo(() => calculateGameAreaHeight(), [calculateGameAreaHeight])
 
   return (
-    <div className="flex flex-col gap-1" ref={gameAreaRef}>
+    <div className="flex flex-col" ref={gameAreaRef}>
       {/* Audio Manager */}
       <AudioManager />
 
@@ -340,7 +334,7 @@ export default function GameBoard() {
         onClose={handleCloseWordFoundToast}
       />
 
-      {/* Compact Top Bar */}
+      {/* Compact Top Bar - Only show during active gameplay */}
       {gameActive && (
         <CompactTopBar
           score={score}
@@ -359,7 +353,7 @@ export default function GameBoard() {
         />
       )}
 
-      {/* Live Word Display - always show when game is active to maintain layout */}
+      {/* Live Word Display - only show when game is active */}
       {gameActive && (
         <LiveWordDisplay
           currentWord={currentWord}
@@ -369,10 +363,25 @@ export default function GameBoard() {
         />
       )}
 
-      {/* Main game area with fixed height container */}
-      <div className="flex flex-col gap-1">
-        {/* Island Map */}
-        <div className="aspect-square w-full max-w-xl mx-auto">
+      {/* Main game area with dynamic height */}
+      <div className="flex flex-col">
+        {/* Next Puzzle Countdown - only show when game is not active */}
+        {!gameActive && timeLeft !== 0 && (
+          <div className="mb-4">
+            <NextPuzzleCountdown />
+          </div>
+        )}
+
+        {/* Island Map with dynamic sizing */}
+        <div
+          className="w-full mx-auto"
+          style={{
+            height: gameActive ? `${gameAreaHeight}px` : "auto",
+            maxHeight: gameActive ? `${gameAreaHeight}px` : "none",
+            aspectRatio: gameActive ? "auto" : "1/1",
+            maxWidth: "600px",
+          }}
+        >
           <IslandMap
             islands={islands}
             selectedIslands={selectedIslands}
@@ -385,7 +394,7 @@ export default function GameBoard() {
           />
         </div>
 
-        {/* Word Controls - Directly below the map */}
+        {/* Word Controls - Only show during active gameplay */}
         {gameActive && (
           <WordControls
             currentWord={currentWord}
@@ -395,16 +404,9 @@ export default function GameBoard() {
             isMobile={isMobile}
           />
         )}
-
-        {/* Next Puzzle Countdown - only show when game is not active */}
-        {!gameActive && timeLeft !== 0 && (
-          <div className="mt-1">
-            <NextPuzzleCountdown />
-          </div>
-        )}
       </div>
 
-      {/* Floating Game Controls */}
+      {/* Floating Game Controls - Only show start button before game starts */}
       <FloatingGameControls
         onStartGame={handleStartGame}
         onResetGame={handleResetGame}
@@ -440,6 +442,7 @@ export default function GameBoard() {
       <ModalOverlay isOpen={showFoundWordsModal} onClose={() => setShowFoundWordsModal(false)} title="Found Words">
         <FoundWordsList foundWords={foundWords} />
       </ModalOverlay>
+
       {/* Share Results Modal */}
       <ModalOverlay isOpen={showShareModal} onClose={() => setShowShareModal(false)} title="Share Your Results">
         <ShareResults
