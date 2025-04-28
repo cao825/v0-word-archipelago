@@ -12,11 +12,11 @@ const nextConfig = {
     domains: ['placeholder.com'],
     unoptimized: true,
   },
-  // Reduce memory usage during build
+  // Disable experimental features that might be causing issues
   experimental: {
-    // Enable optimizations
-    optimizeCss: true,
-    // Reduce memory usage
+    // Disable CSS optimization that requires critters
+    optimizeCss: false,
+    // Keep memory optimization
     memoryBasedWorkersCount: true,
   },
   // Improve production performance
