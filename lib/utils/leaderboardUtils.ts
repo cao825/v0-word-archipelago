@@ -53,7 +53,7 @@ export async function fetchLeaderboardEntries(): Promise<LeaderboardEntry[]> {
 
     if (!data || data.length === 0) {
       console.log("No leaderboard entries found in Supabase")
-      return []
+      return getLocalLeaderboardEntries()
     }
 
     // Convert Supabase records to LeaderboardEntry objects
@@ -71,10 +71,12 @@ export function getLocalLeaderboardEntries(): LeaderboardEntry[] {
 
   try {
     const entries = localStorage.getItem(LEADERBOARD_STORAGE_KEY)
-    const parsedEntries = entries ? JSON.parse(entries) : []
+    if (!entries) return []
+
+    const parsedEntries = JSON.parse(entries)
 
     // If no entries exist, return empty array
-    if (parsedEntries.length === 0) {
+    if (!Array.isArray(parsedEntries) || parsedEntries.length === 0) {
       return []
     }
 
@@ -146,6 +148,8 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
   if (typeof window === "undefined") return false
 
   try {
+    console.log("Adding leaderboard entry:", entry)
+
     // Validate entry
     if (!entry || typeof entry.score !== "number" || entry.score < 0) {
       console.error("Invalid leaderboard entry")
@@ -182,26 +186,69 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
 
     // Then add to Supabase
     const record = entryToRecord(entry)
-    supabase
-      .from("leaderboard")
-      .insert([record])
-      .then(({ error }) => {
-        if (error) {
-          console.error("Error adding entry to Supabase:", error)
-        } else {
-          console.log("Entry added to Supabase successfully")
+    console.log("Submitting to Supabase:", record)
+
+    // Use the API route for more reliable submission
+    fetch("/api/leaderboard", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        player_initials: record.player_initials,
+        score: record.score,
+        words_found: record.words_found,
+        objectives_completed: record.objectives_completed,
+        timestamp: record.timestamp,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((data) => {
+        console.log("API response:", data)
+        if (data.success) {
+          console.log("Entry added via API successfully")
 
           // Refresh leaderboard data after successful submission
-          fetchLeaderboardEntries().then((entries) => {
-            localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(entries))
-            if (window.refreshLeaderboardDisplay) {
-              window.refreshLeaderboardDisplay()
-            }
-          })
+          setTimeout(() => {
+            fetchLeaderboardEntries().then((entries) => {
+              localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(entries))
+              if (window.refreshLeaderboardDisplay) {
+                window.refreshLeaderboardDisplay()
+              }
+            })
+          }, 1000) // Small delay to allow the database to update
         }
       })
       .catch((error) => {
-        console.error("Error in Supabase insert:", error)
+        console.error("Error submitting via API:", error)
+
+        // Fallback to direct Supabase submission
+        supabase
+          .from("leaderboard")
+          .insert([record])
+          .then(({ error }) => {
+            if (error) {
+              console.error("Error adding entry to Supabase:", error)
+            } else {
+              console.log("Entry added to Supabase successfully")
+
+              // Refresh leaderboard data after successful submission
+              fetchLeaderboardEntries().then((entries) => {
+                localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(entries))
+                if (window.refreshLeaderboardDisplay) {
+                  window.refreshLeaderboardDisplay()
+                }
+              })
+            }
+          })
+          .catch((error) => {
+            console.error("Error in Supabase insert:", error)
+          })
       })
 
     return true
@@ -221,29 +268,43 @@ export async function fetchHourlyLeaderboard(): Promise<LeaderboardEntry[]> {
 
     console.log("Fetching hourly leaderboard from:", hourStart.toISOString())
 
-    // Use the correct filter syntax for Supabase
-    const { data, error } = await supabase
-      .from("leaderboard")
-      .select("*")
-      .gte("timestamp", hourStart.toISOString())
-      .order("score", { ascending: false })
-      .limit(10)
-
-    if (error) {
-      console.error("Error fetching hourly leaderboard:", error)
-      return []
+    // Use the API route for more reliable data
+    const response = await fetch(`/api/leaderboard?timeframe=hourly`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
     }
 
-    if (!data || data.length === 0) {
-      console.log("No hourly leaderboard data found")
-      return []
+    const data = await response.json()
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      console.log("No hourly leaderboard data found via API")
+
+      // Fall back to direct Supabase query
+      const { data: supabaseData, error } = await supabase
+        .from("leaderboard")
+        .select("*")
+        .gte("timestamp", hourStart.toISOString())
+        .order("score", { ascending: false })
+        .limit(10)
+
+      if (error) {
+        console.error("Error fetching hourly leaderboard from Supabase:", error)
+        return getHourlyLeaderboard() // Fall back to local storage
+      }
+
+      if (!supabaseData || supabaseData.length === 0) {
+        console.log("No hourly leaderboard data found in Supabase")
+        return getHourlyLeaderboard() // Fall back to local storage
+      }
+
+      console.log(`Found ${supabaseData.length} hourly leaderboard entries in Supabase`)
+      return supabaseData.map(recordToEntry)
     }
 
-    console.log(`Found ${data.length} hourly leaderboard entries`)
-    return data.map(recordToEntry)
+    console.log(`Found ${data.data.length} hourly leaderboard entries via API`)
+    return data.data.map(recordToEntry)
   } catch (error) {
     console.error("Error in fetchHourlyLeaderboard:", error)
-    return []
+    return getHourlyLeaderboard() // Fall back to local storage
   }
 }
 
@@ -276,33 +337,48 @@ export function getHourlyLeaderboard(): LeaderboardEntry[] {
 // Get daily leaderboard (top scores from the last 24 hours)
 export async function fetchDailyLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const dayAgo = new Date()
-    dayAgo.setDate(dayAgo.getDate() - 1)
+    console.log("Fetching daily leaderboard")
 
-    console.log("Fetching daily leaderboard from:", dayAgo.toISOString())
-
-    const { data, error } = await supabase
-      .from("leaderboard")
-      .select("*")
-      .gte("timestamp", dayAgo.toISOString())
-      .order("score", { ascending: false })
-      .limit(10)
-
-    if (error) {
-      console.error("Error fetching daily leaderboard:", error)
-      return []
+    // Use the API route for more reliable data
+    const response = await fetch(`/api/leaderboard?timeframe=daily`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
     }
 
-    if (!data || data.length === 0) {
-      console.log("No daily leaderboard data found")
-      return []
+    const data = await response.json()
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      console.log("No daily leaderboard data found via API")
+
+      // Fall back to direct Supabase query
+      const dayAgo = new Date()
+      dayAgo.setDate(dayAgo.getDate() - 1)
+
+      const { data: supabaseData, error } = await supabase
+        .from("leaderboard")
+        .select("*")
+        .gte("timestamp", dayAgo.toISOString())
+        .order("score", { ascending: false })
+        .limit(10)
+
+      if (error) {
+        console.error("Error fetching daily leaderboard from Supabase:", error)
+        return getDailyLeaderboard() // Fall back to local storage
+      }
+
+      if (!supabaseData || supabaseData.length === 0) {
+        console.log("No daily leaderboard data found in Supabase")
+        return getDailyLeaderboard() // Fall back to local storage
+      }
+
+      console.log(`Found ${supabaseData.length} daily leaderboard entries in Supabase`)
+      return supabaseData.map(recordToEntry)
     }
 
-    console.log(`Found ${data.length} daily leaderboard entries`)
-    return data.map(recordToEntry)
+    console.log(`Found ${data.data.length} daily leaderboard entries via API`)
+    return data.data.map(recordToEntry)
   } catch (error) {
     console.error("Error in fetchDailyLeaderboard:", error)
-    return []
+    return getDailyLeaderboard() // Fall back to local storage
   }
 }
 
@@ -333,27 +409,42 @@ export async function fetchAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
     console.log("Fetching all-time leaderboard")
 
-    const { data, error } = await supabase
-      .from("leaderboard")
-      .select("*")
-      .order("score", { ascending: false })
-      .limit(10)
-
-    if (error) {
-      console.error("Error fetching all-time leaderboard:", error)
-      return []
+    // Use the API route for more reliable data
+    const response = await fetch(`/api/leaderboard?timeframe=all`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
     }
 
-    if (!data || data.length === 0) {
-      console.log("No all-time leaderboard data found")
-      return []
+    const data = await response.json()
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      console.log("No all-time leaderboard data found via API")
+
+      // Fall back to direct Supabase query
+      const { data: supabaseData, error } = await supabase
+        .from("leaderboard")
+        .select("*")
+        .order("score", { ascending: false })
+        .limit(10)
+
+      if (error) {
+        console.error("Error fetching all-time leaderboard from Supabase:", error)
+        return getAllTimeLeaderboard() // Fall back to local storage
+      }
+
+      if (!supabaseData || supabaseData.length === 0) {
+        console.log("No all-time leaderboard data found in Supabase")
+        return getAllTimeLeaderboard() // Fall back to local storage
+      }
+
+      console.log(`Found ${supabaseData.length} all-time leaderboard entries in Supabase`)
+      return supabaseData.map(recordToEntry)
     }
 
-    console.log(`Found ${data.length} all-time leaderboard entries`)
-    return data.map(recordToEntry)
+    console.log(`Found ${data.data.length} all-time leaderboard entries via API`)
+    return data.data.map(recordToEntry)
   } catch (error) {
     console.error("Error in fetchAllTimeLeaderboard:", error)
-    return []
+    return getAllTimeLeaderboard() // Fall back to local storage
   }
 }
 

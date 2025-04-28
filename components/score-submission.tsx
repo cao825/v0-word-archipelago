@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Trophy, Check } from "lucide-react"
 import LeaderboardDisplay from "./leaderboard-display"
+import { addLeaderboardEntry } from "@/lib/utils/leaderboardUtils"
 
 interface ScoreSubmissionProps {
   score: number
@@ -48,15 +49,32 @@ export default function ScoreSubmission({
     }
 
     setIsSubmitting(true)
+    setError("")
 
     try {
-      // Submit to leaderboard using the global function
+      // Submit directly to leaderboard using the utility function
+      const formattedInitials = initials.toUpperCase().trim().substring(0, 3)
+
+      // Create the leaderboard entry
+      const success = addLeaderboardEntry({
+        playerInitials: formattedInitials,
+        score,
+        wordsFound,
+        objectivesCompleted,
+        timestamp: Date.now(),
+      })
+
+      if (!success) {
+        throw new Error("Failed to submit score")
+      }
+
+      // Also submit using the global function for backward compatibility
       if (typeof window !== "undefined" && window.submitLeaderboardScore) {
-        window.submitLeaderboardScore(initials, score, wordsFound, objectivesCompleted)
+        window.submitLeaderboardScore(formattedInitials, score, wordsFound, objectivesCompleted)
       }
 
       // Store the submitted initials to highlight in leaderboard
-      setSubmittedInitials(initials.toUpperCase())
+      setSubmittedInitials(formattedInitials)
 
       // Show success message
       setShowSuccess(true)
@@ -64,6 +82,11 @@ export default function ScoreSubmission({
       // Short delay before showing leaderboard
       setTimeout(() => {
         setShowLeaderboard(true)
+
+        // Force refresh the leaderboard
+        if (window.refreshLeaderboardDisplay) {
+          window.refreshLeaderboardDisplay()
+        }
       }, 1200)
     } catch (error) {
       console.error("Error submitting score:", error)

@@ -45,19 +45,24 @@ export async function POST(request: Request) {
     const supabase = createServerSupabaseClient()
     const body = await request.json()
 
+    console.log("Received leaderboard submission:", body)
+
     // Validate the request body
     if (!body.player_initials || typeof body.score !== "number") {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 
+    // Format the initials
+    const formattedInitials = body.player_initials.toUpperCase().substring(0, 3)
+
     // Insert the new leaderboard entry
     const { data, error } = await supabase.from("leaderboard").insert([
       {
-        player_initials: body.player_initials.toUpperCase().substring(0, 3),
+        player_initials: formattedInitials,
         score: body.score,
         words_found: body.words_found || 0,
         objectives_completed: body.objectives_completed || 0,
-        timestamp: new Date().toISOString(),
+        timestamp: body.timestamp || new Date().toISOString(),
       },
     ])
 
@@ -66,6 +71,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to add leaderboard entry" }, { status: 500 })
     }
 
+    console.log("Successfully added leaderboard entry for:", formattedInitials)
     return NextResponse.json({ success: true, message: "Leaderboard entry added successfully" })
   } catch (error) {
     console.error("Error in leaderboard API:", error)

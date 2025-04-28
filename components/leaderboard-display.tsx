@@ -38,6 +38,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
   // Function to refresh leaderboard data with retry logic
   const refreshLeaderboards = useCallback(async () => {
+    console.log("Refreshing leaderboards...")
     setIsLoading(true)
     setHourlyLoading(true)
     setDailyLoading(true)
@@ -172,9 +173,13 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
       if (allTimeHasEntry) {
         setActiveTab("alltime")
+      } else {
+        // If the entry is not found in any tab, force a refresh
+        console.log("Entry not found in any tab, forcing refresh...")
+        refreshLeaderboards()
       }
     }
-  }, [highlightInitials, hourlyLeaderboard, dailyLeaderboard, allTimeLeaderboard])
+  }, [highlightInitials, hourlyLeaderboard, dailyLeaderboard, allTimeLeaderboard, refreshLeaderboards])
 
   // Memoize the formatted hour display to avoid recalculating on every render
   const formattedHourDisplay = useMemo(() => {

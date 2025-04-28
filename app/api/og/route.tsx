@@ -66,7 +66,7 @@ export async function GET() {
             marginBottom: "40px",
           }}
         >
-          {/* Island with G */}
+          {/* Island with W */}
           <div
             style={{
               width: "120px",
@@ -103,11 +103,11 @@ export async function GET() {
                 textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
               }}
             >
-              G
+              W
             </span>
           </div>
 
-          {/* Island with A */}
+          {/* Island with O */}
           <div
             style={{
               width: "120px",
@@ -144,11 +144,11 @@ export async function GET() {
                 textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
               }}
             >
-              A
+              O
             </span>
           </div>
 
-          {/* Island with M */}
+          {/* Island with R */}
           <div
             style={{
               width: "120px",
@@ -185,11 +185,11 @@ export async function GET() {
                 textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
               }}
             >
-              M
+              R
             </span>
           </div>
 
-          {/* Island with E */}
+          {/* Island with D */}
           <div
             style={{
               width: "120px",
@@ -226,7 +226,7 @@ export async function GET() {
                 textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
               }}
             >
-              E
+              D
             </span>
           </div>
         </div>
