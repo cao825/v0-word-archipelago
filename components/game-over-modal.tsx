@@ -35,6 +35,9 @@ export default function GameOverModal({
   })
 
   const [isVisible, setIsVisible] = useState(false)
+  const [showScoreSubmission, setShowScoreSubmission] = useState(false)
+  const [scoreSubmitted, setScoreSubmitted] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   // Get the completed objectives directly from the Redux store to ensure accuracy
   const completedObjectives = useSelector((state: RootState) => state.game.completedObjectives)
@@ -97,9 +100,6 @@ export default function GameOverModal({
     }
   }, [foundWords])
 
-  const [showScoreSubmission, setShowScoreSubmission] = useState(false)
-  const [scoreSubmitted, setScoreSubmitted] = useState(false)
-
   // Check if score qualifies for leaderboard
   useEffect(() => {
     // Simple qualification check - can be made more sophisticated
@@ -108,13 +108,16 @@ export default function GameOverModal({
     }
   }, [score])
 
-  // Add a state to track if share modal is open
-  const [showShareModal, setShowShareModal] = useState(false)
-
   // Update the onShare function to show the share modal
   const handleShare = () => {
     setShowShareModal(true)
     if (onShare) onShare()
+  }
+
+  // Handle when score submission is complete
+  const handleScoreSubmitted = () => {
+    setScoreSubmitted(true)
+    setShowScoreSubmission(false)
   }
 
   return (
@@ -142,10 +145,7 @@ export default function GameOverModal({
                 wordsFound={foundWords.length}
                 objectivesCompleted={completedObjectivesCount}
                 totalObjectives={objectives.length}
-                onSubmit={() => {
-                  setScoreSubmitted(true)
-                  setShowScoreSubmission(false)
-                }}
+                onSubmit={handleScoreSubmitted}
                 onSkip={() => setShowScoreSubmission(false)}
               />
             </motion.div>

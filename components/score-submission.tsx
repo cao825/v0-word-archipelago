@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Trophy, Check } from "lucide-react"
+import LeaderboardDisplay from "./leaderboard-display"
 
 interface ScoreSubmissionProps {
   score: number
@@ -11,6 +12,7 @@ interface ScoreSubmissionProps {
   totalObjectives: number
   onSubmit: () => void
   onSkip: () => void
+  playerInitials?: string // Optional prop to pre-fill initials
 }
 
 export default function ScoreSubmission({
@@ -20,19 +22,22 @@ export default function ScoreSubmission({
   totalObjectives,
   onSubmit,
   onSkip,
+  playerInitials = "",
 }: ScoreSubmissionProps) {
-  const [initials, setInitials] = useState("")
+  const [initials, setInitials] = useState(playerInitials)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [submittedInitials, setSubmittedInitials] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Auto-focus the input field when component mounts
   useEffect(() => {
-    if (inputRef.current) {
+    if (inputRef.current && !playerInitials) {
       inputRef.current.focus()
     }
-  }, [])
+  }, [playerInitials])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,19 +55,37 @@ export default function ScoreSubmission({
         window.submitLeaderboardScore(initials, score, wordsFound, objectivesCompleted)
       }
 
-      // Show success message before closing
+      // Store the submitted initials to highlight in leaderboard
+      setSubmittedInitials(initials.toUpperCase())
+
+      // Show success message
       setShowSuccess(true)
 
-      // Delay closing to show the success message
+      // Short delay before showing leaderboard
       setTimeout(() => {
-        // Call the onSubmit callback
-        onSubmit()
+        setShowLeaderboard(true)
       }, 1200)
     } catch (error) {
       console.error("Error submitting score:", error)
       setError("Failed to submit score. Please try again.")
       setIsSubmitting(false)
     }
+  }
+
+  // If showing leaderboard, render it
+  if (showLeaderboard) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-white text-center mb-4">Leaderboard</h2>
+        <LeaderboardDisplay highlightInitials={submittedInitials} />
+        <button
+          onClick={onSubmit}
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded-lg font-medium transition-colors"
+        >
+          Continue
+        </button>
+      </div>
+    )
   }
 
   return (
