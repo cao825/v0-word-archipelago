@@ -583,8 +583,22 @@ export function validateWord(word: string): boolean {
     return true
   }
 
+  // Add this special case for chef and other culinary terms
   // Special case for "plot" and other potentially missing words
-  const specialCaseWords = ["plot", "plug", "plan", "play", "plum", "plus"]
+  const specialCaseWords = [
+    "plot",
+    "plug",
+    "plan",
+    "play",
+    "plum",
+    "plus",
+    "chef",
+    "chefs",
+    "cook",
+    "cooks",
+    "bake",
+    "bakes",
+  ]
   if (specialCaseWords.includes(lowerWord)) {
     // Add these to the dictionary if they're missing
     if (!dictionarySet.has(lowerWord)) {

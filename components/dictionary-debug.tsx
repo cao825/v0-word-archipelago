@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { validateWord } from "@/lib/utils/wordValidator"
 import { couldBeValidWord, getWordDifficulty, dictionary } from "@/lib/services/dictionaryService"
 
+// Import the dictionary tester
+import DictionaryTester from "./dictionary-tester"
+
 export default function DictionaryDebug() {
   const [word, setWord] = useState("")
   const [result, setResult] = useState<string | null>(null)
@@ -92,6 +95,7 @@ export default function DictionaryDebug() {
             </ul>
           </div>
         )}
+        <DictionaryTester />
       </CardContent>
     </Card>
   )
