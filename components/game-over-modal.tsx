@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Clock } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { addLeaderboardEntry, formatInitials, type LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
 import LeaderboardDisplay from "./leaderboard-display"
-import NextPuzzleCountdown from "./next-puzzle-countdown"
 import { toast } from "@/components/ui/use-toast"
 
 interface GameOverModalProps {
@@ -26,10 +26,43 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
   const [submitted, setSubmitted] = useState(false)
   const [activeTab, setActiveTab] = useState("summary")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<{
+    minutes: string
+    seconds: string
+  }>({
+    minutes: "00",
+    seconds: "00",
+  })
 
   const completedObjectives = objectives.filter((obj) => obj.completed)
   const objectiveBonus = completedObjectives.length * 50 // 50 points per objective
   const wordPoints = score - objectiveBonus
+
+  // Calculate time until next puzzle
+  useEffect(() => {
+    const calculateTimeRemaining = () => {
+      const now = new Date()
+      const nextHour = new Date(now)
+      nextHour.setHours(now.getHours() + 1, 0, 0, 0)
+
+      const diffMs = nextHour.getTime() - now.getTime()
+      const diffMinutes = Math.floor(diffMs / 60000)
+      const diffSeconds = Math.floor((diffMs % 60000) / 1000)
+
+      setTimeRemaining({
+        minutes: String(diffMinutes).padStart(2, "0"),
+        seconds: String(diffSeconds).padStart(2, "0"),
+      })
+    }
+
+    // Calculate immediately
+    calculateTimeRemaining()
+
+    // Update every second
+    const interval = setInterval(calculateTimeRemaining, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Update formatted initials whenever input changes
   useEffect(() => {
@@ -161,12 +194,17 @@ export default function GameOverModal({ score, foundWords, objectives, onResetGa
                 </div>
               </div>
 
-              <div className="bg-amber-600/30 border border-amber-600 rounded-md p-3">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium text-amber-200">NEXT PUZZLE IN</h3>
-                  <NextPuzzleCountdown />
+              <div className="bg-sky-900 rounded-md p-3 border border-sky-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock size={16} className="text-amber-400" />
+                    <h3 className="text-sm font-medium text-amber-200">NEXT PUZZLE IN</h3>
+                  </div>
+                  <div className="text-lg font-mono font-bold text-amber-100">
+                    {timeRemaining.minutes}:{timeRemaining.seconds}
+                  </div>
                 </div>
-                <p className="text-xs text-amber-100 mt-1">
+                <p className="text-xs text-sky-300 mt-1">
                   New puzzles are available every hour. Come back to improve your score!
                 </p>
               </div>

@@ -293,7 +293,7 @@ export default function GameBoard() {
         )}
 
         {/* Next Puzzle Countdown - only show when game is not active */}
-        {!gameActive && (
+        {!gameActive && timeLeft !== 0 && (
           <div className="mt-2">
             <NextPuzzleCountdown />
           </div>

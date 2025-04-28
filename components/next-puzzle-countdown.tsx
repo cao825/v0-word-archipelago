@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Clock } from "lucide-react"
 
 export default function NextPuzzleCountdown() {
   const [timeRemaining, setTimeRemaining] = useState<{
@@ -38,9 +39,12 @@ export default function NextPuzzleCountdown() {
   }, [])
 
   return (
-    <Card className="border-amber-600 bg-amber-600/30 shadow-lg">
+    <Card className="border-sky-700 bg-sky-800/80 shadow-lg">
       <CardContent className="p-3 flex items-center justify-between">
-        <span className="text-xs uppercase font-light tracking-wider text-amber-200">Next Puzzle</span>
+        <div className="flex items-center gap-2">
+          <Clock size={16} className="text-amber-400" />
+          <span className="text-xs uppercase font-light tracking-wider text-amber-200">Next Puzzle</span>
+        </div>
         <span className="text-lg font-mono font-bold text-amber-100">
           {timeRemaining.minutes}:{timeRemaining.seconds}
         </span>
