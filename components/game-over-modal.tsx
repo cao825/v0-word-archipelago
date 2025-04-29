@@ -131,7 +131,7 @@ export default function GameOverModal({
           }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden"
+          className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         >
           {showScoreSubmission && !scoreSubmitted ? (
             <motion.div
@@ -158,7 +158,7 @@ export default function GameOverModal({
             >
               <div className="mb-4">
                 <h2 className="text-2xl font-bold text-white">Game Over</h2>
-                <div className="flex items-center justify-center gap-2 text-slate-300 text-sm">
+                <div className="flex items-center justify-center gap-2 text-white text-sm">
                   <Clock size={14} className="text-amber-400" />
                   <p>
                     Next puzzle in {timeRemaining.minutes}:{timeRemaining.seconds}
@@ -172,7 +172,7 @@ export default function GameOverModal({
                 transition={{ delay: 0.2, type: "spring" }}
                 className="flex justify-center mb-4"
               >
-                <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-amber-500/30 flex items-center justify-center">
                   <Trophy className="w-10 h-10 text-amber-400" />
                 </div>
               </motion.div>
@@ -184,7 +184,7 @@ export default function GameOverModal({
                 className="mb-4"
               >
                 <div className="text-4xl font-bold text-amber-400">{score}</div>
-                <p className="text-slate-300 text-sm">Final Score</p>
+                <p className="text-white text-sm">Final Score</p>
               </motion.div>
 
               <motion.div
@@ -193,35 +193,35 @@ export default function GameOverModal({
                 transition={{ delay: 0.4 }}
                 className="grid grid-cols-2 gap-3 mb-5"
               >
-                <div className="bg-slate-800/50 p-2 rounded-lg">
+                <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
                   <div className="text-xl font-bold text-white">{foundWords.length}</div>
-                  <div className="text-slate-400 text-xs">Words Found</div>
+                  <div className="text-slate-200 text-xs">Words Found</div>
                 </div>
-                <div className="bg-slate-800/50 p-2 rounded-lg">
+                <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
                   <div className="text-xl font-bold text-white">
                     {completedObjectivesCount}/{objectives.length}
                   </div>
-                  <div className="text-slate-400 text-xs">Objectives</div>
+                  <div className="text-slate-200 text-xs">Objectives</div>
                 </div>
               </motion.div>
 
-              {/* New section for game highlights */}
+              {/* New section for game highlights with improved contrast */}
               {foundWords.length > 0 && (
                 <motion.div
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="mb-5 bg-slate-800/30 p-3 rounded-lg"
+                  className="mb-5 bg-slate-800 p-3 rounded-lg border border-slate-700"
                 >
-                  <h3 className="text-sm font-medium text-slate-300 mb-2">Game Highlights</h3>
+                  <h3 className="text-sm font-medium text-white mb-2">Game Highlights</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <div className="text-amber-400 font-medium">{gameStats.longestWord}</div>
-                      <div className="text-slate-400 text-xs">Longest Word ({gameStats.wordLength} letters)</div>
+                    <div className="bg-slate-700/70 p-2 rounded">
+                      <div className="text-amber-300 font-bold">{gameStats.longestWord}</div>
+                      <div className="text-slate-200 text-xs">Longest Word ({gameStats.wordLength} letters)</div>
                     </div>
-                    <div>
-                      <div className="text-amber-400 font-medium">{gameStats.highestScoringWord}</div>
-                      <div className="text-slate-400 text-xs">Highest Points</div>
+                    <div className="bg-slate-700/70 p-2 rounded">
+                      <div className="text-amber-300 font-bold">{gameStats.highestScoringWord}</div>
+                      <div className="text-slate-200 text-xs">Highest Points</div>
                     </div>
                   </div>
                 </motion.div>
@@ -251,7 +251,7 @@ export default function GameOverModal({
 
                 <button
                   onClick={handleShare}
-                  className="w-full py-2 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-md transition-colors duration-200"
+                  className="w-full py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-md transition-colors duration-200"
                 >
                   Share Results
                 </button>
