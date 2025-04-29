@@ -19,8 +19,8 @@ export default function ObjectivesList({ objectives }: ObjectivesListProps) {
   // Use effect to force re-render when completedObjectives change
   React.useEffect(() => {
     forceUpdate()
-    console.log("[ObjectivesList] Objectives:", objectives)
-    console.log("[ObjectivesList] Completed objectives:", completedObjectives)
+    console.log("[ObjectivesList] Objectives:", JSON.stringify(objectives))
+    console.log("[ObjectivesList] Completed objectives:", JSON.stringify(completedObjectives))
   }, [objectives, completedObjectives])
 
   const completedCount = objectives.filter((obj) => completedObjectives.includes(obj.id)).length
@@ -43,6 +43,8 @@ export default function ObjectivesList({ objectives }: ObjectivesListProps) {
             }`}
             data-testid={`objective-${objective.id}`}
             data-completed={isCompleted}
+            data-objective-type={objective.type}
+            data-objective-param={objective.parameter}
           >
             {isCompleted ? (
               <CheckCircle2 className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />

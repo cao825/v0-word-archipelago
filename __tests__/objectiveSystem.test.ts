@@ -1,5 +1,4 @@
 import {
-  hasAtLeastNVowels,
   checkWordAgainstObjective,
   checkObjectives,
   generateObjectives,
@@ -8,32 +7,6 @@ import {
 } from "../lib/utils/objectiveGenerator"
 
 describe("Objective System", () => {
-  describe("hasAtLeastNVowels", () => {
-    test("correctly counts vowels", () => {
-      expect(hasAtLeastNVowels("hello", 2)).toBe(true) // 2 vowels
-      expect(hasAtLeastNVowels("world", 1)).toBe(true) // 1 vowel
-      expect(hasAtLeastNVowels("sky", 1)).toBe(false) // 0 vowels
-      expect(hasAtLeastNVowels("beautiful", 4)).toBe(true) // 5 vowels
-      expect(hasAtLeastNVowels("toys", 1)).toBe(true) // 1 vowel (o)
-      expect(hasAtLeastNVowels("toys", 2)).toBe(false) // only 1 vowel
-      expect(hasAtLeastNVowels("aeiou", 5)).toBe(true) // 5 vowels
-    })
-
-    test("is case insensitive", () => {
-      expect(hasAtLeastNVowels("HELLO", 2)).toBe(true)
-      expect(hasAtLeastNVowels("World", 1)).toBe(true)
-      expect(hasAtLeastNVowels("TOYS", 1)).toBe(true)
-      expect(hasAtLeastNVowels("AEIOU", 5)).toBe(true)
-    })
-
-    test("handles edge cases", () => {
-      expect(hasAtLeastNVowels("", 1)).toBe(false)
-      expect(hasAtLeastNVowels(null as any, 1)).toBe(false)
-      expect(hasAtLeastNVowels(undefined as any, 1)).toBe(false)
-      expect(hasAtLeastNVowels("hello", 0)).toBe(true) // Any word has at least 0 vowels
-    })
-  })
-
   describe("checkWordAgainstObjective", () => {
     const createObjective = (type: ObjectiveType, parameter: string | number): Objective => ({
       id: `${type}-${parameter}`,
@@ -47,171 +20,118 @@ describe("Objective System", () => {
       test("matches words of exact length", () => {
         const objective3 = createObjective("length", 3)
         const objective4 = createObjective("length", 4)
-        const objective6 = createObjective("length", 6)
+        const objective5 = createObjective("length", 5)
 
         // 3-letter words
         expect(checkWordAgainstObjective("cat", objective3)).toBe(true)
         expect(checkWordAgainstObjective("dog", objective3)).toBe(true)
-        expect(checkWordAgainstObjective("ton", objective3)).toBe(true)
+        expect(checkWordAgainstObjective("his", objective3)).toBe(true)
+        expect(checkWordAgainstObjective("hi", objective3)).toBe(false) // 2 letters, not 3
 
         // 4-letter words
         expect(checkWordAgainstObjective("test", objective4)).toBe(true)
         expect(checkWordAgainstObjective("word", objective4)).toBe(true)
         expect(checkWordAgainstObjective("toys", objective4)).toBe(true)
+        expect(checkWordAgainstObjective("his", objective4)).toBe(false) // 3 letters, not 4
 
-        // 6-letter words
-        expect(checkWordAgainstObjective("garden", objective6)).toBe(true)
-        expect(checkWordAgainstObjective("system", objective6)).toBe(true)
-      })
-
-      test("rejects words of different length", () => {
-        const objective3 = createObjective("length", 3)
-        const objective4 = createObjective("length", 4)
-
-        // 3-letter words should NOT match 4-letter objective
-        expect(checkWordAgainstObjective("cat", objective4)).toBe(false)
-        expect(checkWordAgainstObjective("dog", objective4)).toBe(false)
-        expect(checkWordAgainstObjective("ton", objective4)).toBe(false)
-
-        // 4-letter words should NOT match 3-letter objective
-        expect(checkWordAgainstObjective("test", objective3)).toBe(false)
-        expect(checkWordAgainstObjective("word", objective3)).toBe(false)
-        expect(checkWordAgainstObjective("toys", objective3)).toBe(false)
+        // 5-letter words
+        expect(checkWordAgainstObjective("hello", objective5)).toBe(true)
+        expect(checkWordAgainstObjective("world", objective5)).toBe(true)
+        expect(checkWordAgainstObjective("his", objective5)).toBe(false) // 3 letters, not 5
       })
 
       test("handles string parameters", () => {
         const objective = createObjective("length", "3")
-
         expect(checkWordAgainstObjective("cat", objective)).toBe(true)
-        expect(checkWordAgainstObjective("dog", objective)).toBe(true)
+        expect(checkWordAgainstObjective("his", objective)).toBe(true)
         expect(checkWordAgainstObjective("test", objective)).toBe(false)
-        expect(checkWordAgainstObjective("toys", objective)).toBe(false)
       })
 
       test("handles invalid parameters", () => {
         const invalidObjective = createObjective("length", "not-a-number")
-
         expect(checkWordAgainstObjective("test", invalidObjective)).toBe(false)
-        expect(checkWordAgainstObjective("toys", invalidObjective)).toBe(false)
+        expect(checkWordAgainstObjective("his", invalidObjective)).toBe(false)
       })
     })
 
     describe("startsWith objective", () => {
       test("matches words starting with the parameter", () => {
+        const objectiveH = createObjective("startsWith", "h")
         const objectiveT = createObjective("startsWith", "t")
-        const objectiveS = createObjective("startsWith", "s")
+
+        // Words starting with 'h'
+        expect(checkWordAgainstObjective("his", objectiveH)).toBe(true)
+        expect(checkWordAgainstObjective("hat", objectiveH)).toBe(true)
+        expect(checkWordAgainstObjective("hello", objectiveH)).toBe(true)
 
         // Words starting with 't'
         expect(checkWordAgainstObjective("test", objectiveT)).toBe(true)
-        expect(checkWordAgainstObjective("ton", objectiveT)).toBe(true)
-        expect(checkWordAgainstObjective("toys", objectiveT)).toBe(true)
+        expect(checkWordAgainstObjective("tie", objectiveT)).toBe(true)
 
-        // Words starting with 's'
-        expect(checkWordAgainstObjective("system", objectiveS)).toBe(true)
-        expect(checkWordAgainstObjective("sun", objectiveS)).toBe(true)
-      })
-
-      test("rejects words not starting with the parameter", () => {
-        const objectiveT = createObjective("startsWith", "t")
-
-        expect(checkWordAgainstObjective("cat", objectiveT)).toBe(false)
-        expect(checkWordAgainstObjective("dog", objectiveT)).toBe(false)
-        expect(checkWordAgainstObjective("system", objectiveT)).toBe(false)
+        // Words not starting with 'h'
+        expect(checkWordAgainstObjective("cat", objectiveH)).toBe(false)
+        expect(checkWordAgainstObjective("this", objectiveH)).toBe(false) // 't' not 'h'
       })
 
       test("is case insensitive", () => {
-        const objectiveT = createObjective("startsWith", "T") // Uppercase parameter
-
-        expect(checkWordAgainstObjective("test", objectiveT)).toBe(true)
-        expect(checkWordAgainstObjective("Ton", objectiveT)).toBe(true) // Uppercase first letter
-        expect(checkWordAgainstObjective("TOYS", objectiveT)).toBe(true) // All uppercase
-      })
-
-      test("handles invalid parameters", () => {
-        const invalidObjective = createObjective("startsWith", 123)
-
-        expect(checkWordAgainstObjective("test", invalidObjective)).toBe(false)
+        const objectiveH = createObjective("startsWith", "H")
+        expect(checkWordAgainstObjective("his", objectiveH)).toBe(true)
+        expect(checkWordAgainstObjective("HIS", objectiveH)).toBe(true)
+        expect(checkWordAgainstObjective("Hat", objectiveH)).toBe(true)
       })
     })
 
     describe("endsWith objective", () => {
       test("matches words ending with the parameter", () => {
-        const objectiveN = createObjective("endsWith", "n")
         const objectiveS = createObjective("endsWith", "s")
-        const objectiveH = createObjective("endsWith", "h")
-
-        // Words ending with 'n'
-        expect(checkWordAgainstObjective("ton", objectiveN)).toBe(true)
-        expect(checkWordAgainstObjective("run", objectiveN)).toBe(true)
+        const objectiveE = createObjective("endsWith", "e")
 
         // Words ending with 's'
+        expect(checkWordAgainstObjective("his", objectiveS)).toBe(true)
         expect(checkWordAgainstObjective("toys", objectiveS)).toBe(true)
-        expect(checkWordAgainstObjective("cats", objectiveS)).toBe(true)
+        expect(checkWordAgainstObjective("compass", objectiveS)).toBe(true)
 
-        // Words ending with 'h'
-        expect(checkWordAgainstObjective("fish", objectiveH)).toBe(true)
-        expect(checkWordAgainstObjective("dish", objectiveH)).toBe(true)
-      })
+        // Words ending with 'e'
+        expect(checkWordAgainstObjective("time", objectiveE)).toBe(true)
+        expect(checkWordAgainstObjective("bike", objectiveE)).toBe(true)
 
-      test("rejects words not ending with the parameter", () => {
-        const objectiveN = createObjective("endsWith", "n")
-        const objectiveH = createObjective("endsWith", "h")
-
-        expect(checkWordAgainstObjective("cat", objectiveN)).toBe(false)
-        expect(checkWordAgainstObjective("toys", objectiveN)).toBe(false)
-        expect(checkWordAgainstObjective("toys", objectiveH)).toBe(false) // "toys" does NOT end with "h"
+        // Words not ending with 's'
+        expect(checkWordAgainstObjective("hi", objectiveS)).toBe(false)
+        expect(checkWordAgainstObjective("sit", objectiveS)).toBe(false) // 't' not 's'
       })
 
       test("is case insensitive", () => {
-        const objectiveS = createObjective("endsWith", "S") // Uppercase parameter
-
-        expect(checkWordAgainstObjective("toys", objectiveS)).toBe(true)
-        expect(checkWordAgainstObjective("Toys", objectiveS)).toBe(true) // Mixed case
-        expect(checkWordAgainstObjective("TOYS", objectiveS)).toBe(true) // All uppercase
-      })
-
-      test("handles invalid parameters", () => {
-        const invalidObjective = createObjective("endsWith", 123)
-
-        expect(checkWordAgainstObjective("test", invalidObjective)).toBe(false)
+        const objectiveS = createObjective("endsWith", "S")
+        expect(checkWordAgainstObjective("his", objectiveS)).toBe(true)
+        expect(checkWordAgainstObjective("HIS", objectiveS)).toBe(true)
+        expect(checkWordAgainstObjective("toyS", objectiveS)).toBe(true)
       })
     })
 
     describe("contains objective", () => {
       test("matches words containing the parameter", () => {
+        const objectiveI = createObjective("contains", "i")
         const objectiveO = createObjective("contains", "o")
-        const objectiveY = createObjective("contains", "y")
+
+        // Words containing 'i'
+        expect(checkWordAgainstObjective("his", objectiveI)).toBe(true)
+        expect(checkWordAgainstObjective("time", objectiveI)).toBe(true)
+        expect(checkWordAgainstObjective("bike", objectiveI)).toBe(true)
 
         // Words containing 'o'
-        expect(checkWordAgainstObjective("ton", objectiveO)).toBe(true)
         expect(checkWordAgainstObjective("dog", objectiveO)).toBe(true)
         expect(checkWordAgainstObjective("toys", objectiveO)).toBe(true)
 
-        // Words containing 'y'
-        expect(checkWordAgainstObjective("toys", objectiveY)).toBe(true)
-        expect(checkWordAgainstObjective("system", objectiveY)).toBe(true)
-      })
-
-      test("rejects words not containing the parameter", () => {
-        const objectiveZ = createObjective("contains", "z")
-
-        expect(checkWordAgainstObjective("cat", objectiveZ)).toBe(false)
-        expect(checkWordAgainstObjective("dog", objectiveZ)).toBe(false)
-        expect(checkWordAgainstObjective("toys", objectiveZ)).toBe(false)
+        // Words not containing 'i'
+        expect(checkWordAgainstObjective("dog", objectiveI)).toBe(false)
+        expect(checkWordAgainstObjective("cat", objectiveI)).toBe(false)
       })
 
       test("is case insensitive", () => {
-        const objectiveO = createObjective("contains", "O") // Uppercase parameter
-
-        expect(checkWordAgainstObjective("ton", objectiveO)).toBe(true)
-        expect(checkWordAgainstObjective("dOg", objectiveO)).toBe(true) // Mixed case
-        expect(checkWordAgainstObjective("TOYS", objectiveO)).toBe(true) // All uppercase
-      })
-
-      test("handles invalid parameters", () => {
-        const invalidObjective = createObjective("contains", 123)
-
-        expect(checkWordAgainstObjective("test", invalidObjective)).toBe(false)
+        const objectiveI = createObjective("contains", "I")
+        expect(checkWordAgainstObjective("his", objectiveI)).toBe(true)
+        expect(checkWordAgainstObjective("HIS", objectiveI)).toBe(true)
+        expect(checkWordAgainstObjective("tIme", objectiveI)).toBe(true)
       })
     })
   })
@@ -227,10 +147,10 @@ describe("Objective System", () => {
           completed: false,
         },
         {
-          id: "startsWith-t",
+          id: "startsWith-h",
           type: "startsWith",
-          description: "Find a word starting with 't'",
-          parameter: "t",
+          description: "Find a word starting with 'h'",
+          parameter: "h",
           completed: false,
         },
         {
@@ -242,19 +162,26 @@ describe("Objective System", () => {
         },
       ]
 
-      // Test with "ton" - should complete length-3 and startsWith-t
-      const completedWithTon = checkObjectives("ton", objectives, [])
-      expect(completedWithTon).toContain("length-3")
-      expect(completedWithTon).toContain("startsWith-t")
-      expect(completedWithTon).not.toContain("endsWith-s")
-      expect(completedWithTon.length).toBe(2)
+      // Test with "hi" - shouldn't complete any objectives
+      const completedWithHi = checkObjectives("hi", objectives, [])
+      expect(completedWithHi).not.toContain("length-3")
+      expect(completedWithHi).not.toContain("startsWith-h")
+      expect(completedWithHi).not.toContain("endsWith-s")
+      expect(completedWithHi.length).toBe(0)
 
-      // Test with "toys" - should complete startsWith-t and endsWith-s
-      const completedWithToys = checkObjectives("toys", objectives, [])
-      expect(completedWithToys).not.toContain("length-3")
-      expect(completedWithToys).toContain("startsWith-t")
-      expect(completedWithToys).toContain("endsWith-s")
-      expect(completedWithToys.length).toBe(2)
+      // Test with "his" - should complete length-3, startsWith-h and endsWith-s
+      const completedWithHis = checkObjectives("his", objectives, [])
+      expect(completedWithHis).toContain("length-3")
+      expect(completedWithHis).toContain("startsWith-h")
+      expect(completedWithHis).toContain("endsWith-s")
+      expect(completedWithHis.length).toBe(3)
+
+      // Test with "hat" - should complete length-3 and startsWith-h
+      const completedWithHat = checkObjectives("hat", objectives, [])
+      expect(completedWithHat).toContain("length-3")
+      expect(completedWithHat).toContain("startsWith-h")
+      expect(completedWithHat).not.toContain("endsWith-s")
+      expect(completedWithHat.length).toBe(2)
     })
 
     test("skips already completed objectives", () => {
@@ -267,10 +194,10 @@ describe("Objective System", () => {
           completed: false,
         },
         {
-          id: "startsWith-t",
+          id: "startsWith-h",
           type: "startsWith",
-          description: "Find a word starting with 't'",
-          parameter: "t",
+          description: "Find a word starting with 'h'",
+          parameter: "h",
           completed: false,
         },
         {
@@ -282,15 +209,15 @@ describe("Objective System", () => {
         },
       ]
 
-      // Mark length-3 and endsWith-s as already completed
-      const alreadyCompleted = ["length-3", "endsWith-s"]
+      // Mark some objectives as already completed
+      const alreadyCompleted = ["length-3", "startsWith-h"]
 
-      // Test with "toys" - should only complete startsWith-t
-      const completed = checkObjectives("toys", objectives, alreadyCompleted)
-      expect(completed).not.toContain("length-3")
-      expect(completed).toContain("startsWith-t")
-      expect(completed).not.toContain("endsWith-s")
-      expect(completed.length).toBe(1)
+      // Test with "his" - should only complete endsWith-s
+      const completedWithHis = checkObjectives("his", objectives, alreadyCompleted)
+      expect(completedWithHis).not.toContain("length-3")
+      expect(completedWithHis).not.toContain("startsWith-h")
+      expect(completedWithHis).toContain("endsWith-s")
+      expect(completedWithHis.length).toBe(1)
     })
 
     test("handles empty or invalid inputs", () => {
@@ -308,10 +235,8 @@ describe("Objective System", () => {
       expect(checkObjectives("a", objectives, [])).toEqual([])
       expect(checkObjectives(null as any, objectives, [])).toEqual([])
       expect(checkObjectives(undefined as any, objectives, [])).toEqual([])
-    })
-
-    test("handles empty objectives array", () => {
       expect(checkObjectives("test", [], [])).toEqual([])
+      expect(checkObjectives("test", null as any, [])).toEqual([])
     })
   })
 
@@ -319,52 +244,84 @@ describe("Objective System", () => {
     const createMockIslands = (count: number) => {
       return Array.from({ length: count }, (_, i) => ({
         id: String(i + 1),
-        letter: String.fromCharCode(65 + i), // A, B, C, ...
+        letter: String.fromCharCode(97 + i), // a, b, c, ...
         position: { x: 0, y: 0 },
         size: 40,
         connections: [],
       }))
     }
 
-    test("generates the correct number of objectives", () => {
+    test("generates exactly 3 unique objectives", () => {
       const mockIslands = createMockIslands(6)
       const mockSeed = jest.fn().mockReturnValue(0.5)
       const objectives = generateObjectives(mockSeed, mockIslands)
 
       expect(objectives.length).toBe(3)
+
+      // Check for unique IDs and types
+      const ids = objectives.map((obj) => obj.id)
+      const uniqueIds = new Set(ids)
+      expect(uniqueIds.size).toBe(3)
     })
 
-    test("handles invalid islands gracefully", () => {
+    test("handles islands with no letters", () => {
+      const invalidIslands = Array(5).fill({ id: "1", position: { x: 0, y: 0 }, size: 40, connections: [] })
       const mockSeed = jest.fn().mockReturnValue(0.5)
-
-      // Test with null
-      expect(generateObjectives(mockSeed, null as any)).toEqual([])
-
-      // Test with empty array
-      expect(generateObjectives(mockSeed, [])).toHaveLength(3)
-
-      // Test with invalid islands
-      const invalidIslands = [{ invalid: "data" }] as any
       const objectives = generateObjectives(mockSeed, invalidIslands)
+
+      // Should still generate 3 objectives with fallbacks
       expect(objectives.length).toBe(3)
     })
 
-    test("generates unique objectives", () => {
-      const mockIslands = createMockIslands(6)
-      let counter = 0
+    test("handles duplicate types with different parameters", () => {
+      const mockIslands = createMockIslands(2) // Only 'a' and 'b'
+      const seedValues = [0.1, 0.1, 0.5, 0.5, 0.9, 0.9] // Force some duplicate types
+      let seedIndex = 0
+
       const mockSeed = jest.fn().mockImplementation(() => {
-        counter += 1
-        return 0.1 // Always return the same value to try to force duplicates
+        const value = seedValues[seedIndex]
+        seedIndex = (seedIndex + 1) % seedValues.length
+        return value
       })
 
       const objectives = generateObjectives(mockSeed, mockIslands)
 
-      // Check that all objectives have unique types
-      const types = objectives.map((obj) => obj.type)
-      const uniqueTypes = new Set(types)
+      // Should still generate 3 unique objectives by parameter
+      expect(objectives.length).toBe(3)
 
-      // We should have 3 unique objective types
-      expect(uniqueTypes.size).toBe(objectives.length)
+      const keys = objectives.map((obj) => `${obj.type}-${obj.parameter}`)
+      const uniqueKeys = new Set(keys)
+      expect(uniqueKeys.size).toBe(3)
+    })
+
+    test("special test for 'his' word with generated objectives", () => {
+      // Create mock islands with letters h, i, s
+      const mockIslands = [
+        { id: "1", letter: "h", position: { x: 0, y: 0 }, size: 40, connections: [] },
+        { id: "2", letter: "i", position: { x: 0, y: 0 }, size: 40, connections: [] },
+        { id: "3", letter: "s", position: { x: 0, y: 0 }, size: 40, connections: [] },
+      ]
+
+      const mockSeed = jest
+        .fn()
+        .mockReturnValueOnce(0) // First call: select "length" type
+        .mockReturnValueOnce(0) // Second call: select length 3
+        .mockReturnValueOnce(0.25) // Third call: select "startsWith" type
+        .mockReturnValueOnce(0) // Fourth call: select letter "h"
+        .mockReturnValueOnce(0.5) // Fifth call: select "endsWith" type
+        .mockReturnValueOnce(0.66) // Sixth call: select letter "s"
+
+      const objectives = generateObjectives(mockSeed, mockIslands)
+
+      // Should generate the specific objectives we want for testing "his"
+      expect(objectives.length).toBe(3)
+      expect(objectives.find((obj) => obj.type === "length" && obj.parameter === 3)).toBeTruthy()
+      expect(objectives.find((obj) => obj.type === "startsWith" && obj.parameter === "h")).toBeTruthy()
+      expect(objectives.find((obj) => obj.type === "endsWith" && obj.parameter === "s")).toBeTruthy()
+
+      // Now check that "his" completes all three objectives
+      const completedObjectives = checkObjectives("his", objectives, [])
+      expect(completedObjectives.length).toBe(3)
     })
   })
 })

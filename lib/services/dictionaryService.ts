@@ -469,7 +469,7 @@ const commonEnglishWords = new Set([
   "tic",
   "tie",
   "til",
-  "tin",
+  "tin", // Added "tin" here as well for redundancy
   "tip",
   "toe",
   "tog",
@@ -540,6 +540,26 @@ const commonEnglishWords = new Set([
   "zig",
   "zip",
   "zoo",
+
+  // Age-related terms
+  "teen",
+  "teens",
+  "baby",
+  "kid",
+  "kids",
+  "tots",
+  "tot",
+  "tyke",
+  "tykes",
+  "aged",
+  "ages",
+  "age",
+  "old",
+  "young",
+  "elder",
+  "youth",
+  "adult",
+  "child",
 ])
 
 // Add common English words to the dictionary set and trie
@@ -552,6 +572,275 @@ commonEnglishWords.forEach((word) => {
 
 // Add this after the commonEnglishWords are added to the dictionary
 console.log(`Dictionary expanded to ${dictionarySet.size} words with common words and plurals`)
+
+// Additional common words that might be missing
+const additionalCommonWords = [
+  // Metals and materials
+  "tin",
+  "gold",
+  "iron",
+  "zinc",
+  "lead",
+  "coal",
+  "clay",
+  "sand",
+  "rock",
+  "wood",
+  "wool",
+  "silk",
+  "hemp",
+  "jute",
+  "flax",
+  "cork",
+  "wax",
+  "jade",
+  "ruby",
+  "opal",
+  "pearl",
+  "steel",
+  "brass",
+  "bronze",
+  "copper",
+  "silver",
+  "nickel",
+  "chrome",
+  "cobalt",
+  "quartz",
+  "marble",
+  "granite",
+  "slate",
+  "cotton",
+  "linen",
+  "denim",
+  "velvet",
+  "nylon",
+  "rayon",
+  "satin",
+  "leather",
+  "rubber",
+  "plastic",
+  "paper",
+  "glass",
+  "chalk",
+  "cement",
+  "plaster",
+
+  // Common household items
+  "mug",
+  "cup",
+  "pot",
+  "pan",
+  "fork",
+  "spoon",
+  "knife",
+  "plate",
+  "bowl",
+  "tray",
+  "vase",
+  "lamp",
+  "bulb",
+  "clock",
+  "chair",
+  "table",
+  "desk",
+  "shelf",
+  "bed",
+  "pillow",
+  "sheet",
+  "quilt",
+  "towel",
+  "soap",
+  "brush",
+  "comb",
+  "mirror",
+
+  // Common foods
+  "rice",
+  "bread",
+  "pasta",
+  "meat",
+  "fish",
+  "egg",
+  "milk",
+  "cheese",
+  "butter",
+  "oil",
+  "salt",
+  "sugar",
+  "spice",
+  "herb",
+  "fruit",
+  "apple",
+  "pear",
+  "grape",
+  "plum",
+  "peach",
+  "berry",
+  "nut",
+  "seed",
+  "bean",
+  "pea",
+  "corn",
+  "cake",
+  "pie",
+  "soup",
+  "stew",
+
+  // Common verbs
+  "run",
+  "walk",
+  "jump",
+  "skip",
+  "hop",
+  "swim",
+  "dive",
+  "float",
+  "sink",
+  "fly",
+  "soar",
+  "climb",
+  "fall",
+  "rise",
+  "lift",
+  "drop",
+  "push",
+  "pull",
+  "throw",
+  "catch",
+  "hit",
+  "kick",
+  "punch",
+  "grab",
+  "hold",
+  "hug",
+  "kiss",
+  "love",
+  "hate",
+  "like",
+  "want",
+  "need",
+  "have",
+  "give",
+  "take",
+  "make",
+  "build",
+  "break",
+  "fix",
+  "mend",
+  "wash",
+  "clean",
+  "cook",
+  "bake",
+  "fry",
+  "boil",
+  "eat",
+  "drink",
+  "sip",
+  "gulp",
+  "chew",
+  "bite",
+  "taste",
+  "smell",
+  "hear",
+  "see",
+  "look",
+  "watch",
+  "read",
+  "write",
+  "draw",
+  "paint",
+  "sing",
+  "dance",
+  "play",
+  "work",
+  "rest",
+  "sleep",
+  "wake",
+  "dress",
+  "wear",
+  "buy",
+  "sell",
+  "pay",
+  "spend",
+  "save",
+  "earn",
+  "win",
+  "lose",
+  "bet",
+  "risk",
+  "try",
+  "fail",
+  "learn",
+  "teach",
+  "study",
+  "think",
+  "know",
+  "guess",
+  "doubt",
+  "trust",
+  "hope",
+  "fear",
+  "worry",
+  "care",
+  "help",
+  "hurt",
+  "heal",
+  "cure",
+  "grow",
+  "shrink",
+  "start",
+  "stop",
+  "wait",
+  "rush",
+  "move",
+  "stay",
+  "come",
+  "go",
+  "leave",
+  "return",
+  "visit",
+  "meet",
+  "greet",
+  "talk",
+  "speak",
+  "shout",
+  "whisper",
+  "laugh",
+  "cry",
+  "smile",
+  "frown",
+
+  // Age-related terms
+  "teen",
+  "teens",
+  "baby",
+  "kid",
+  "kids",
+  "tots",
+  "tot",
+  "tyke",
+  "tykes",
+  "aged",
+  "ages",
+  "age",
+  "old",
+  "young",
+  "elder",
+  "youth",
+  "adult",
+  "child",
+]
+
+// Add additional common words to the dictionary set and trie
+additionalCommonWords.forEach((word) => {
+  if (!dictionarySet.has(word)) {
+    dictionarySet.add(word)
+    dictionaryTrie.insert(word)
+  }
+})
+
+// Log the final dictionary size
+console.log(`Final dictionary size after adding additional common words: ${dictionarySet.size}`)
 
 /**
  * Validate if a word is valid according to game rules
@@ -583,9 +872,20 @@ export function validateWord(word: string): boolean {
     return true
   }
 
-  // Add this special case for chef and other culinary terms
-  // Special case for "plot" and other potentially missing words
+  // Check in our additional common words list
+  if (additionalCommonWords.includes(lowerWord)) {
+    // Add it to the dictionary if it's missing
+    if (!dictionarySet.has(lowerWord)) {
+      dictionarySet.add(lowerWord)
+      dictionaryTrie.insert(lowerWord)
+      console.log(`Added special case word to dictionary: ${lowerWord}`)
+    }
+    return true
+  }
+
+  // Special case for "tin" and other potentially missing words
   const specialCaseWords = [
+    "tin",
     "plot",
     "plug",
     "plan",
@@ -606,6 +906,24 @@ export function validateWord(word: string): boolean {
     "meaning",
     "meaningful",
     "meaningless",
+    "teen",
+    "teens",
+    "baby",
+    "kid",
+    "kids",
+    "tots",
+    "tot",
+    "tyke",
+    "tykes",
+    "aged",
+    "ages",
+    "age",
+    "old",
+    "young",
+    "elder",
+    "youth",
+    "adult",
+    "child",
   ]
   if (specialCaseWords.includes(lowerWord)) {
     // Add these to the dictionary if they're missing
@@ -641,6 +959,11 @@ export function couldBeValidWord(prefix: string): boolean {
     if (word.startsWith(lowerPrefix)) return true
   }
 
+  // Check if any additional common word starts with this prefix
+  for (const word of additionalCommonWords) {
+    if (word.startsWith(lowerPrefix)) return true
+  }
+
   return false
 }
 
@@ -661,6 +984,13 @@ export function getPossibleWords(letters: string[]): string[] {
 
   // Check common words
   for (const word of commonEnglishWords) {
+    if (canFormWord(word, letters) && !possibleWords.includes(word)) {
+      possibleWords.push(word)
+    }
+  }
+
+  // Check additional common words
+  for (const word of additionalCommonWords) {
     if (canFormWord(word, letters) && !possibleWords.includes(word)) {
       possibleWords.push(word)
     }

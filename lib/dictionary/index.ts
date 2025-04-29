@@ -19,6 +19,12 @@ import { emotionWords } from "./categories/emotions"
 import { bodyWords } from "./categories/body"
 import { timeWords } from "./categories/time"
 import { comparativeWords } from "./categories/comparatives"
+import { materialWords } from "./categories/materials"
+import { familyWords } from "./categories/family"
+import { professionWords } from "./categories/professions"
+import { placeWords } from "./categories/places"
+import { numberWords } from "./categories/numbers"
+import { slangWords } from "./categories/slang"
 
 // Combine all word lists into a single dictionary
 export const dictionary = [
@@ -42,6 +48,12 @@ export const dictionary = [
   ...bodyWords,
   ...timeWords,
   ...comparativeWords,
+  ...materialWords,
+  ...familyWords,
+  ...professionWords,
+  ...placeWords,
+  ...numberWords,
+  ...slangWords,
 ]
 
 // Export individual categories for potential use in themed games
@@ -66,4 +78,10 @@ export {
   bodyWords,
   timeWords,
   comparativeWords,
+  materialWords,
+  familyWords,
+  professionWords,
+  placeWords,
+  numberWords,
+  slangWords,
 }

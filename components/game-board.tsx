@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks/hooks"
 import {
@@ -13,6 +15,7 @@ import {
   checkForNewPuzzle,
   type GameTheme,
   resetInvalidSubmission,
+  hidePointsAnimation,
 } from "@/lib/slices/gameSlice"
 import IslandMap from "./island-map"
 import ObjectivesList from "./objectives-list"
@@ -33,6 +36,7 @@ import ObjectiveCompleteNotification from "./objective-complete-notification"
 import ShareResults from "./share-results"
 import MiniAchievement from "./mini-achievement"
 import LeaderboardButton from "./leaderboard-button"
+import { IslandFeedback } from "./island-feedback"
 
 export default function GameBoard() {
   const dispatch = useAppDispatch()
@@ -45,12 +49,15 @@ export default function GameBoard() {
   const timeLeft = useAppSelector((state) => state.game.timeLeft)
   const gameActive = useAppSelector((state) => state.game.gameActive)
   const objectives = useAppSelector((state) => state.game.objectives)
+  const completedObjectives = useAppSelector((state) => state.game.completedObjectives)
   const theme = useAppSelector((state) => state.game.theme)
   const invalidSubmission = useAppSelector((state) => state.game.invalidSubmission)
   const duplicateSubmission = useAppSelector((state) => state.game.duplicateSubmission)
   const successfulSubmission = useAppSelector((state) => state.game.successfulSubmission)
   const comboCount = useAppSelector((state) => state.game.comboCount)
   const puzzleDate = useAppSelector((state) => state.game.gameTimestamp)
+  // Get points animation state directly from Redux
+  const pointsAnimation = useAppSelector((state) => state.game.pointsAnimation)
 
   const [showSettings, setShowSettings] = useState(false)
   const [showObjectivesModal, setShowObjectivesModal] = useState(false)
@@ -62,6 +69,10 @@ export default function GameBoard() {
   const [viewportHeight, setViewportHeight] = useState(0)
   // Add state for mini achievements
   const [miniAchievement, setMiniAchievement] = useState({ title: "", visible: false })
+  const [invalidIslandClick, setInvalidIslandClick] = useState(false)
+  const [invalidClickPosition, setInvalidClickPosition] = useState({ x: 0, y: 0 })
+  // Add state to track if all objectives completed notification has been shown
+  const [allObjectivesNotificationShown, setAllObjectivesNotificationShown] = useState(false)
 
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const puzzleCheckRef = useRef<NodeJS.Timeout | null>(null)
@@ -70,6 +81,8 @@ export default function GameBoard() {
   const lastScoreRef = useRef<number>(0)
   // Add a ref to track the current word being formed
   const currentWordRef = useRef<string>("")
+  // Add ref to track previous completed objectives count
+  const prevCompletedObjectivesCountRef = useRef<number>(0)
 
   // Detect mobile devices and set viewport height
   useEffect(() => {
@@ -153,7 +166,7 @@ export default function GameBoard() {
       const newWord = currentWordRef.current || foundWords[foundWords.length - 1]
 
       // Calculate points earned - if we can't determine exactly, use a reasonable estimate
-      const pointsEarned = score - lastScoreRef.current > 0 ? score - lastScoreRef.current : newWord.length * 10 // Fallback calculation
+      const pointsEarned = pointsAnimation.points > 0 ? pointsAnimation.points : score - lastScoreRef.current
 
       // Show the toast with the most recent word
       setWordFoundToast({
@@ -165,7 +178,7 @@ export default function GameBoard() {
       lastFoundWordRef.current = newWord
       lastScoreRef.current = score
     }
-  }, [successfulSubmission, foundWords, score])
+  }, [successfulSubmission, foundWords, score, pointsAnimation.points])
 
   // Handle invalid submission feedback
   useEffect(() => {
@@ -178,6 +191,11 @@ export default function GameBoard() {
       return () => clearTimeout(timer)
     }
   }, [invalidSubmission, duplicateSubmission, dispatch])
+
+  // Handle points animation completion
+  const handlePointsAnimationComplete = useCallback(() => {
+    dispatch(hidePointsAnimation())
+  }, [dispatch])
 
   // Memoize event handlers to prevent unnecessary re-renders
   const handleKeyDown = useCallback(
@@ -246,6 +264,8 @@ export default function GameBoard() {
     lastScoreRef.current = 0
     lastFoundWordRef.current = ""
     currentWordRef.current = ""
+    setAllObjectivesNotificationShown(false)
+    prevCompletedObjectivesCountRef.current = 0
   }, [dispatch])
 
   const handleResetGame = useCallback(() => {
@@ -253,6 +273,8 @@ export default function GameBoard() {
     lastScoreRef.current = 0
     lastFoundWordRef.current = ""
     currentWordRef.current = ""
+    setAllObjectivesNotificationShown(false)
+    prevCompletedObjectivesCountRef.current = 0
   }, [dispatch])
 
   const handleSetGameTheme = useCallback(
@@ -321,8 +343,8 @@ export default function GameBoard() {
 
   // Count completed objectives
   const completedObjectivesCount = useMemo(() => {
-    return objectives.filter((obj) => obj.completed).length
-  }, [objectives])
+    return completedObjectives.length
+  }, [completedObjectives])
 
   // Calculate available height for the game area - ensure consistent layout
   const calculateGameAreaHeight = useCallback(() => {
@@ -357,12 +379,28 @@ export default function GameBoard() {
       }
     }
 
-    // Check for objective achievements
-    const completedCount = objectives.filter((obj) => obj.completed).length
-    if (completedCount > 0 && completedCount === objectives.length) {
+    // Check for objective achievements - only show "All Objectives Completed!" once
+    if (
+      completedObjectivesCount > 0 &&
+      completedObjectivesCount === objectives.length &&
+      !allObjectivesNotificationShown &&
+      prevCompletedObjectivesCountRef.current !== completedObjectivesCount
+    ) {
       showMiniAchievement("All Objectives Completed!")
+      setAllObjectivesNotificationShown(true)
     }
-  }, [successfulSubmission, foundWords, comboCount, objectives, showMiniAchievement])
+
+    // Update the previous completed objectives count
+    prevCompletedObjectivesCountRef.current = completedObjectivesCount
+  }, [
+    successfulSubmission,
+    foundWords,
+    comboCount,
+    objectives,
+    completedObjectivesCount,
+    showMiniAchievement,
+    allObjectivesNotificationShown,
+  ])
 
   // Add state or derive the puzzleDate
   // Add this near the other state variables:
@@ -381,13 +419,44 @@ export default function GameBoard() {
     setShowShareModal(true)
   }, [])
 
+  const handleInvalidIslandClick = (event: React.MouseEvent, islandId: string) => {
+    // Get the position of the click
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+
+    setInvalidClickPosition({ x, y })
+    setInvalidIslandClick(true)
+
+    // Reset after animation completes
+    setTimeout(() => {
+      setInvalidIslandClick(false)
+    }, 1000)
+  }
+
+  // Calculate the highest multiplier from selected islands when a word is found
+  const getHighestMultiplier = useCallback(() => {
+    if (!selectedIslands.length) return 1
+
+    return selectedIslands
+      .map((id) => islands.find((island) => island.id === id))
+      .filter(Boolean)
+      .reduce((max, island) => Math.max(max, island?.multiplier || 1), 1)
+  }, [islands, selectedIslands])
+
+  const highestMultiplier = useMemo(() => getHighestMultiplier(), [getHighestMultiplier])
+
   return (
     <div className="flex flex-col transition-all duration-300" ref={gameAreaRef}>
       {/* Audio Manager */}
       <AudioManager />
 
       {/* Points Animation */}
-      <PointsAnimation />
+      <PointsAnimation
+        points={pointsAnimation.points}
+        isVisible={pointsAnimation.isVisible}
+        onComplete={handlePointsAnimationComplete}
+      />
 
       {/* Objective Complete Notification */}
       <ObjectiveCompleteNotification />
@@ -405,6 +474,8 @@ export default function GameBoard() {
         points={wordFoundToast.points}
         isVisible={wordFoundToast.visible}
         onClose={handleCloseWordFoundToast}
+        comboCount={comboCount}
+        multiplier={highestMultiplier}
       />
 
       {/* Mini Achievement */}
@@ -465,16 +536,20 @@ export default function GameBoard() {
             minHeight: "400px", // Ensure minimum height to prevent layout shifts
           }}
         >
-          <IslandMap
-            islands={islands}
-            selectedIslands={selectedIslands}
-            onIslandClick={handleIslandClick}
-            onIslandDoubleTap={handleIslandDoubleTap}
-            onPreGameClick={handlePreGameClick}
-            theme={theme}
-            invalidSubmission={invalidSubmission}
-            successfulSubmission={successfulSubmission}
-          />
+          <div className="relative">
+            <IslandFeedback isActive={invalidIslandClick} position={invalidClickPosition} />
+            <IslandMap
+              islands={islands}
+              selectedIslands={selectedIslands}
+              onIslandClick={handleIslandClick}
+              onIslandDoubleTap={handleIslandDoubleTap}
+              onPreGameClick={handlePreGameClick}
+              theme={theme}
+              invalidSubmission={invalidSubmission}
+              successfulSubmission={successfulSubmission}
+              onInvalidIslandClick={handleInvalidIslandClick}
+            />
+          </div>
         </div>
 
         {/* Word Controls - Only show during active gameplay */}

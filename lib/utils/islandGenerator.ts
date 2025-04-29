@@ -214,5 +214,32 @@ export function generateIslands(seed: () => number): Island[] {
     }
   })
 
-  return islands
+  // Ensure a certain percentage of islands have multipliers
+  const assignMultipliers = (islands: Island[]): Island[] => {
+    // Create a copy of the islands array
+    const islandsWithMultipliers = [...islands]
+
+    // Determine how many islands should have multipliers (about 15%)
+    const multiplierCount = Math.max(1, Math.floor(islands.length * 0.15))
+
+    // Randomly select islands to have multipliers
+    const indices = new Set<number>()
+    while (indices.size < multiplierCount) {
+      indices.add(Math.floor(Math.random() * islands.length))
+    }
+
+    // Assign multipliers (2x or 3x) to the selected islands
+    indices.forEach((index) => {
+      islandsWithMultipliers[index] = {
+        ...islandsWithMultipliers[index],
+        multiplier: Math.random() < 0.7 ? 2 : 3, // 70% chance of 2x, 30% chance of 3x
+      }
+    })
+
+    return islandsWithMultipliers
+  }
+
+  // Make sure to call this function before returning the islands
+  // For example:
+  return assignMultipliers(islands)
 }

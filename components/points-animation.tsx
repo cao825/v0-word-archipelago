@@ -20,19 +20,28 @@ export const PointsAnimation: React.FC<PointsAnimationProps> = ({ points, isVisi
     }
   }, [onComplete, isVisible])
 
+  // Determine color based on points value
+  const getColor = () => {
+    if (points >= 20) return "#10b981" // Green for high points
+    if (points >= 10) return "#3b82f6" // Blue for medium points
+    return "#ffffff" // White for regular points
+  }
+
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 0 }}
-          animate={{ opacity: 1, y: -30 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1 }}
-          className="absolute pointer-events-none z-50 font-bold text-lg"
+          initial={{ opacity: 0, y: 0, scale: 0.8 }}
+          animate={{ opacity: 1, y: -30, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.8 }}
+          className="absolute pointer-events-none z-50 font-bold text-2xl"
           style={{
-            color: points > 5 ? "#10b981" : points > 3 ? "#3b82f6" : "#ffffff",
+            color: getColor(),
             left: "50%",
+            top: "40%",
             transform: "translateX(-50%)",
+            textShadow: "0px 0px 4px rgba(0,0,0,0.7)",
           }}
         >
           +{points}

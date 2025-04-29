@@ -1,5 +1,5 @@
 "use client"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAppSelector, useAppDispatch } from "@/lib/hooks/hooks"
 import { hideObjectiveNotification } from "@/lib/slices/gameSlice"
@@ -12,8 +12,13 @@ export default function ObjectiveCompleteNotification() {
   )
   const objectives = useAppSelector((state) => state.game.objectives)
 
+  // Add a ref to track if we've already shown a notification for all objectives
+  const allObjectivesNotifiedRef = useRef(false)
+  const totalObjectives = objectives.length
+  const completedObjectives = useAppSelector((state) => state.game.completedObjectives)
+
   // Find the completed objective descriptions
-  const completedObjectives = objectives
+  const completedObjectiveDescriptions = objectives
     .filter((obj) => completedObjectiveIds.includes(obj.id))
     .map((obj) => obj.description)
 
@@ -27,9 +32,22 @@ export default function ObjectiveCompleteNotification() {
     }
   }, [isVisible, dispatch])
 
+  // Check if all objectives are completed
+  useEffect(() => {
+    if (completedObjectives.length === totalObjectives) {
+      allObjectivesNotifiedRef.current = true
+    } else {
+      allObjectivesNotifiedRef.current = false
+    }
+  }, [completedObjectives.length, totalObjectives])
+
+  // Only show notification if there are new completed objectives and not showing "all completed" repeatedly
+  const shouldShowNotification =
+    isVisible && count > 0 && (completedObjectiveDescriptions.length > 0 || !allObjectivesNotifiedRef.current)
+
   return (
     <AnimatePresence>
-      {isVisible && count > 0 && (
+      {shouldShowNotification && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -43,9 +61,9 @@ export default function ObjectiveCompleteNotification() {
               <span className="font-medium">
                 {count} Objective{count > 1 ? "s" : ""} Completed! +{count * 50} points
               </span>
-              {completedObjectives.length > 0 && (
+              {completedObjectiveDescriptions.length > 0 && (
                 <ul className="text-xs mt-1 font-normal">
-                  {completedObjectives.map((desc, i) => (
+                  {completedObjectiveDescriptions.map((desc, i) => (
                     <li key={i}>• {desc}</li>
                   ))}
                 </ul>

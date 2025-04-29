@@ -5,6 +5,9 @@ import { useRef, useEffect, useState, useMemo, useCallback } from "react"
 import type { Island } from "../lib/slices/gameSlice"
 import type { GameTheme } from "../lib/slices/gameSlice"
 import { useSpring, animated } from "react-spring"
+import { useDispatch, useSelector } from "react-redux"
+import { clearInvalidIslandSelection } from "../lib/slices/gameSlice"
+import type { RootState } from "@/lib/store"
 
 // Add a new prop for handling pre-game clicks
 interface IslandMapProps {
@@ -16,6 +19,7 @@ interface IslandMapProps {
   theme?: GameTheme
   invalidSubmission?: boolean
   successfulSubmission?: boolean
+  onInvalidIslandClick?: (event: React.MouseEvent, islandId: string) => void
 }
 
 // Interface for storing island shapes
@@ -35,6 +39,7 @@ export default function IslandMap({
   theme = "tropical",
   invalidSubmission = false,
   successfulSubmission = false,
+  onInvalidIslandClick,
 }: IslandMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -46,7 +51,12 @@ export default function IslandMap({
   const [lastTapIsland, setLastTapIsland] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [hasShaken, setHasShaken] = useState(false)
+  // Fix: Don't destructure useRef, it's not an iterable
   const renderedRef = useRef(false)
+  const dispatch = useDispatch()
+
+  // Get the invalid island selection from Redux store
+  const invalidIslandSelection = useSelector((state: RootState) => state.game.invalidIslandSelection)
 
   // Add a new state to track incorrect island selections
   const [incorrectIsland, setIncorrectIsland] = useState<string | null>(null)
@@ -67,6 +77,20 @@ export default function IslandMap({
       return () => clearTimeout(timer)
     }
   }, [incorrectIsland])
+
+  // Add effect to handle invalid island selection from Redux
+  useEffect(() => {
+    if (invalidIslandSelection) {
+      setIncorrectIsland(invalidIslandSelection)
+
+      // Clear the invalid island selection after a short delay
+      const timer = setTimeout(() => {
+        dispatch(clearInvalidIslandSelection())
+      }, 500)
+
+      return () => clearTimeout(timer)
+    }
+  }, [invalidIslandSelection, dispatch])
 
   // Detect mobile devices
   useEffect(() => {
@@ -436,7 +460,7 @@ export default function IslandMap({
       const isSelected = selectedIslands.includes(island.id)
       const isLastSelected = selectedIslands.length > 0 && selectedIslands[selectedIslands.length - 1] === island.id
       const isJustClicked = lastClickedIsland === island.id
-      const isIncorrect = incorrectIsland === island.id
+      const isIncorrect = incorrectIsland === island.id || invalidIslandSelection === island.id
       const shape = islandShapes[island.id]
 
       if (!shape) return
@@ -732,7 +756,16 @@ export default function IslandMap({
       // Reset shadow
       ctx.shadowBlur = 0
     })
-  }, [islands, selectedIslands, islandShapes, time, themeColors, lastClickedIsland, incorrectIsland])
+  }, [
+    islands,
+    selectedIslands,
+    islandShapes,
+    time,
+    themeColors,
+    lastClickedIsland,
+    incorrectIsland,
+    invalidIslandSelection,
+  ])
 
   // Handle click on islands - optimized with useCallback
   const handleCanvasClick = useCallback(
@@ -791,6 +824,11 @@ export default function IslandMap({
             ) {
               // Mark as incorrect selection for visual feedback
               setIncorrectIsland(island.id)
+
+              // If there's an invalid island click handler, call it
+              if (onInvalidIslandClick) {
+                onInvalidIslandClick(e, island.id)
+              }
             }
 
             // Call the click handler regardless
@@ -820,6 +858,7 @@ export default function IslandMap({
       lastTapIsland,
       isMobile,
       selectedIslands,
+      onInvalidIslandClick,
     ],
   )
 

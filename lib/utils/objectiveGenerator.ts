@@ -35,6 +35,176 @@ export function hasAtLeastNVowels(word: string, n: number): boolean {
 }
 
 /**
+ * Checks if a word completes a specific objective
+ * @param word - The word to check
+ * @param objective - The objective to check against
+ * @returns True if the word completes the objective, false otherwise
+ */
+export function checkWordAgainstObjective(word: string, objective: Objective): boolean {
+  // Validate inputs
+  if (!word || typeof word !== "string") {
+    console.debug("[checkWordAgainstObjective] Invalid word:", word)
+    return false
+  }
+
+  if (!objective || typeof objective !== "object") {
+    console.debug("[checkWordAgainstObjective] Invalid objective:", objective)
+    return false
+  }
+
+  // Normalize the word
+  const normalizedWord = word.toLowerCase().trim()
+
+  // Debug logging for troubleshooting
+  console.debug(
+    `[checkWordAgainstObjective] Checking "${normalizedWord}" against ${objective.type}:${objective.parameter}`,
+  )
+
+  try {
+    switch (objective.type) {
+      case "length": {
+        const targetLength =
+          typeof objective.parameter === "number"
+            ? objective.parameter
+            : Number.parseInt(String(objective.parameter), 10)
+
+        if (isNaN(targetLength)) {
+          console.debug(`[length] Invalid target length: ${objective.parameter}`)
+          return false
+        }
+
+        const result = normalizedWord.length === targetLength
+        console.debug(`[length] ${normalizedWord}.length(${normalizedWord.length}) === ${targetLength}: ${result}`)
+        return result
+      }
+      case "startsWith": {
+        if (!objective.parameter || typeof objective.parameter !== "string") {
+          console.debug(`[startsWith] Invalid parameter: ${objective.parameter}`)
+          return false
+        }
+
+        const param = objective.parameter.toLowerCase().trim()
+        if (!param) {
+          console.debug(`[startsWith] Empty parameter after normalization`)
+          return false
+        }
+
+        const result = normalizedWord.startsWith(param)
+        console.debug(`[startsWith] ${normalizedWord}.startsWith(${param}): ${result}`)
+        return result
+      }
+      case "endsWith": {
+        if (!objective.parameter || typeof objective.parameter !== "string") {
+          console.debug(`[endsWith] Invalid parameter: ${objective.parameter}`)
+          return false
+        }
+
+        const param = objective.parameter.toLowerCase().trim()
+        if (!param) {
+          console.debug(`[endsWith] Empty parameter after normalization`)
+          return false
+        }
+
+        const result = normalizedWord.endsWith(param)
+        console.debug(`[endsWith] ${normalizedWord}.endsWith(${param}): ${result}`)
+        return result
+      }
+      case "contains": {
+        if (!objective.parameter || typeof objective.parameter !== "string") {
+          console.debug(`[contains] Invalid parameter: ${objective.parameter}`)
+          return false
+        }
+
+        const param = objective.parameter.toLowerCase().trim()
+        if (!param) {
+          console.debug(`[contains] Empty parameter after normalization`)
+          return false
+        }
+
+        const result = normalizedWord.includes(param)
+        console.debug(`[contains] ${normalizedWord}.includes(${param}): ${result}`)
+        return result
+      }
+      default:
+        console.warn(`Unknown objective type: ${objective.type}`)
+        return false
+    }
+  } catch (error) {
+    console.error(`[checkWordAgainstObjective] Error checking ${objective.type} objective:`, error)
+    return false
+  }
+}
+
+/**
+ * Checks if a word completes any objectives
+ * @param word - The word to check
+ * @param objectives - Array of objectives to check against
+ * @param completedObjectives - Array of already completed objective IDs
+ * @returns Array of newly completed objective IDs
+ */
+export function checkObjectives(word: string, objectives: Objective[], completedObjectives: string[]): string[] {
+  // Validate inputs
+  if (!word || typeof word !== "string" || word.length < 2) {
+    console.debug("[checkObjectives] Invalid word or too short:", word)
+    return []
+  }
+
+  if (!objectives || !Array.isArray(objectives) || objectives.length === 0) {
+    console.debug("[checkObjectives] No objectives to check against")
+    return []
+  }
+
+  if (!completedObjectives || !Array.isArray(completedObjectives)) {
+    console.debug("[checkObjectives] Invalid completedObjectives array")
+    completedObjectives = []
+  }
+
+  const newCompletedObjectives: string[] = []
+  const lowerWord = word.toLowerCase().trim()
+
+  // Debug log the word being checked
+  console.debug(`[checkObjectives] Checking word "${lowerWord}" against ${objectives.length} objectives`)
+
+  objectives.forEach((objective) => {
+    // Skip already completed objectives
+    if (objective.completed || completedObjectives.includes(objective.id)) {
+      console.debug(`[checkObjectives] Skipping already completed objective: ${objective.id}`)
+      return
+    }
+
+    // Validate the objective has required properties
+    if (!objective.type || !objective.id) {
+      console.debug(`[checkObjectives] Invalid objective:`, objective)
+      return
+    }
+
+    try {
+      const completed = checkWordAgainstObjective(lowerWord, objective)
+
+      // Debug logging for troubleshooting
+      console.debug(
+        `[checkObjectives] Word "${lowerWord}" against objective ${objective.id} (${objective.type}:${objective.parameter}): ${completed ? "COMPLETED" : "not completed"}`,
+      )
+
+      if (completed) {
+        newCompletedObjectives.push(objective.id)
+      }
+    } catch (error) {
+      console.error(`[checkObjectives] Error checking objective ${objective.id}:`, error)
+    }
+  })
+
+  // Log the results
+  if (newCompletedObjectives.length > 0) {
+    console.debug(`[checkObjectives] Word "${lowerWord}" completed objectives:`, newCompletedObjectives)
+  } else {
+    console.debug(`[checkObjectives] Word "${lowerWord}" completed no objectives`)
+  }
+
+  return newCompletedObjectives
+}
+
+/**
  * Generates objectives based on the current islands and seed
  * @param seed - Function that returns a random number between 0 and 1
  * @param islands - Array of island objects
@@ -118,26 +288,45 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
     ]
 
     // Generate 3 unique objectives
-    while (objectives.length < 3 && usedTypes.size < objectiveTypes.length) {
-      const typeIndex = Math.floor(seed() * objectiveTypes.length)
-      const objectiveType = objectiveTypes[typeIndex]
+    const maxAttempts = 20 // Prevent infinite loops
+    let attempts = 0
 
-      // Skip if we've already used this type
-      if (usedTypes.has(objectiveType.type)) continue
+    while (objectives.length < 3 && attempts < maxAttempts) {
+      attempts++
+
+      // Select a random objective type that hasn't been used yet
+      const availableTypes = objectiveTypes.filter((type) => !usedTypes.has(type.type))
+
+      // If we've used all types, break to use fallbacks
+      if (availableTypes.length === 0) break
+
+      const typeIndex = Math.floor(seed() * availableTypes.length)
+      const objectiveType = availableTypes[typeIndex]
 
       // Generate parameter for this objective type
-      const parameter = objectiveType.generateParameter()
-      const uniqueKey = `${objectiveType.type}-${parameter}`
+      let parameter = objectiveType.generateParameter()
+      let uniqueKey = `${objectiveType.type}-${parameter}`
 
-      // Ensure we don't duplicate objective types or parameters
+      // Try up to 5 times to get a unique parameter for this type
+      let paramAttempts = 0
+      while (usedParameters.has(uniqueKey) && paramAttempts < 5) {
+        paramAttempts++
+        parameter = objectiveType.generateParameter()
+        uniqueKey = `${objectiveType.type}-${parameter}`
+      }
+
+      // If we found a unique parameter, add the objective
       if (!usedParameters.has(uniqueKey)) {
         usedTypes.add(objectiveType.type)
         usedParameters.add(uniqueKey)
 
         const description = objectiveType.description.replace("{parameter}", parameter.toString())
 
+        // Generate a unique ID that includes the type and parameter
+        const id = `${objectiveType.type}-${parameter}`
+
         objectives.push({
-          id: `objective-${objectives.length}`,
+          id,
           type: objectiveType.type,
           description,
           parameter,
@@ -157,7 +346,7 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
           if (!usedParameters.has(uniqueKey)) {
             usedParameters.add(uniqueKey)
             objectives.push({
-              id: `objective-${i}`,
+              id: `length-${length}`,
               type: "length",
               description: `Find a word with ${length} letters`,
               parameter: length,
@@ -169,107 +358,13 @@ export function generateObjectives(seed: () => number, islands: any[]): Objectiv
       }
     }
 
-    return objectives
+    // Final check for duplicates
+    const uniqueObjectives = objectives.filter((obj, index, self) => index === self.findIndex((o) => o.id === obj.id))
+
+    return uniqueObjectives.slice(0, 3) // Ensure we return exactly 3 objectives
   } catch (error) {
     console.error("Error generating objectives:", error)
     return []
-  }
-}
-
-/**
- * Checks if a word completes any objectives
- * @param word - The word to check
- * @param objectives - Array of objectives to check against
- * @param completedObjectives - Array of already completed objective IDs
- * @returns Array of newly completed objective IDs
- */
-export function checkObjectives(word: string, objectives: Objective[], completedObjectives: string[]): string[] {
-  if (!word || typeof word !== "string" || word.length < 2) {
-    return []
-  }
-
-  const newCompletedObjectives: string[] = []
-  const lowerWord = word.toLowerCase()
-
-  objectives.forEach((objective) => {
-    // Skip already completed objectives
-    if (objective.completed || completedObjectives.includes(objective.id)) {
-      return
-    }
-
-    const completed = checkWordAgainstObjective(lowerWord, objective)
-
-    // Debug logging for troubleshooting
-    console.debug(
-      `[checkObjectives] Word "${lowerWord}" against objective ${objective.id} (${objective.type}:${objective.parameter}): ${completed ? "COMPLETED" : "not completed"}`,
-    )
-
-    if (completed) {
-      newCompletedObjectives.push(objective.id)
-    }
-  })
-
-  return newCompletedObjectives
-}
-
-/**
- * Checks if a word completes a specific objective
- * @param word - The word to check
- * @param objective - The objective to check against
- * @returns True if the word completes the objective, false otherwise
- */
-export function checkWordAgainstObjective(word: string, objective: Objective): boolean {
-  // Validate inputs
-  if (!word || !objective) {
-    return false
-  }
-
-  // Normalize the word
-  const normalizedWord = word.toLowerCase().trim()
-
-  // Debug logging for troubleshooting
-  console.debug(
-    `[checkWordAgainstObjective] Checking "${normalizedWord}" against ${objective.type}:${objective.parameter}`,
-  )
-
-  switch (objective.type) {
-    case "length": {
-      const targetLength =
-        typeof objective.parameter === "number" ? objective.parameter : Number.parseInt(String(objective.parameter), 10)
-
-      if (isNaN(targetLength)) return false
-
-      const result = normalizedWord.length === targetLength
-      console.debug(`[length] ${normalizedWord}.length(${normalizedWord.length}) === ${targetLength}: ${result}`)
-      return result
-    }
-    case "startsWith": {
-      if (!objective.parameter || typeof objective.parameter !== "string") return false
-
-      const param = objective.parameter.toLowerCase()
-      const result = normalizedWord.startsWith(param)
-      console.debug(`[startsWith] ${normalizedWord}.startsWith(${param}): ${result}`)
-      return result
-    }
-    case "endsWith": {
-      if (!objective.parameter || typeof objective.parameter !== "string") return false
-
-      const param = objective.parameter.toLowerCase()
-      const result = normalizedWord.endsWith(param)
-      console.debug(`[endsWith] ${normalizedWord}.endsWith(${param}): ${result}`)
-      return result
-    }
-    case "contains": {
-      if (!objective.parameter || typeof objective.parameter !== "string") return false
-
-      const param = objective.parameter.toLowerCase()
-      const result = normalizedWord.includes(param)
-      console.debug(`[contains] ${normalizedWord}.includes(${param}): ${result}`)
-      return result
-    }
-    default:
-      console.warn(`Unknown objective type: ${objective.type}`)
-      return false
   }
 }
 

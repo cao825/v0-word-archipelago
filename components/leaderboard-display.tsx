@@ -172,37 +172,56 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
     return () => clearInterval(refreshInterval)
   }, [refreshLeaderboards])
 
+  // Track if we've already set the initial tab
+  const initialTabSetRef = useRef(false)
+
   // If highlightInitials is provided, find which tab contains the entry and set it as active
+  // But only do this once when the component mounts or when highlightInitials changes
   useEffect(() => {
-    if (highlightInitials) {
-      // Check hourly first (most likely to contain the new entry)
-      const hourlyHasEntry = hourlyLeaderboard.some((entry) => entry.playerInitials === highlightInitials)
+    // Skip if we've already set the tab for this highlightInitials value
+    // or if there are no highlightInitials
+    if (!highlightInitials || initialTabSetRef.current) {
+      return
+    }
 
-      if (hourlyHasEntry) {
+    // Find the most recent entry with matching initials in each tab
+    const findMostRecentEntry = (entries: LeaderboardEntry[]) => {
+      return (
+        entries
+          .filter((entry) => entry.playerInitials === highlightInitials)
+          .sort((a, b) => b.timestamp - a.timestamp)[0] || null
+      )
+    }
+
+    const hourlyEntry = findMostRecentEntry(hourlyLeaderboard)
+    const dailyEntry = findMostRecentEntry(dailyLeaderboard)
+    const allTimeEntry = findMostRecentEntry(allTimeLeaderboard)
+
+    // Find the most recent entry across all tabs
+    const allEntries = [hourlyEntry, dailyEntry, allTimeEntry].filter(Boolean) as LeaderboardEntry[]
+    const mostRecentEntry = allEntries.sort((a, b) => b.timestamp - a.timestamp)[0] || null
+
+    if (mostRecentEntry) {
+      // Set the tab based on which leaderboard contains the most recent entry
+      if (hourlyEntry && hourlyEntry.timestamp === mostRecentEntry.timestamp) {
         setActiveTab("hourly")
-        return
-      }
-
-      // Check daily next
-      const dailyHasEntry = dailyLeaderboard.some((entry) => entry.playerInitials === highlightInitials)
-
-      if (dailyHasEntry) {
+      } else if (dailyEntry && dailyEntry.timestamp === mostRecentEntry.timestamp) {
         setActiveTab("daily")
-        return
-      }
-
-      // Check all-time last
-      const allTimeHasEntry = allTimeLeaderboard.some((entry) => entry.playerInitials === highlightInitials)
-
-      if (allTimeHasEntry) {
+      } else if (allTimeEntry && allTimeEntry.timestamp === mostRecentEntry.timestamp) {
         setActiveTab("alltime")
-      } else {
-        // If the entry is not found in any tab, force a refresh
-        console.log("Entry not found in any tab, forcing refresh...")
-        refreshLeaderboards()
       }
+      initialTabSetRef.current = true
+    } else {
+      // If the entry is not found in any tab, force a refresh
+      console.log("Entry not found in any tab, forcing refresh...")
+      refreshLeaderboards()
     }
   }, [highlightInitials, hourlyLeaderboard, dailyLeaderboard, allTimeLeaderboard, refreshLeaderboards])
+
+  // Reset the initialTabSetRef when highlightInitials changes
+  useEffect(() => {
+    initialTabSetRef.current = false
+  }, [highlightInitials])
 
   // Memoize the formatted hour display to avoid recalculating on every render
   const formattedHourDisplay = useMemo(() => {
@@ -238,11 +257,24 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
         return <p className="text-center text-sky-400 py-4 text-sm">No entries yet</p>
       }
 
+      // Find the most recent entry with matching initials
+      let mostRecentMatchingEntry: LeaderboardEntry | null = null
+      if (highlightInitials) {
+        mostRecentMatchingEntry =
+          entries
+            .filter((entry) => entry.playerInitials === highlightInitials)
+            .sort((a, b) => b.timestamp - a.timestamp)[0] || null
+      }
+
       return (
         <div ref={containerRef} className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container">
           {entries.map((entry, index) => {
-            // Check if this entry should be highlighted
-            const isHighlighted = highlightInitials && entry.playerInitials === highlightInitials
+            // Check if this entry should be highlighted (only highlight the most recent matching entry)
+            const isHighlighted =
+              highlightInitials &&
+              mostRecentMatchingEntry &&
+              entry.playerInitials === highlightInitials &&
+              entry.timestamp === mostRecentMatchingEntry.timestamp
 
             return (
               <div

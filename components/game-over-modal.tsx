@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { RotateCcw, Share2, Trophy, Clock } from "lucide-react"
+import { Trophy, Clock } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { motion, AnimatePresence } from "framer-motion"
 import ScoreSubmission from "./score-submission"
@@ -121,7 +121,7 @@ export default function GameOverModal({
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <AnimatePresence>
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -131,7 +131,7 @@ export default function GameOverModal({
           }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="bg-gradient-to-b from-slate-900 to-slate-800 rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
+          className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         >
           {showScoreSubmission && !scoreSubmitted ? (
             <motion.div
@@ -227,27 +227,35 @@ export default function GameOverModal({
                 </motion.div>
               )}
 
-              <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="flex gap-2"
-              >
-                <button
-                  onClick={handleShare}
-                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors text-sm"
-                >
-                  <Share2 size={16} />
-                  Share Results
-                </button>
+              <div className="flex flex-col gap-4 mt-6">
                 <button
                   onClick={onResetGame}
-                  className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors text-sm"
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md transition-colors duration-200 flex items-center justify-center"
                 >
-                  <RotateCcw size={16} />
-                  Play Again
+                  <span className="mr-2">Play Again</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                  </svg>
                 </button>
-              </motion.div>
+
+                <button
+                  onClick={handleShare}
+                  className="w-full py-2 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-md transition-colors duration-200"
+                >
+                  Share Results
+                </button>
+              </div>
             </motion.div>
           )}
 

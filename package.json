@@ -64,9 +64,9 @@
     "@reduxjs/toolkit": "latest",
     "@jest/globals": "latest",
     "framer-motion": "latest",
-    "react-spring": "latest",
     "@supabase/supabase-js": "latest",
-    "html2canvas": "latest"
+    "html2canvas": "latest",
+    "react-spring": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
