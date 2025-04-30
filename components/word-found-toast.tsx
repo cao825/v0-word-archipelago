@@ -1,15 +1,15 @@
 "use client"
 
-import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useEffect } from "react"
 
 interface WordFoundToastProps {
   word: string
   points: number
   isVisible: boolean
   onClose: () => void
-  comboCount?: number
-  multiplier?: number
+  comboCount: number
+  multiplier: number
 }
 
 export default function WordFoundToast({
@@ -17,9 +17,10 @@ export default function WordFoundToast({
   points,
   isVisible,
   onClose,
-  comboCount = 0,
-  multiplier = 1,
+  comboCount,
+  multiplier,
 }: WordFoundToastProps) {
+  // Auto-close the toast after a delay
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
@@ -30,30 +31,25 @@ export default function WordFoundToast({
     }
   }, [isVisible, onClose])
 
-  // Determine if we should show bonus information
-  const showComboBonus = comboCount >= 3
-  const showMultiplier = multiplier > 1
-
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-          className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none"
+          exit={{ opacity: 0, y: -20 }}
         >
-          <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 px-3 py-1.5 rounded-full shadow-lg">
-            <div className="flex items-center gap-2">
-              <span className="text-white text-sm">
-                Found: <span className="font-bold">{word}</span>
-              </span>
-              <span className="text-amber-400 text-sm font-bold">+{points} pts</span>
-              {showComboBonus && <span className="text-emerald-400 text-xs font-medium">{comboCount}x combo!</span>}
-              {showMultiplier && !showComboBonus && (
-                <span className="text-emerald-400 text-xs font-medium">{multiplier}x multiplier!</span>
-              )}
+          <div className="bg-slate-800/90 text-white px-4 py-3 rounded-lg shadow-lg border border-slate-700 min-w-[200px] text-center">
+            <div className="font-bold text-lg mb-1">{word}</div>
+            <div className="flex justify-center items-center gap-2">
+              <span className="text-emerald-400 font-bold">+{points}</span>
+
+              {/* Only show combo if it's 2 or higher */}
+              {comboCount >= 2 && <span className="text-amber-400 text-sm">{comboCount}x combo</span>}
+
+              {/* Only show multiplier if it's greater than 1 */}
+              {multiplier > 1 && <span className="text-blue-400 text-sm">{multiplier}x multiplier</span>}
             </div>
           </div>
         </motion.div>

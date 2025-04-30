@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Trophy, Clock } from "lucide-react"
+import { Trophy, Clock, ArrowLeft } from "lucide-react"
 import type { Objective } from "@/lib/slices/gameSlice"
 import { motion, AnimatePresence } from "framer-motion"
 import ScoreSubmission from "./score-submission"
@@ -37,7 +37,7 @@ export default function GameOverModal({
   const [isVisible, setIsVisible] = useState(false)
   const [showScoreSubmission, setShowScoreSubmission] = useState(false)
   const [scoreSubmitted, setScoreSubmitted] = useState(false)
-  const [showShareModal, setShowShareModal] = useState(false)
+  const [showShareResults, setShowShareResults] = useState(false)
 
   // Get the completed objectives directly from the Redux store to ensure accuracy
   const completedObjectives = useSelector((state: RootState) => state.game.completedObjectives)
@@ -108,9 +108,9 @@ export default function GameOverModal({
     }
   }, [score])
 
-  // Update the onShare function to show the share modal
+  // Update the onShare function to show the share results
   const handleShare = () => {
-    setShowShareModal(true)
+    setShowShareResults(true)
     if (onShare) onShare()
   }
 
@@ -120,10 +120,16 @@ export default function GameOverModal({
     setShowScoreSubmission(false)
   }
 
+  // Handle going back from share results to game over screen
+  const handleBackFromShare = () => {
+    setShowShareResults(false)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         <motion.div
+          key={showShareResults ? "share" : showScoreSubmission ? "submit" : "results"}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{
             scale: isVisible ? 1 : 0.9,
@@ -134,12 +140,7 @@ export default function GameOverModal({
           className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         >
           {showScoreSubmission && !scoreSubmitted ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="p-5"
-            >
+            <div className="p-5">
               <ScoreSubmission
                 score={score}
                 wordsFound={foundWords.length}
@@ -148,14 +149,29 @@ export default function GameOverModal({
                 onSubmit={handleScoreSubmitted}
                 onSkip={() => setShowScoreSubmission(false)}
               />
-            </motion.div>
+            </div>
+          ) : showShareResults ? (
+            <div className="p-5">
+              <div className="flex items-center mb-4">
+                <button
+                  onClick={handleBackFromShare}
+                  className="mr-2 p-1 rounded-full hover:bg-slate-800 transition-colors"
+                  aria-label="Back to results"
+                >
+                  <ArrowLeft size={20} className="text-slate-300" />
+                </button>
+                <h3 className="text-xl font-bold text-white">Share Your Results</h3>
+              </div>
+              <ShareResults
+                score={score}
+                foundWordsCount={foundWords.length}
+                completedObjectives={completedObjectivesCount}
+                totalObjectives={objectives.length}
+                puzzleDate={puzzleDate}
+              />
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="p-5 text-center"
-            >
+            <div className="p-5 text-center">
               <div className="mb-4">
                 <h2 className="text-2xl font-bold text-white">Game Over</h2>
                 <div className="flex items-center justify-center gap-2 text-white text-sm">
@@ -205,7 +221,7 @@ export default function GameOverModal({
                 </div>
               </motion.div>
 
-              {/* New section for game highlights with improved contrast */}
+              {/* Game highlights section */}
               {foundWords.length > 0 && (
                 <motion.div
                   initial={{ y: 10, opacity: 0 }}
@@ -256,42 +272,8 @@ export default function GameOverModal({
                   Share Results
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
-
-          <AnimatePresence>
-            {showShareModal && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-slate-900/95 flex items-center justify-center p-4 z-10"
-              >
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                  className="bg-slate-800 rounded-xl p-5 w-full max-w-md"
-                >
-                  <h3 className="text-xl font-bold text-white mb-4">Share Your Results</h3>
-                  <ShareResults
-                    score={score}
-                    foundWordsCount={foundWords.length}
-                    completedObjectives={completedObjectivesCount}
-                    totalObjectives={objectives.length}
-                    puzzleDate={puzzleDate}
-                  />
-                  <button
-                    onClick={() => setShowShareModal(false)}
-                    className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-medium"
-                  >
-                    Close
-                  </button>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
       </AnimatePresence>
     </div>

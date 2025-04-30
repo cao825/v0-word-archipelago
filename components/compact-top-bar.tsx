@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Settings, Target, BookOpen, Share2, RotateCcw } from "lucide-react"
-import GameStatus from "./game-status"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import type { GameTheme } from "@/lib/slices/gameSlice"
@@ -41,6 +41,8 @@ export default function CompactTopBar({
   isMobile = false,
 }: CompactTopBarProps) {
   const [message, setMessage] = useState("Select islands to form words!")
+  const [prevComboCount, setPrevComboCount] = useState(0)
+  const [showComboAnimation, setShowComboAnimation] = useState(false)
 
   // Get the completed objectives directly from the Redux store to ensure accuracy
   const completedObjectivesFromStore = useSelector((state: RootState) => state.game.completedObjectives.length)
@@ -51,114 +53,188 @@ export default function CompactTopBar({
   // Add progress indicator
   const progressPercentage = (actualObjectivesCompleted / totalObjectives) * 100
 
-  const bonusWords = ["Word1", "Word2", "Word3", "Word4"] // Example bonus words
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`
+  }
+
+  // Animate combo count when it changes
+  useEffect(() => {
+    if (comboCount > prevComboCount && comboCount > 1) {
+      setShowComboAnimation(true)
+      const timer = setTimeout(() => {
+        setShowComboAnimation(false)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+    setPrevComboCount(comboCount)
+  }, [comboCount, prevComboCount])
+
+  // Get theme-appropriate colors
+  const getThemeColors = () => {
+    switch (theme) {
+      case "tropical":
+        return {
+          bg: "from-teal-500/30 to-emerald-500/30",
+          accent: "bg-teal-500",
+          highlight: "bg-emerald-400",
+          text: "text-teal-900",
+          border: "border-teal-200",
+        }
+      case "sunset":
+        return {
+          bg: "from-amber-500/30 to-orange-500/30",
+          accent: "bg-amber-500",
+          highlight: "bg-orange-400",
+          text: "text-amber-900",
+          border: "border-amber-200",
+        }
+      case "stormy":
+        return {
+          bg: "from-slate-600/30 to-slate-700/30",
+          accent: "bg-slate-500",
+          highlight: "bg-slate-400",
+          text: "text-slate-900",
+          border: "border-slate-300",
+        }
+      case "volcanic":
+        return {
+          bg: "from-red-500/30 to-orange-500/30",
+          accent: "bg-red-500",
+          highlight: "bg-orange-400",
+          text: "text-red-900",
+          border: "border-red-200",
+        }
+      default:
+        return {
+          bg: "from-sky-500/30 to-indigo-500/30",
+          accent: "bg-sky-500",
+          highlight: "bg-indigo-400",
+          text: "text-sky-900",
+          border: "border-sky-200",
+        }
+    }
+  }
+
+  const themeColors = getThemeColors()
 
   return (
-    <div className="w-full bg-sky-900/80 backdrop-blur-sm border-b border-sky-800 p-2 sticky top-0 z-10 shadow-md">
-      <div className="flex flex-col gap-1 max-w-4xl mx-auto">
-        {/* Main controls row */}
-        <div className="flex items-center justify-between gap-2">
-          {/* Game status with flex-shrink to allow it to compress when needed */}
-          <div className="flex-shrink min-w-0">
-            <GameStatus
-              score={score}
-              timeLeft={timeLeft}
-              message={message}
-              gameActive={gameActive}
-              comboCount={comboCount}
-              isMobile={isMobile}
-            />
-          </div>
-
-          {/* Right side controls with nowrap and overflow handling */}
-          <div className="flex items-center gap-1 flex-nowrap">
-            {/* Bonus Words Section */}
-            <div className="flex items-center">
-              <span className="text-xs font-medium mr-1">Bonus:</span>
-              <div className="flex flex-wrap items-center max-w-[120px] overflow-hidden">
-                {bonusWords.length > 0 ? (
-                  bonusWords.length > 3 ? (
-                    <span className="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                      +{bonusWords.length}
-                    </span>
-                  ) : (
-                    bonusWords.map((word, index) => (
-                      <span
-                        key={index}
-                        className="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full mr-1 mb-1"
-                      >
-                        {word}
-                      </span>
-                    ))
-                  )
-                ) : (
-                  <span className="text-xs text-gray-400">None</span>
-                )}
+    <div className="w-full sticky top-0 z-10">
+      {/* Glass-morphism container with subtle gradient */}
+      <div
+        className={`w-full bg-gradient-to-r ${themeColors.bg} backdrop-blur-md border-b border-white/10 p-2 shadow-sm`}
+      >
+        <div className="flex flex-col gap-1 max-w-4xl mx-auto">
+          {/* Main controls row */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Score display with animation */}
+            <motion.div
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-white/70">Score</span>
+                <span className="text-2xl font-bold text-white tracking-tight">{score}</span>
               </div>
+
+              {/* Combo indicator with animation */}
+              <AnimatePresence>
+                {comboCount > 1 && (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{
+                      scale: showComboAnimation ? [1, 1.2, 1] : 1,
+                      opacity: 1,
+                    }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full flex items-center"
+                  >
+                    <span className="text-white text-sm font-bold">{comboCount}×</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Center controls with hover effects */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onShowObjectives}
+                className="relative flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                title="Objectives"
+              >
+                <Target size={14} className="text-white" />
+                <span className="text-white text-xs font-medium">
+                  {actualObjectivesCompleted}/{totalObjectives}
+                </span>
+              </button>
+
+              <button
+                onClick={onShowFoundWords}
+                className="relative flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                title="Found Words"
+              >
+                <BookOpen size={14} className="text-white" />
+                <span className="text-white text-xs font-medium">{foundWordsCount}</span>
+              </button>
             </div>
 
-            {/* Fixed: Added py-1 for vertical padding to prevent buttons from being cut off */}
-            <button
-              onClick={onShowFoundWords}
-              className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
-              title="Found Words"
-            >
-              <BookOpen size={16} />
-              {/* Show condensed badge for high counts */}
-              {foundWordsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center text-[10px] shadow-sm">
-                  {foundWordsCount > 99 ? "99+" : foundWordsCount}
-                </span>
-              )}
-            </button>
+            {/* Time display with animation */}
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-medium text-white/70">Time</span>
+                <span className="text-2xl font-bold text-white tracking-tight">{formatTime(timeLeft)}</span>
+              </div>
 
-            <button
-              onClick={onShowObjectives}
-              className="relative flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
-              title="Objectives"
-            >
-              <Target size={16} />
-              {/* Fixed: Adjusted badge positioning to prevent it from being cut off */}
-              <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center text-[10px] shadow-sm">
-                {actualObjectivesCompleted}/{totalObjectives}
-              </span>
-            </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={onShowShareModal}
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Share"
+                >
+                  <Share2 size={16} className="text-white" />
+                </button>
 
-            <button
-              onClick={onShowShareModal}
-              className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
-              title="Share"
-            >
-              <Share2 size={16} />
-            </button>
+                <button
+                  onClick={onResetGame}
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Reset Game"
+                >
+                  <RotateCcw size={16} className="text-white" />
+                </button>
 
-            <button
-              onClick={onResetGame}
-              className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
-              title="Reset Game"
-            >
-              <RotateCcw size={16} />
-            </button>
-
-            <button
-              onClick={onOpenSettings}
-              className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-sky-800 hover:bg-sky-700 text-white my-1"
-              title="Settings"
-            >
-              <Settings size={16} />
-            </button>
+                <button
+                  onClick={onOpenSettings}
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
+                  title="Settings"
+                >
+                  <Settings size={16} className="text-white" />
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Progress bar for objectives with animation */}
+          {gameActive && (
+            <motion.div
+              className="w-full h-1 bg-white/10 rounded-full overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <motion.div
+                className="h-full bg-white/40"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </motion.div>
+          )}
         </div>
-
-        {/* Progress bar for objectives */}
-        {gameActive && (
-          <div className="w-full h-1 bg-sky-800/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-500 transition-all duration-300 ease-out"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-        )}
       </div>
     </div>
   )
