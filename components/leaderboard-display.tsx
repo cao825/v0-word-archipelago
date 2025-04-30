@@ -38,6 +38,17 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   const [retryCount, setRetryCount] = useState<number>(0)
   const maxRetries = 3
 
+  // Track if initial scroll has happened
+  const initialScrollCompletedRef = useRef<{
+    hourly: boolean
+    daily: boolean
+    alltime: boolean
+  }>({
+    hourly: false,
+    daily: false,
+    alltime: false,
+  })
+
   // Add refs for each leaderboard container
   const hourlyContainerRef = useRef<HTMLDivElement>(null)
   const dailyContainerRef = useRef<HTMLDivElement>(null)
@@ -99,6 +110,13 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       setLastRefreshed(new Date())
       setCurrentHour(getCurrentHourTimestamp())
       setRetryCount(0) // Reset retry count on success
+
+      // Reset scroll flags when refreshing data
+      initialScrollCompletedRef.current = {
+        hourly: false,
+        daily: false,
+        alltime: false,
+      }
     } catch (error) {
       console.error("Error refreshing leaderboards:", error)
 
@@ -221,6 +239,13 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   // Reset the initialTabSetRef when highlightInitials changes
   useEffect(() => {
     initialTabSetRef.current = false
+
+    // Reset scroll flags when highlightInitials changes
+    initialScrollCompletedRef.current = {
+      hourly: false,
+      daily: false,
+      alltime: false,
+    }
   }, [highlightInitials])
 
   // Memoize the formatted hour display to avoid recalculating on every render
@@ -235,7 +260,12 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
   // Memoize the renderLeaderboard function to avoid recreating it on every render
   const renderLeaderboard = useCallback(
-    (entries: LeaderboardEntry[], isLoadingState: boolean, containerRef: React.RefObject<HTMLDivElement>) => {
+    (
+      entries: LeaderboardEntry[],
+      isLoadingState: boolean,
+      containerRef: React.RefObject<HTMLDivElement>,
+      tabKey: "hourly" | "daily" | "alltime",
+    ) => {
       if (fetchError) {
         return (
           <div className="flex items-center justify-center py-8 text-red-400">
@@ -267,7 +297,11 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       }
 
       return (
-        <div ref={containerRef} className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container">
+        <div
+          ref={containerRef}
+          className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container"
+          style={{ scrollBehavior: "auto" }} // Ensure smooth scrolling doesn't interfere with manual scrolling
+        >
           {entries.map((entry, index) => {
             // Check if this entry should be highlighted (only highlight the most recent matching entry)
             const isHighlighted =
@@ -283,12 +317,23 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
                   isHighlighted ? "border-amber-400 shadow-lg shadow-amber-400/20 animate-pulse" : "border-sky-700"
                 }`}
                 ref={
-                  isHighlighted
+                  isHighlighted && !initialScrollCompletedRef.current[tabKey]
                     ? (el) => {
-                        // Scroll to the highlighted element
-                        if (el) {
+                        // Scroll to the highlighted element only once
+                        if (el && containerRef.current) {
+                          // Use a more gentle scroll that doesn't lock the scrolling
                           setTimeout(() => {
-                            el.scrollIntoView({ behavior: "smooth", block: "center" })
+                            // Calculate the scroll position to center the element
+                            const containerHeight = containerRef.current?.clientHeight || 0
+                            const elementTop = el.offsetTop
+                            const elementHeight = el.clientHeight
+                            const centerPosition = elementTop - containerHeight / 2 + elementHeight / 2
+
+                            // Scroll to position
+                            if (containerRef.current) {
+                              containerRef.current.scrollTop = centerPosition
+                              initialScrollCompletedRef.current[tabKey] = true
+                            }
                           }, 100)
                         }
                       }
@@ -350,7 +395,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef)}
+        {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef, "hourly")}
       </TabsContent>
       <TabsContent value="daily" className="mt-2">
         <div className="flex justify-between items-center mb-2">
@@ -364,7 +409,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef)}
+        {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef, "daily")}
       </TabsContent>
       <TabsContent value="alltime" className="mt-2">
         <div className="flex justify-between items-center mb-2">
@@ -378,7 +423,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
           </button>
         </div>
-        {renderLeaderboard(allTimeLeaderboard, allTimeLoading, allTimeContainerRef)}
+        {renderLeaderboard(allTimeLeaderboard, allTimeLoading, allTimeContainerRef, "alltime")}
       </TabsContent>
     </Tabs>
   )

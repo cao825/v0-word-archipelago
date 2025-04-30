@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Settings, Target, BookOpen, Share2, RotateCcw } from "lucide-react"
+import { Settings, Target, BookOpen, Share2, RotateCcw, Clock, Zap } from "lucide-react"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import type { GameTheme } from "@/lib/slices/gameSlice"
@@ -40,18 +40,14 @@ export default function CompactTopBar({
   onResetGame,
   isMobile = false,
 }: CompactTopBarProps) {
-  const [message, setMessage] = useState("Select islands to form words!")
   const [prevComboCount, setPrevComboCount] = useState(0)
   const [showComboAnimation, setShowComboAnimation] = useState(false)
 
   // Get the completed objectives directly from the Redux store to ensure accuracy
   const completedObjectivesFromStore = useSelector((state: RootState) => state.game.completedObjectives.length)
 
-  // Use the value from the store instead of the prop
-  const actualObjectivesCompleted = completedObjectivesFromStore
-
-  // Add progress indicator
-  const progressPercentage = (actualObjectivesCompleted / totalObjectives) * 100
+  // Calculate progress percentage for the time bar
+  const timePercentage = (timeLeft / 300) * 100 // Assuming 5 minutes (300 seconds) total
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -77,43 +73,48 @@ export default function CompactTopBar({
     switch (theme) {
       case "tropical":
         return {
-          bg: "from-teal-500/30 to-emerald-500/30",
-          accent: "bg-teal-500",
-          highlight: "bg-emerald-400",
-          text: "text-teal-900",
-          border: "border-teal-200",
+          bg: "from-teal-500/10 to-emerald-500/10",
+          progress: "bg-gradient-to-r from-teal-400 to-emerald-400",
+          accent: "text-teal-400",
+          button: "bg-teal-500/20 hover:bg-teal-500/30",
+          highlight: "bg-emerald-500/20",
+          badge: "bg-teal-400/30 text-teal-50",
         }
       case "sunset":
         return {
-          bg: "from-amber-500/30 to-orange-500/30",
-          accent: "bg-amber-500",
-          highlight: "bg-orange-400",
-          text: "text-amber-900",
-          border: "border-amber-200",
+          bg: "from-amber-500/10 to-orange-500/10",
+          progress: "bg-gradient-to-r from-amber-400 to-orange-400",
+          accent: "text-amber-400",
+          button: "bg-amber-500/20 hover:bg-amber-500/30",
+          highlight: "bg-orange-500/20",
+          badge: "bg-amber-400/30 text-amber-50",
         }
       case "stormy":
         return {
-          bg: "from-slate-600/30 to-slate-700/30",
-          accent: "bg-slate-500",
-          highlight: "bg-slate-400",
-          text: "text-slate-900",
-          border: "border-slate-300",
+          bg: "from-slate-600/10 to-slate-700/10",
+          progress: "bg-gradient-to-r from-slate-400 to-slate-500",
+          accent: "text-slate-400",
+          button: "bg-slate-500/20 hover:bg-slate-500/30",
+          highlight: "bg-slate-600/20",
+          badge: "bg-slate-400/30 text-slate-50",
         }
       case "volcanic":
         return {
-          bg: "from-red-500/30 to-orange-500/30",
-          accent: "bg-red-500",
-          highlight: "bg-orange-400",
-          text: "text-red-900",
-          border: "border-red-200",
+          bg: "from-red-500/10 to-orange-500/10",
+          progress: "bg-gradient-to-r from-red-400 to-orange-400",
+          accent: "text-red-400",
+          button: "bg-red-500/20 hover:bg-red-500/30",
+          highlight: "bg-orange-500/20",
+          badge: "bg-red-400/30 text-red-50",
         }
       default:
         return {
-          bg: "from-sky-500/30 to-indigo-500/30",
-          accent: "bg-sky-500",
-          highlight: "bg-indigo-400",
-          text: "text-sky-900",
-          border: "border-sky-200",
+          bg: "from-sky-500/10 to-indigo-500/10",
+          progress: "bg-gradient-to-r from-sky-400 to-indigo-400",
+          accent: "text-sky-400",
+          button: "bg-sky-500/20 hover:bg-sky-500/30",
+          highlight: "bg-indigo-500/20",
+          badge: "bg-sky-400/30 text-sky-50",
         }
     }
   }
@@ -122,23 +123,16 @@ export default function CompactTopBar({
 
   return (
     <div className="w-full sticky top-0 z-10">
-      {/* Glass-morphism container with subtle gradient */}
-      <div
-        className={`w-full bg-gradient-to-r ${themeColors.bg} backdrop-blur-md border-b border-white/10 p-2 shadow-sm`}
-      >
-        <div className="flex flex-col gap-1 max-w-4xl mx-auto">
-          {/* Main controls row */}
-          <div className="flex items-center justify-between gap-2">
-            {/* Score display with animation */}
-            <motion.div
-              className="flex items-center gap-2"
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-white/70">Score</span>
-                <span className="text-2xl font-bold text-white tracking-tight">{score}</span>
+      {/* Frosted glass container */}
+      <div className={`w-full bg-gradient-to-r ${themeColors.bg} backdrop-blur-md border-b border-white/10 shadow-sm`}>
+        <div className="max-w-4xl mx-auto px-2">
+          {/* Main controls row - single line layout */}
+          <div className="h-[52px] flex items-center justify-between">
+            {/* Score display */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline">
+                <span className="text-xl font-medium text-white tabular-nums tracking-tight">{score}</span>
+                <span className="text-xs text-white/60 ml-1">pts</span>
               </div>
 
               {/* Combo indicator with animation */}
@@ -152,90 +146,99 @@ export default function CompactTopBar({
                     }}
                     exit={{ scale: 0.8, opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full flex items-center"
+                    className={`${themeColors.highlight} px-2 py-0.5 rounded-full flex items-center`}
                   >
-                    <span className="text-white text-sm font-bold">{comboCount}×</span>
+                    <Zap size={12} className={`${themeColors.accent} mr-0.5`} />
+                    <span className="text-white text-xs font-medium">{comboCount}×</span>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
 
-            {/* Center controls with hover effects */}
+            {/* Center controls - evenly spaced */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={onShowObjectives}
-                className="relative flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
-                title="Objectives"
-              >
-                <Target size={14} className="text-white" />
-                <span className="text-white text-xs font-medium">
-                  {actualObjectivesCompleted}/{totalObjectives}
+              {/* Objectives button with properly positioned badge */}
+              <div className="relative">
+                <button
+                  onClick={onShowObjectives}
+                  className={`flex items-center justify-center h-8 w-8 rounded-full ${themeColors.button} transition-colors duration-200`}
+                  title="Objectives"
+                >
+                  <Target size={16} className="text-white/80" />
+                </button>
+                <span
+                  className={`absolute -top-1 -right-1 ${themeColors.badge} text-[10px] font-medium rounded-full h-4 min-w-4 px-1 flex items-center justify-center`}
+                >
+                  {completedObjectivesFromStore}/{totalObjectives}
                 </span>
+              </div>
+
+              {/* Found words button with properly positioned badge */}
+              <div className="relative">
+                <button
+                  onClick={onShowFoundWords}
+                  className={`flex items-center justify-center h-8 w-8 rounded-full ${themeColors.button} transition-colors duration-200`}
+                  title="Found Words"
+                >
+                  <BookOpen size={16} className="text-white/80" />
+                </button>
+                <span
+                  className={`absolute -top-1 -right-1 ${themeColors.badge} text-[10px] font-medium rounded-full h-4 min-w-4 px-1 flex items-center justify-center`}
+                >
+                  {foundWordsCount}
+                </span>
+              </div>
+
+              {/* Share button */}
+              <button
+                onClick={onShowShareModal}
+                className={`flex items-center justify-center h-8 w-8 rounded-full ${themeColors.button} transition-colors duration-200`}
+                title="Share Results"
+              >
+                <Share2 size={16} className="text-white/80" />
               </button>
 
+              {/* Reset button */}
               <button
-                onClick={onShowFoundWords}
-                className="relative flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
-                title="Found Words"
+                onClick={onResetGame}
+                className={`flex items-center justify-center h-8 w-8 rounded-full ${themeColors.button} transition-colors duration-200`}
+                title="Reset Game"
               >
-                <BookOpen size={14} className="text-white" />
-                <span className="text-white text-xs font-medium">{foundWordsCount}</span>
+                <RotateCcw size={16} className="text-white/80" />
+              </button>
+
+              {/* Settings button */}
+              <button
+                onClick={onOpenSettings}
+                className={`flex items-center justify-center h-8 w-8 rounded-full ${themeColors.button} transition-colors duration-200`}
+                title="Settings"
+              >
+                <Settings size={16} className="text-white/80" />
               </button>
             </div>
 
-            {/* Time display with animation */}
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-medium text-white/70">Time</span>
-                <span className="text-2xl font-bold text-white tracking-tight">{formatTime(timeLeft)}</span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={onShowShareModal}
-                  className="flex items-center justify-center h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
-                  title="Share"
-                >
-                  <Share2 size={16} className="text-white" />
-                </button>
-
-                <button
-                  onClick={onResetGame}
-                  className="flex items-center justify-center h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
-                  title="Reset Game"
-                >
-                  <RotateCcw size={16} className="text-white" />
-                </button>
-
-                <button
-                  onClick={onOpenSettings}
-                  className="flex items-center justify-center h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200"
-                  title="Settings"
-                >
-                  <Settings size={16} className="text-white" />
-                </button>
-              </div>
+            {/* Time display */}
+            <div className="flex items-center">
+              <Clock size={14} className="text-white/60 mr-1.5" />
+              <span className="text-white text-base font-medium tabular-nums tracking-tight">
+                {formatTime(timeLeft)}
+              </span>
             </div>
           </div>
-
-          {/* Progress bar for objectives with animation */}
-          {gameActive && (
-            <motion.div
-              className="w-full h-1 bg-white/10 rounded-full overflow-hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <motion.div
-                className="h-full bg-white/40"
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercentage}%` }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              />
-            </motion.div>
-          )}
         </div>
       </div>
+
+      {/* Thin progress bar for time visualization */}
+      {gameActive && (
+        <motion.div className="w-full h-0.5 bg-white/10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div
+            className={`h-full ${themeColors.progress}`}
+            initial={{ width: `${timePercentage}%` }}
+            animate={{ width: `${timePercentage}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </motion.div>
+      )}
     </div>
   )
 }

@@ -111,7 +111,8 @@ export default function GameOverModal({
   // Update the onShare function to show the share results
   const handleShare = () => {
     setShowShareResults(true)
-    if (onShare) onShare()
+    // IMPORTANT: Remove this call to prevent duplicate share modals
+    // if (onShare) onShare()
   }
 
   // Handle when score submission is complete

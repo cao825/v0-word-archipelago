@@ -72,6 +72,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
@@ -190,4 +191,45 @@
   right: -0.25rem;
   z-index: 1;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Modern UI improvements */
+.frosted-glass {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.island-button {
+  transition: all 0.2s ease;
+  transform-origin: center;
+}
+
+.island-button:active {
+  transform: scale(0.95);
+}
+
+/* Improved typography */
+.tracking-tight {
+  letter-spacing: -0.01em;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle animations */
+@keyframes gentle-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.gentle-pulse {
+  animation: gentle-pulse 2s infinite ease-in-out;
 }
