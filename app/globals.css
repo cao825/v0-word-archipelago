@@ -233,3 +233,17 @@
 .gentle-pulse {
   animation: gentle-pulse 2s infinite ease-in-out;
 }
+
+/* Ensure proper scrolling behavior for leaderboards */
+.leaderboard-container {
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+
+/* Fix for iOS scrolling issues */
+@supports (-webkit-touch-callout: none) {
+  .leaderboard-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}

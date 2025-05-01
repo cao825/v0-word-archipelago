@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Settings, Target, BookOpen, Share2, RotateCcw, Clock, Zap, Plus } from "lucide-react"
+import { Settings, Target, BookOpen, Share2, RotateCcw, Clock, Zap } from "lucide-react"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import type { GameTheme } from "@/lib/slices/gameSlice"
@@ -123,40 +123,20 @@ export default function CompactTopBar({
 
   const themeColors = getThemeColors()
 
-  // Determine how to display bonus words
+  // Render bonus words as a compact badge
   const renderBonusWords = () => {
     if (!bonusWords || bonusWords.length === 0) return null
 
-    // Show up to 2 bonus words directly, collapse the rest
-    if (bonusWords.length <= 2) {
-      return (
-        <div className="flex items-center gap-1 ml-2">
-          {bonusWords.map((word, index) => (
-            <span
-              key={index}
-              className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap`}
-            >
-              {word}
-            </span>
-          ))}
-        </div>
-      )
-    } else {
-      // Show first bonus word and a count for the rest
-      return (
-        <div className="flex items-center gap-1 ml-2">
-          <span className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap`}>
-            {bonusWords[0]}
-          </span>
-          <span
-            className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap flex items-center`}
-          >
-            <Plus size={10} className="mr-0.5" />
-            {bonusWords.length - 1}
-          </span>
-        </div>
-      )
-    }
+    // Always show a compact badge with count
+    return (
+      <div className="flex items-center shrink-0 ml-2">
+        <span
+          className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap flex items-center`}
+        >
+          Bonus <span className="ml-1 font-medium">(+{bonusWords.length})</span>
+        </span>
+      </div>
+    )
   }
 
   return (
@@ -193,7 +173,7 @@ export default function CompactTopBar({
               </AnimatePresence>
 
               {/* Bonus words that won't wrap */}
-              <div className="overflow-hidden">{renderBonusWords()}</div>
+              {renderBonusWords()}
             </div>
 
             {/* Center controls - evenly spaced */}

@@ -1,6 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useState } from "react"
 
 interface LiveWordDisplayProps {
   currentWord: string
@@ -15,11 +16,19 @@ export default function LiveWordDisplay({
   invalidSubmission,
   duplicateSubmission,
 }: LiveWordDisplayProps) {
+  // Add local state to ensure the component re-renders when currentWord changes
+  const [displayWord, setDisplayWord] = useState(currentWord)
+
+  // Update local state whenever currentWord changes
+  useEffect(() => {
+    setDisplayWord(currentWord)
+  }, [currentWord])
+
   // Determine text color based on validity
   const getTextColor = () => {
     if (invalidSubmission) return "text-red-500"
     if (duplicateSubmission) return "text-amber-500"
-    if (currentWord.length >= 2) {
+    if (displayWord.length >= 2) {
       return isValid ? "text-emerald-400" : "text-red-400"
     }
     return "text-white"
@@ -28,15 +37,15 @@ export default function LiveWordDisplay({
   return (
     <div className="h-8 flex items-center justify-center transition-all duration-300">
       <AnimatePresence mode="wait">
-        {currentWord ? (
+        {displayWord ? (
           <motion.div
-            key={currentWord}
+            key={displayWord}
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
             className={`font-mono font-bold text-lg tracking-wider ${getTextColor()}`}
           >
-            {currentWord}
+            {displayWord}
           </motion.div>
         ) : (
           <motion.div

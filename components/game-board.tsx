@@ -11,6 +11,7 @@ import {
   tickTimer,
   startGame,
   resetGame,
+  resetGameAfterReview,
   setGameTheme,
   checkForNewPuzzle,
   type GameTheme,
@@ -48,6 +49,7 @@ export default function GameBoard() {
   const score = useAppSelector((state) => state.game.score)
   const timeLeft = useAppSelector((state) => state.game.timeLeft)
   const gameActive = useAppSelector((state) => state.game.gameActive)
+  const gameOver = useAppSelector((state) => state.game.gameOver)
   const objectives = useAppSelector((state) => state.game.objectives)
   const completedObjectives = useAppSelector((state) => state.game.completedObjectives)
   const theme = useAppSelector((state) => state.game.theme)
@@ -272,6 +274,15 @@ export default function GameBoard() {
 
   const handleResetGame = useCallback(() => {
     dispatch(resetGame())
+    lastScoreRef.current = 0
+    lastFoundWordRef.current = ""
+    currentWordRef.current = ""
+    setAllObjectivesNotificationShown(false)
+    prevCompletedObjectivesCountRef.current = 0
+  }, [dispatch])
+
+  const handleResetGameAfterReview = useCallback(() => {
+    dispatch(resetGameAfterReview())
     lastScoreRef.current = 0
     lastFoundWordRef.current = ""
     currentWordRef.current = ""
@@ -511,8 +522,8 @@ export default function GameBoard() {
         />
       )}
 
-      {/* Live Word Display - only show when game is active */}
-      {gameActive && (
+      {/* Live Word Display - show when game is active or game is over but not reset */}
+      {(gameActive || gameOver) && (
         <LiveWordDisplay
           currentWord={currentWord}
           isValid={isWordValid}
@@ -523,8 +534,8 @@ export default function GameBoard() {
 
       {/* Main game area with consistent height - prevent layout collapse */}
       <div className="flex flex-col transition-all duration-300">
-        {/* Next Puzzle Countdown - only show when game is not active */}
-        {!gameActive && timeLeft !== 0 && (
+        {/* Next Puzzle Countdown - only show when game is not active and not game over */}
+        {!gameActive && !gameOver && (
           <div className="mb-4">
             <NextPuzzleCountdown />
           </div>
@@ -551,7 +562,7 @@ export default function GameBoard() {
               invalidSubmission={invalidSubmission}
               successfulSubmission={successfulSubmission}
               onInvalidIslandClick={handleInvalidIslandClick}
-              gameActive={gameActive}
+              gameActive={gameActive || gameOver} // Keep islands active for display when game is over
             />
           </div>
         </div>
@@ -569,12 +580,14 @@ export default function GameBoard() {
       </div>
 
       {/* Floating Game Controls - Only show start button before game starts */}
-      <FloatingGameControls
-        onStartGame={handleStartGame}
-        onResetGame={handleResetGame}
-        onOpenSettings={handleToggleSettings}
-        gameActive={gameActive}
-      />
+      {!gameOver && (
+        <FloatingGameControls
+          onStartGame={handleStartGame}
+          onResetGame={handleResetGame}
+          onOpenSettings={handleToggleSettings}
+          gameActive={gameActive}
+        />
+      )}
 
       {/* Game Over Modal */}
       {showGameOver && (
@@ -582,7 +595,7 @@ export default function GameBoard() {
           score={score}
           foundWords={foundWords}
           objectives={objectives}
-          onResetGame={handleResetGame}
+          onResetGame={handleResetGameAfterReview} // Use the new reset function
           onShare={handleShareResults}
           puzzleDate={puzzleDate}
         />

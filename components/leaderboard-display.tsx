@@ -300,7 +300,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
         <div
           ref={containerRef}
           className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container"
-          style={{ scrollBehavior: "auto" }} // Ensure smooth scrolling doesn't interfere with manual scrolling
+          style={{ scrollBehavior: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }} // Ensure smooth scrolling doesn't interfere with manual scrolling
         >
           {entries.map((entry, index) => {
             // Check if this entry should be highlighted (only highlight the most recent matching entry)
@@ -371,60 +371,80 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   )
 
   return (
-    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid grid-cols-3 bg-sky-900">
-        <TabsTrigger value="hourly" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
-          Hourly
-        </TabsTrigger>
-        <TabsTrigger value="daily" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
-          Daily
-        </TabsTrigger>
-        <TabsTrigger value="alltime" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
-          All Time
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="hourly" className="mt-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-light tracking-wide text-sky-100">{formattedHourDisplay}</h3>
-          <button
-            onClick={refreshLeaderboards}
-            className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
-            disabled={isLoading}
-          >
-            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Refresh</span>}
-            <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
-          </button>
-        </div>
-        {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef, "hourly")}
-      </TabsContent>
-      <TabsContent value="daily" className="mt-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-light tracking-wide text-sky-100">DAILY TOP SCORES</h3>
-          <button
-            onClick={refreshLeaderboards}
-            className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
-            disabled={isLoading}
-          >
-            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Refresh</span>}
-            <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
-          </button>
-        </div>
-        {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef, "daily")}
-      </TabsContent>
-      <TabsContent value="alltime" className="mt-2">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-light tracking-wide text-sky-100">ALL-TIME TOP SCORES</h3>
-          <button
-            onClick={refreshLeaderboards}
-            className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
-            disabled={isLoading}
-          >
-            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Refresh</span>}
-            <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
-          </button>
-        </div>
-        {renderLeaderboard(allTimeLeaderboard, allTimeLoading, allTimeContainerRef, "alltime")}
-      </TabsContent>
-    </Tabs>
+    <>
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid grid-cols-3 bg-sky-900">
+          <TabsTrigger value="hourly" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+            Hourly
+          </TabsTrigger>
+          <TabsTrigger value="daily" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+            Daily
+          </TabsTrigger>
+          <TabsTrigger value="alltime" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+            All Time
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="hourly" className="mt-2">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-light tracking-wide text-sky-100">{formattedHourDisplay}</h3>
+            <button
+              onClick={refreshLeaderboards}
+              className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Refresh</span>}
+              <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
+            </button>
+          </div>
+          {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef, "hourly")}
+        </TabsContent>
+        <TabsContent value="daily" className="mt-2">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-light tracking-wide text-sky-100">DAILY TOP SCORES</h3>
+            <button
+              onClick={refreshLeaderboards}
+              className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Refresh</span>}
+              <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
+            </button>
+          </div>
+          {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef, "daily")}
+        </TabsContent>
+        <TabsContent value="alltime" className="mt-2 h-full flex flex-col">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-light tracking-wide text-sky-100">ALL-TIME TOP SCORES</h3>
+            <button
+              onClick={refreshLeaderboards}
+              className="text-xs text-sky-300 hover:text-sky-100 flex items-center gap-1"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <span>Refresh</span>}
+              <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
+            </button>
+          </div>
+          {renderLeaderboard(allTimeLeaderboard, allTimeLoading, allTimeContainerRef, "alltime")}
+        </TabsContent>
+      </Tabs>
+      <style jsx global>{`
+        .leaderboard-container {
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(56, 189, 248, 0.5) rgba(7, 89, 133, 0.1);
+        }
+        .leaderboard-container::-webkit-scrollbar {
+          width: 6px;
+        }
+        .leaderboard-container::-webkit-scrollbar-track {
+          background: rgba(7, 89, 133, 0.1);
+          border-radius: 3px;
+        }
+        .leaderboard-container::-webkit-scrollbar-thumb {
+          background-color: rgba(56, 189, 248, 0.5);
+          border-radius: 3px;
+        }
+      `}</style>
+    </>
   )
 }

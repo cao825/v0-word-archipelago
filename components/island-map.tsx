@@ -20,7 +20,7 @@ interface IslandMapProps {
   invalidSubmission?: boolean
   successfulSubmission?: boolean
   onInvalidIslandClick?: (event: React.MouseEvent, islandId: string) => void
-  gameActive?: boolean // Add this prop to check if game is active
+  gameActive: boolean // Make sure this prop is required
 }
 
 // Interface for storing island shapes
@@ -41,7 +41,7 @@ export default function IslandMap({
   invalidSubmission = false,
   successfulSubmission = false,
   onInvalidIslandClick,
-  gameActive = false,
+  gameActive,
 }: IslandMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
