@@ -48,6 +48,12 @@ export default function ScoreSubmission({
       return
     }
 
+    // Add validation to prevent scores of 0 or negative
+    if (score <= 0) {
+      setError("Score must be greater than 0 to be submitted")
+      return
+    }
+
     setIsSubmitting(true)
     setError("")
 

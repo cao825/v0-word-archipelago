@@ -52,6 +52,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
     }
 
+    // Add validation to prevent scores of 0 or negative
+    if (body.score <= 0) {
+      return NextResponse.json({ error: "Score must be greater than 0" }, { status: 400 })
+    }
+
     // Format the initials
     const formattedInitials = body.player_initials.toUpperCase().substring(0, 3)
 

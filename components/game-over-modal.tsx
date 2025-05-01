@@ -108,8 +108,8 @@ export default function GameOverModal({
 
   // Check if score qualifies for leaderboard - only check once when component mounts
   useEffect(() => {
-    // Simple qualification check - can be made more sophisticated
-    if (score > 100 && !scoreSubmitted) {
+    // Only show score submission if score is greater than 0 and not already submitted
+    if (score > 0 && !scoreSubmitted) {
       setShowScoreSubmission(true)
     }
   }, [score, scoreSubmitted])

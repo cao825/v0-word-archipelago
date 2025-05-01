@@ -151,8 +151,8 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
     console.log("Adding leaderboard entry:", entry)
 
     // Validate entry
-    if (!entry || typeof entry.score !== "number" || entry.score < 0) {
-      console.error("Invalid leaderboard entry")
+    if (!entry || typeof entry.score !== "number" || entry.score <= 0) {
+      console.error("Invalid leaderboard entry or score is 0 or negative")
       return false
     }
 
