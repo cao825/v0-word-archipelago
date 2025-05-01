@@ -55,11 +55,11 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="fixed inset-x-4 top-1/4 z-50 max-w-md mx-auto"
-            style={{ maxHeight: "60vh" }}
+            className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-md mx-auto w-full"
+            style={{ maxHeight: "80vh" }}
           >
-            <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg overflow-hidden">
-              <div className="flex items-center justify-between p-3 border-b border-sky-700">
+            <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg overflow-hidden w-full">
+              <div className="flex items-center justify-between p-3 border-b border-sky-700 w-full">
                 <h3 className="text-sm font-medium text-white">{title}</h3>
                 <Button
                   variant="ghost"
@@ -70,7 +70,7 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
                   <X size={16} />
                 </Button>
               </div>
-              <div className="p-3 max-h-[60vh] overflow-y-auto">{children}</div>
+              <div className="p-3 max-h-[60vh] overflow-y-auto w-full">{children}</div>
             </div>
           </motion.div>
         </>

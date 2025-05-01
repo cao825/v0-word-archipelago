@@ -268,7 +268,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
     ) => {
       if (fetchError) {
         return (
-          <div className="flex items-center justify-center py-8 text-red-400">
+          <div className="flex items-center justify-center py-8 text-red-400 w-full">
             <p>{fetchError}</p>
           </div>
         )
@@ -276,7 +276,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
       if (isLoadingState && entries.length === 0) {
         return (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-8 w-full">
             <Loader2 className="h-6 w-6 animate-spin text-sky-400" />
             <span className="ml-2 text-sky-400">Loading leaderboard...</span>
           </div>
@@ -284,7 +284,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       }
 
       if (entries.length === 0) {
-        return <p className="text-center text-sky-400 py-4 text-sm">No entries yet</p>
+        return <p className="text-center text-sky-400 py-4 text-sm w-full">No entries yet</p>
       }
 
       // Find the most recent entry with matching initials
@@ -299,7 +299,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       return (
         <div
           ref={containerRef}
-          className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container"
+          className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container w-full"
           style={{ scrollBehavior: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }} // Ensure smooth scrolling doesn't interfere with manual scrolling
         >
           {entries.map((entry, index) => {
@@ -313,7 +313,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             return (
               <div
                 key={`${entry.playerInitials}-${entry.timestamp}-${index}`}
-                className={`bg-sky-900 rounded-md p-1.5 flex items-center border ${
+                className={`bg-sky-900 rounded-md p-1.5 flex items-center border w-full ${
                   isHighlighted ? "border-amber-400 shadow-lg shadow-amber-400/20 animate-pulse" : "border-sky-700"
                 }`}
                 ref={
@@ -371,9 +371,9 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   )
 
   return (
-    <>
+    <div className="w-full">
       <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid grid-cols-3 bg-sky-900">
+        <TabsList className="grid grid-cols-3 bg-sky-900 w-full">
           <TabsTrigger value="hourly" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
             Hourly
           </TabsTrigger>
@@ -384,8 +384,8 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             All Time
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="hourly" className="mt-2">
-          <div className="flex justify-between items-center mb-2">
+        <TabsContent value="hourly" className="mt-2 w-full">
+          <div className="flex justify-between items-center mb-2 w-full">
             <h3 className="text-sm font-light tracking-wide text-sky-100">{formattedHourDisplay}</h3>
             <button
               onClick={refreshLeaderboards}
@@ -398,8 +398,8 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
           </div>
           {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef, "hourly")}
         </TabsContent>
-        <TabsContent value="daily" className="mt-2">
-          <div className="flex justify-between items-center mb-2">
+        <TabsContent value="daily" className="mt-2 w-full">
+          <div className="flex justify-between items-center mb-2 w-full">
             <h3 className="text-sm font-light tracking-wide text-sky-100">DAILY TOP SCORES</h3>
             <button
               onClick={refreshLeaderboards}
@@ -412,8 +412,8 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
           </div>
           {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef, "daily")}
         </TabsContent>
-        <TabsContent value="alltime" className="mt-2 h-full flex flex-col">
-          <div className="flex justify-between items-center mb-2">
+        <TabsContent value="alltime" className="mt-2 h-full flex flex-col w-full">
+          <div className="flex justify-between items-center mb-2 w-full">
             <h3 className="text-sm font-light tracking-wide text-sky-100">ALL-TIME TOP SCORES</h3>
             <button
               onClick={refreshLeaderboards}
@@ -432,6 +432,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
           -webkit-overflow-scrolling: touch;
           scrollbar-width: thin;
           scrollbar-color: rgba(56, 189, 248, 0.5) rgba(7, 89, 133, 0.1);
+          width: 100%;
         }
         .leaderboard-container::-webkit-scrollbar {
           width: 6px;
@@ -445,6 +446,6 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
           border-radius: 3px;
         }
       `}</style>
-    </>
+    </div>
   )
 }

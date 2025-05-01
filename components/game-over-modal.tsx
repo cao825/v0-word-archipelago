@@ -1,134 +1,315 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { Trophy, Share2, RotateCcw } from "lucide-react"
-import { resetGameAfterReview } from "@/lib/slices/gameSlice"
-import type { RootState } from "@/lib/store"
-import ModalOverlay from "./modal-overlay"
-import ShareResults from "./share-results"
+import { useState, useEffect, useMemo } from "react"
+import { Trophy, Clock, ArrowLeft } from "lucide-react"
+import type { Objective } from "@/lib/slices/gameSlice"
+import { motion, AnimatePresence } from "framer-motion"
 import ScoreSubmission from "./score-submission"
+import ShareResults from "./share-results"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState } from "@/lib/store"
+import { resetGameAfterReview } from "@/lib/slices/gameSlice"
 
 interface GameOverModalProps {
   score: number
-  foundWordsCount: number
-  completedObjectives: number
-  totalObjectives: number
-  puzzleDate: string
+  foundWords: string[]
+  objectives: Objective[]
+  onResetGame: () => void
+  onShare: () => void
+  puzzleDate?: string
 }
 
 export default function GameOverModal({
   score,
-  foundWordsCount,
-  completedObjectives,
-  totalObjectives,
-  puzzleDate,
+  foundWords,
+  objectives,
+  onResetGame,
+  onShare,
+  puzzleDate = new Date().toISOString(),
 }: GameOverModalProps) {
+  const [timeRemaining, setTimeRemaining] = useState<{
+    minutes: string
+    seconds: string
+  }>({
+    minutes: "00",
+    seconds: "00",
+  })
+
+  const [isVisible, setIsVisible] = useState(false)
+  const [showScoreSubmission, setShowScoreSubmission] = useState(false)
+  const [scoreSubmitted, setScoreSubmitted] = useState(false)
+  const [showShareResults, setShowShareResults] = useState(false)
+
   const dispatch = useDispatch()
-  const [isOpen, setIsOpen] = useState(false)
-  const [showShareScreen, setShowShareScreen] = useState(false)
-  const [hasSubmittedScore, setHasSubmittedScore] = useState(false)
-  const gameOver = useSelector((state: RootState) => state.game.gameOver)
 
-  // Open modal when game is over
+  // Get the completed objectives directly from the Redux store to ensure accuracy
+  const completedObjectives = useSelector((state: RootState) => state.game.completedObjectives)
+  const completedObjectivesCount = completedObjectives.length
+
+  // Get the found words count directly from the prop or Redux store
+  const foundWordsCount = foundWords.length
+
+  // For debugging
+  console.log("GameOverModal props:", {
+    score,
+    foundWordsLength: foundWords.length,
+    objectivesLength: objectives.length,
+    completedObjectivesCount,
+  })
+
+  // Animation delay for modal appearance
   useEffect(() => {
-    if (gameOver) {
-      setIsOpen(true)
-    } else {
-      setIsOpen(false)
-      setShowShareScreen(false) // Reset share screen state when modal closes
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 300) // Reduced delay for better UX
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Calculate time until next puzzle
+  useEffect(() => {
+    const calculateTimeRemaining = () => {
+      const now = new Date()
+      const nextHour = new Date(now)
+      nextHour.setHours(now.getHours() + 1, 0, 0, 0)
+
+      const diffMs = nextHour.getTime() - now.getTime()
+      const diffMinutes = Math.floor(diffMs / 60000)
+      const diffSeconds = Math.floor((diffMs % 60000) / 1000)
+
+      setTimeRemaining({
+        minutes: String(diffMinutes).padStart(2, "0"),
+        seconds: String(diffSeconds).padStart(2, "0"),
+      })
+
+      // Check if we've reached the next hour (countdown reached zero)
+      if (diffMinutes === 0 && diffSeconds === 0) {
+        // Refresh the page to get the new puzzle
+        window.location.reload()
+      }
     }
-  }, [gameOver])
 
-  const handlePlayAgain = () => {
-    dispatch(resetGameAfterReview())
-    setIsOpen(false)
+    // Calculate immediately
+    calculateTimeRemaining()
+
+    // Update every second
+    const interval = setInterval(calculateTimeRemaining, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Find longest word and highest scoring word
+  const gameStats = useMemo(() => {
+    if (foundWords.length === 0) return { longestWord: "", highestScoringWord: "" }
+
+    const longestWord = [...foundWords].sort((a, b) => b.length - a.length)[0]
+
+    // Simple scoring: word length * 10 (this is a simplification)
+    const highestScoringWord = [...foundWords].sort((a, b) => b.length - a.length)[0]
+
+    return {
+      longestWord: longestWord.toUpperCase(),
+      highestScoringWord: highestScoringWord.toUpperCase(),
+      wordLength: longestWord.length,
+    }
+  }, [foundWords])
+
+  // Check if score qualifies for leaderboard - only check once when component mounts
+  useEffect(() => {
+    // Simple qualification check - can be made more sophisticated
+    if (score > 100 && !scoreSubmitted) {
+      setShowScoreSubmission(true)
+    }
+  }, [score, scoreSubmitted])
+
+  // Update the onShare function to show the share results
+  const handleShare = () => {
+    setShowShareResults(true)
+    // IMPORTANT: Remove this call to prevent duplicate share modals
+    // if (onShare) onShare()
   }
 
-  const handleShareResults = () => {
-    setShowShareScreen(true)
-  }
-
+  // Handle when score submission is complete
   const handleScoreSubmitted = () => {
-    setHasSubmittedScore(true)
+    setScoreSubmitted(true)
+    setShowScoreSubmission(false)
   }
 
-  // Determine what content to show in the modal
-  const renderModalContent = () => {
-    if (showShareScreen) {
-      // Show share results screen
-      return (
-        <ShareResults
-          score={score}
-          foundWordsCount={foundWordsCount}
-          completedObjectives={completedObjectives}
-          totalObjectives={totalObjectives}
-          puzzleDate={puzzleDate}
-        />
-      )
-    } else {
-      // Show game over screen with score submission
-      return (
-        <div className="flex flex-col items-center gap-6">
-          <div className="text-center">
-            <div className="flex justify-center mb-2">
-              <Trophy className="text-amber-400" size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-1">Game Over!</h2>
-            <p className="text-sky-200">Your final score:</p>
-            <div className="text-4xl font-bold text-amber-400 my-2">{score}</div>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="bg-sky-800/30 p-3 rounded-lg text-center">
-                <div className="text-xl font-bold text-white">{foundWordsCount}</div>
-                <div className="text-sky-300 text-sm">Words Found</div>
-              </div>
-              <div className="bg-sky-800/30 p-3 rounded-lg text-center">
-                <div className="text-xl font-bold text-white">
-                  {completedObjectives}/{totalObjectives}
-                </div>
-                <div className="text-sky-300 text-sm">Objectives</div>
-              </div>
-            </div>
-          </div>
+  // Handle going back from share results to game over screen
+  const handleBackFromShare = () => {
+    setShowShareResults(false)
+    // Important: Don't reset scoreSubmitted state here
+  }
 
-          {!hasSubmittedScore && <ScoreSubmission score={score} onScoreSubmitted={handleScoreSubmitted} />}
-
-          <div className="flex flex-col w-full gap-3">
-            <button
-              onClick={handleShareResults}
-              className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-            >
-              <Share2 size={18} />
-              Share Results
-            </button>
-            <button
-              onClick={handlePlayAgain}
-              className="flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-            >
-              <RotateCcw size={18} />
-              Play Again
-            </button>
-          </div>
-        </div>
-      )
-    }
+  // Handle play again with proper reset
+  const handlePlayAgain = () => {
+    // Dispatch the resetGameAfterReview action to properly reset the game
+    dispatch(resetGameAfterReview())
+    // Then call the original onResetGame function
+    onResetGame()
   }
 
   return (
-    <ModalOverlay
-      isOpen={isOpen}
-      onClose={() => {
-        // If on share screen, go back to main game over screen
-        if (showShareScreen) {
-          setShowShareScreen(false)
-        } else {
-          // Otherwise close the modal and reset the game
-          handlePlayAgain()
-        }
-      }}
-      title={showShareScreen ? "Share Results" : "Game Over"}
-    >
-      {renderModalContent()}
-    </ModalOverlay>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={showShareResults ? "share" : showScoreSubmission && !scoreSubmitted ? "submit" : "results"}
+          initial={{ scale: 0.9, opacity: 0, y: 0 }}
+          animate={{
+            scale: isVisible ? 1 : 0.9,
+            opacity: isVisible ? 1 : 0,
+            y: 0,
+          }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto"
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          {showScoreSubmission && !scoreSubmitted ? (
+            <div className="p-5">
+              <ScoreSubmission
+                score={score}
+                wordsFound={foundWordsCount}
+                objectivesCompleted={completedObjectivesCount}
+                totalObjectives={objectives.length}
+                onSubmit={handleScoreSubmitted}
+                onSkip={() => {
+                  setScoreSubmitted(true) // Mark as submitted even if skipped
+                  setShowScoreSubmission(false)
+                }}
+              />
+            </div>
+          ) : showShareResults ? (
+            <div className="p-5">
+              <div className="flex items-center mb-4">
+                <button
+                  onClick={handleBackFromShare}
+                  className="mr-2 p-1 rounded-full hover:bg-slate-800 transition-colors"
+                  aria-label="Back to results"
+                >
+                  <ArrowLeft size={20} className="text-slate-300" />
+                </button>
+                <h3 className="text-xl font-bold text-white">Share Your Results</h3>
+              </div>
+              <ShareResults
+                score={score}
+                foundWordsCount={foundWordsCount}
+                completedObjectives={completedObjectivesCount}
+                totalObjectives={objectives.length}
+                puzzleDate={puzzleDate}
+              />
+            </div>
+          ) : (
+            <div className="p-5 text-center">
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-white">Game Over</h2>
+                <div className="flex items-center justify-center gap-2 text-white text-sm">
+                  <Clock size={14} className="text-amber-400" />
+                  <p>
+                    Next puzzle in {timeRemaining.minutes}:{timeRemaining.seconds}
+                  </p>
+                </div>
+              </div>
+
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="flex justify-center mb-4"
+              >
+                <div className="w-20 h-20 rounded-full bg-amber-500/30 flex items-center justify-center">
+                  <Trophy className="w-10 h-10 text-amber-400" />
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mb-4"
+              >
+                <div className="text-4xl font-bold text-amber-400">{score}</div>
+                <p className="text-white text-sm">Final Score</p>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="grid grid-cols-2 gap-3 mb-5"
+              >
+                <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                  <div className="text-xl font-bold text-white">{foundWordsCount}</div>
+                  <div className="text-slate-200 text-xs">Words Found</div>
+                </div>
+                <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                  <div className="text-xl font-bold text-white">
+                    {completedObjectivesCount}/{objectives.length}
+                  </div>
+                  <div className="text-slate-200 text-xs">Objectives</div>
+                </div>
+              </motion.div>
+
+              {/* Game highlights section */}
+              {foundWords.length > 0 && (
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="mb-5 bg-slate-800 p-3 rounded-lg border border-slate-700"
+                >
+                  <h3 className="text-sm font-medium text-white mb-2">Game Highlights</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="bg-slate-700/70 p-2 rounded">
+                      <div className="text-amber-300 font-bold">{gameStats.longestWord}</div>
+                      <div className="text-slate-200 text-xs">Longest Word ({gameStats.wordLength} letters)</div>
+                    </div>
+                    <div className="bg-slate-700/70 p-2 rounded">
+                      <div className="text-amber-300 font-bold">{gameStats.highestScoringWord}</div>
+                      <div className="text-slate-200 text-xs">Highest Points</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              <div className="flex flex-col gap-4 mt-6">
+                <button
+                  onClick={handlePlayAgain}
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md transition-colors duration-200 flex items-center justify-center"
+                >
+                  <span className="mr-2">Play Again</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                  </svg>
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="w-full py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-md transition-colors duration-200"
+                >
+                  Share Results
+                </button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   )
 }
