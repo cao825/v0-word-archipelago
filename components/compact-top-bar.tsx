@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Settings, Target, BookOpen, Share2, RotateCcw, Clock, Zap } from "lucide-react"
+import { Settings, Target, BookOpen, Share2, RotateCcw, Clock, Zap, Plus } from "lucide-react"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/store"
 import type { GameTheme } from "@/lib/slices/gameSlice"
@@ -22,6 +22,7 @@ interface CompactTopBarProps {
   onShowShareModal: () => void
   onResetGame: () => void
   isMobile?: boolean
+  bonusWords?: string[] // Add bonusWords prop
 }
 
 export default function CompactTopBar({
@@ -39,6 +40,7 @@ export default function CompactTopBar({
   onShowShareModal,
   onResetGame,
   isMobile = false,
+  bonusWords = [], // Default to empty array
 }: CompactTopBarProps) {
   const [prevComboCount, setPrevComboCount] = useState(0)
   const [showComboAnimation, setShowComboAnimation] = useState(false)
@@ -121,6 +123,42 @@ export default function CompactTopBar({
 
   const themeColors = getThemeColors()
 
+  // Determine how to display bonus words
+  const renderBonusWords = () => {
+    if (!bonusWords || bonusWords.length === 0) return null
+
+    // Show up to 2 bonus words directly, collapse the rest
+    if (bonusWords.length <= 2) {
+      return (
+        <div className="flex items-center gap-1 ml-2">
+          {bonusWords.map((word, index) => (
+            <span
+              key={index}
+              className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap`}
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      )
+    } else {
+      // Show first bonus word and a count for the rest
+      return (
+        <div className="flex items-center gap-1 ml-2">
+          <span className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap`}>
+            {bonusWords[0]}
+          </span>
+          <span
+            className={`${themeColors.highlight} px-2 py-0.5 rounded-full text-xs text-white whitespace-nowrap flex items-center`}
+          >
+            <Plus size={10} className="mr-0.5" />
+            {bonusWords.length - 1}
+          </span>
+        </div>
+      )
+    }
+  }
+
   return (
     <div className="w-full sticky top-0 z-10">
       {/* Frosted glass container */}
@@ -128,9 +166,9 @@ export default function CompactTopBar({
         <div className="max-w-4xl mx-auto px-2">
           {/* Main controls row - single line layout */}
           <div className="h-[52px] flex items-center justify-between">
-            {/* Score display */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-baseline">
+            {/* Score display with bonus words that won't wrap */}
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-baseline shrink-0">
                 <span className="text-xl font-medium text-white tabular-nums tracking-tight">{score}</span>
                 <span className="text-xs text-white/60 ml-1">pts</span>
               </div>
@@ -146,17 +184,20 @@ export default function CompactTopBar({
                     }}
                     exit={{ scale: 0.8, opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className={`${themeColors.highlight} px-2 py-0.5 rounded-full flex items-center`}
+                    className={`${themeColors.highlight} px-2 py-0.5 rounded-full flex items-center shrink-0`}
                   >
                     <Zap size={12} className={`${themeColors.accent} mr-0.5`} />
                     <span className="text-white text-xs font-medium">{comboCount}×</span>
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Bonus words that won't wrap */}
+              <div className="overflow-hidden">{renderBonusWords()}</div>
             </div>
 
             {/* Center controls - evenly spaced */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Objectives button with properly positioned badge */}
               <div className="relative">
                 <button
@@ -218,7 +259,7 @@ export default function CompactTopBar({
             </div>
 
             {/* Time display */}
-            <div className="flex items-center">
+            <div className="flex items-center shrink-0">
               <Clock size={14} className="text-white/60 mr-1.5" />
               <span className="text-white text-base font-medium tabular-nums tracking-tight">
                 {formatTime(timeLeft)}

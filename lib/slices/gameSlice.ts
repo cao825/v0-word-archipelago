@@ -61,6 +61,10 @@ interface GameState {
   gameEndedButNotReset: boolean
   // Track if all objectives have been completed
   allObjectivesCompleted: boolean
+  // Track bonus words
+  bonusWords: string[]
+  // Track if the game should preserve the final state
+  preserveFinalState: boolean
 }
 
 // Get current hour timestamp (YYYY-MM-DD-HH format)
@@ -121,6 +125,10 @@ const initialState: GameState = {
   gameEndedButNotReset: false,
   // Track if all objectives have been completed
   allObjectivesCompleted: false,
+  // Track bonus words
+  bonusWords: [],
+  // Track if the game should preserve the final state
+  preserveFinalState: false,
 }
 
 export const gameSlice = createSlice({
@@ -253,6 +261,11 @@ export const gameSlice = createSlice({
         state.foundWords.push(word)
         state.successfulSubmission = true
 
+        // Check if this is a bonus word (length >= 6)
+        if (word.length >= 6) {
+          state.bonusWords.push(word)
+        }
+
         // Set points animation - IMPORTANT: This is what shows the points
         state.pointsAnimation = {
           points: wordScore,
@@ -287,9 +300,17 @@ export const gameSlice = createSlice({
             completed: state.completedObjectives.includes(obj.id),
           }))
 
-          // Check if all objectives are now completed
-          if (state.completedObjectives.length === state.objectives.length) {
-            state.allObjectivesCompleted = true
+          // Check if all objectives are now completed - with double verification
+          const actualCompletedCount = state.completedObjectives.length
+          const totalObjectives = state.objectives.length
+          if (actualCompletedCount > 0 && actualCompletedCount === totalObjectives) {
+            // Double-check by counting objectives marked as completed
+            const verifiedCompletedCount = state.objectives.filter((obj) =>
+              state.completedObjectives.includes(obj.id),
+            ).length
+            state.allObjectivesCompleted = verifiedCompletedCount === totalObjectives
+          } else {
+            state.allObjectivesCompleted = false
           }
 
           // Show objective completion notification
@@ -343,6 +364,7 @@ export const gameSlice = createSlice({
         if (state.timeLeft === 0) {
           state.gameActive = false
           state.gameOver = true // Set gameOver to true instead of resetting
+          state.preserveFinalState = true // Preserve the final state
           state.message = "Time's up!"
         }
       }
@@ -388,6 +410,8 @@ export const gameSlice = createSlice({
       state.invalidIslandSelection = null
       state.gameEndedButNotReset = false
       state.allObjectivesCompleted = false // Reset the all objectives completed flag
+      state.bonusWords = [] // Reset bonus words
+      state.preserveFinalState = false // Reset preserve final state flag
 
       // Reset completion status of objectives
       state.objectives = state.objectives.map((obj) => ({
@@ -397,13 +421,55 @@ export const gameSlice = createSlice({
     },
 
     resetGame: (state) => {
-      // Keep the same islands and objectives (same hour)
+      // Only reset the game state if we're not preserving the final state
+      // or if we're explicitly resetting after game over
+      if (!state.preserveFinalState || state.gameEndedButNotReset) {
+        // Keep the same islands and objectives (same hour)
+        state.selectedIslands = []
+        state.foundWords = []
+        state.score = 0
+        state.timeLeft = 120 // Always 2 minutes
+        state.gameActive = false
+        state.gameOver = false // Reset gameOver state
+        state.completedObjectives = []
+        state.message = "Game reset! Press Start to play again."
+        state.comboCount = 0
+        state.lastWordTime = 0
+        state.invalidSubmission = false
+        state.duplicateSubmission = false
+        state.successfulSubmission = false
+        state.pointsAnimation.isVisible = false
+        state.allObjectivesCompleted = false // Reset the all objectives completed flag
+        state.bonusWords = [] // Reset bonus words
+        state.preserveFinalState = false // Reset preserve final state flag
+
+        // FIX: Set objectiveCompletionNotification to an object with the correct structure
+        state.objectiveCompletionNotification = {
+          isVisible: false,
+          count: 0,
+          completedObjectiveIds: [],
+        }
+
+        state.invalidIslandSelection = null
+        state.gameEndedButNotReset = false
+
+        // Reset completion status of objectives
+        state.objectives = state.objectives.map((obj) => ({
+          ...obj,
+          completed: false,
+        }))
+      }
+    },
+
+    // Add a new action to explicitly reset the game after viewing the final state
+    resetGameAfterReview: (state) => {
+      // Force reset regardless of preserveFinalState
       state.selectedIslands = []
       state.foundWords = []
       state.score = 0
-      state.timeLeft = 120 // Always 2 minutes
+      state.timeLeft = 120
       state.gameActive = false
-      state.gameOver = false // Reset gameOver state
+      state.gameOver = false
       state.completedObjectives = []
       state.message = "Game reset! Press Start to play again."
       state.comboCount = 0
@@ -412,9 +478,10 @@ export const gameSlice = createSlice({
       state.duplicateSubmission = false
       state.successfulSubmission = false
       state.pointsAnimation.isVisible = false
-      state.allObjectivesCompleted = false // Reset the all objectives completed flag
+      state.allObjectivesCompleted = false
+      state.bonusWords = []
+      state.preserveFinalState = false
 
-      // FIX: Set objectiveCompletionNotification to an object with the correct structure
       state.objectiveCompletionNotification = {
         isVisible: false,
         count: 0,
@@ -470,6 +537,7 @@ export const gameSlice = createSlice({
           state.completedObjectives = []
           state.message = "New puzzle available! Press Start to play."
           state.allObjectivesCompleted = false // Reset the all objectives completed flag
+          state.bonusWords = [] // Reset bonus words
         } else {
           // If game is active, show a message but don't interrupt gameplay
           state.message = "A new puzzle is available after this game!"
@@ -492,6 +560,7 @@ export const gameSlice = createSlice({
       state.gameActive = false
       state.gameOver = true
       state.gameEndedButNotReset = true
+      state.preserveFinalState = true // Preserve the final state when ending the game
     },
     resetAfterGameEnd: (state) => {
       // Now perform the actual reset
@@ -504,6 +573,8 @@ export const gameSlice = createSlice({
       state.completedObjectives = []
       state.message = "Game reset! Press Start to play again."
       state.allObjectivesCompleted = false // Reset the all objectives completed flag
+      state.bonusWords = [] // Reset bonus words
+      state.preserveFinalState = false // Reset preserve final state flag
     },
   },
 })
@@ -515,6 +586,7 @@ export const {
   tickTimer,
   startGame,
   resetGame,
+  resetGameAfterReview, // Export the new action
   setGameTheme,
   hidePointsAnimation,
   hideObjectiveNotification,

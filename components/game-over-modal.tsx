@@ -6,8 +6,9 @@ import type { Objective } from "@/lib/slices/gameSlice"
 import { motion, AnimatePresence } from "framer-motion"
 import ScoreSubmission from "./score-submission"
 import ShareResults from "./share-results"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/lib/store"
+import { resetGameAfterReview } from "@/lib/slices/gameSlice"
 
 interface GameOverModalProps {
   score: number
@@ -38,6 +39,8 @@ export default function GameOverModal({
   const [showScoreSubmission, setShowScoreSubmission] = useState(false)
   const [scoreSubmitted, setScoreSubmitted] = useState(false)
   const [showShareResults, setShowShareResults] = useState(false)
+
+  const dispatch = useDispatch()
 
   // Get the completed objectives directly from the Redux store to ensure accuracy
   const completedObjectives = useSelector((state: RootState) => state.game.completedObjectives)
@@ -124,6 +127,14 @@ export default function GameOverModal({
   // Handle going back from share results to game over screen
   const handleBackFromShare = () => {
     setShowShareResults(false)
+  }
+
+  // Handle play again with proper reset
+  const handlePlayAgain = () => {
+    // Dispatch the resetGameAfterReview action to properly reset the game
+    dispatch(resetGameAfterReview())
+    // Then call the original onResetGame function
+    onResetGame()
   }
 
   return (
@@ -246,7 +257,7 @@ export default function GameOverModal({
 
               <div className="flex flex-col gap-4 mt-6">
                 <button
-                  onClick={onResetGame}
+                  onClick={handlePlayAgain}
                   className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md transition-colors duration-200 flex items-center justify-center"
                 >
                   <span className="mr-2">Play Again</span>

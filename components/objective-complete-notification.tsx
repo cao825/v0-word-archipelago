@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAppSelector, useAppDispatch } from "@/lib/hooks/hooks"
 import { hideObjectiveNotification } from "@/lib/slices/gameSlice"
@@ -7,30 +7,49 @@ import { CheckCircle } from "lucide-react"
 
 export default function ObjectiveCompleteNotification() {
   const dispatch = useAppDispatch()
-  const { isVisible, count, completedObjectiveIds } = useAppSelector(
-    (state) => state.game.objectiveCompletionNotification,
-  )
+  const objectiveCompletionNotification = useAppSelector((state) => state.game.objectiveCompletionNotification)
   const objectives = useAppSelector((state) => state.game.objectives)
+  const completedObjectives = useAppSelector((state) => state.game.completedObjectives)
+
+  const [isVisible, setIsVisible] = useState(false)
+  const [count, setCount] = useState(0)
 
   // Add a ref to track if we've already shown a notification for all objectives
   const allObjectivesNotifiedRef = useRef(false)
   const totalObjectives = objectives.length
-  const completedObjectives = useAppSelector((state) => state.game.completedObjectives)
 
   // Find the completed objective descriptions
   const completedObjectiveDescriptions = objectives
-    .filter((obj) => completedObjectiveIds.includes(obj.id))
+    .filter((obj) => objectiveCompletionNotification.completedObjectiveIds.includes(obj.id))
     .map((obj) => obj.description)
 
   useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => {
-        dispatch(hideObjectiveNotification())
-      }, 3000)
+    if (objectiveCompletionNotification.isVisible && objectiveCompletionNotification.completedObjectiveIds.length > 0) {
+      // Verify that these objectives are actually completed
+      const verifiedIds = objectiveCompletionNotification.completedObjectiveIds.filter((id) =>
+        completedObjectives.includes(id),
+      )
 
-      return () => clearTimeout(timer)
+      // Only show notification if there are verified completed objectives
+      if (verifiedIds.length > 0) {
+        setIsVisible(true)
+        setCount(verifiedIds.length)
+
+        // Hide after delay
+        const timer = setTimeout(() => {
+          setIsVisible(false)
+          dispatch(hideObjectiveNotification())
+        }, 3000)
+
+        return () => clearTimeout(timer)
+      } else {
+        // If no verified objectives, hide the notification
+        dispatch(hideObjectiveNotification())
+      }
+    } else {
+      setIsVisible(false)
     }
-  }, [isVisible, dispatch])
+  }, [objectiveCompletionNotification, completedObjectives, dispatch])
 
   // Check if all objectives are completed
   useEffect(() => {

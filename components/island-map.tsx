@@ -20,6 +20,7 @@ interface IslandMapProps {
   invalidSubmission?: boolean
   successfulSubmission?: boolean
   onInvalidIslandClick?: (event: React.MouseEvent, islandId: string) => void
+  gameActive?: boolean // Add this prop to check if game is active
 }
 
 // Interface for storing island shapes
@@ -40,6 +41,7 @@ export default function IslandMap({
   invalidSubmission = false,
   successfulSubmission = false,
   onInvalidIslandClick,
+  gameActive = false,
 }: IslandMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -535,7 +537,7 @@ export default function IslandMap({
 
         ctx.closePath()
 
-        // Beach gradient
+        // Beach gradient - FIX: Ensure all 6 arguments are provided
         const beachGradient = ctx.createRadialGradient(
           island.position.x - island.size / 3,
           island.position.y - island.size / 3,
@@ -574,7 +576,7 @@ export default function IslandMap({
 
         ctx.closePath()
 
-        // Island vegetation gradient
+        // Island vegetation gradient - FIX: Ensure all 6 arguments are provided
         const islandGradient = ctx.createRadialGradient(
           island.position.x - island.size / 3,
           island.position.y - island.size / 3,
@@ -735,7 +737,7 @@ export default function IslandMap({
         ctx.beginPath()
         ctx.arc(island.position.x, island.position.y, island.size * 0.6, 0, Math.PI * 2)
 
-        // Create radial gradient for flash
+        // Create radial gradient for flash - FIX: Ensure all 6 arguments are provided
         const flashGradient = ctx.createRadialGradient(
           island.position.x,
           island.position.y,
@@ -816,6 +818,7 @@ export default function IslandMap({
 
             // Check if this would be an invalid selection (not connected to last island)
             if (
+              gameActive && // Only check connections if the game is active
               selectedIslands.length > 0 &&
               lastSelected &&
               !lastSelected.connections.includes(island.id) &&
@@ -832,7 +835,9 @@ export default function IslandMap({
             }
 
             // Call the click handler regardless
-            onIslandClick(island.id)
+            if (gameActive) {
+              onIslandClick(island.id)
+            }
           }
 
           // Update tap tracking
@@ -859,6 +864,7 @@ export default function IslandMap({
       isMobile,
       selectedIslands,
       onInvalidIslandClick,
+      gameActive,
     ],
   )
 

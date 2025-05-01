@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks/hooks"
 import {
   selectIsland,
@@ -58,6 +58,8 @@ export default function GameBoard() {
   const puzzleDate = useAppSelector((state) => state.game.gameTimestamp)
   // Get points animation state directly from Redux
   const pointsAnimation = useAppSelector((state) => state.game.pointsAnimation)
+  // Get bonus words from Redux
+  const bonusWords = useAppSelector((state) => state.game.bonusWords || [])
 
   const [showSettings, setShowSettings] = useState(false)
   const [showObjectivesModal, setShowObjectivesModal] = useState(false)
@@ -505,6 +507,7 @@ export default function GameBoard() {
           onShowShareModal={handleShowShareModal}
           onResetGame={handleResetGame}
           isMobile={isMobile}
+          bonusWords={bonusWords}
         />
       )}
 
@@ -548,6 +551,7 @@ export default function GameBoard() {
               invalidSubmission={invalidSubmission}
               successfulSubmission={successfulSubmission}
               onInvalidIslandClick={handleInvalidIslandClick}
+              gameActive={gameActive}
             />
           </div>
         </div>
