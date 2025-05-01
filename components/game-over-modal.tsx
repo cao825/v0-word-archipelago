@@ -49,14 +49,6 @@ export default function GameOverModal({
   // Get the found words count directly from the prop or Redux store
   const foundWordsCount = foundWords.length
 
-  // For debugging
-  console.log("GameOverModal props:", {
-    score,
-    foundWordsLength: foundWords.length,
-    objectivesLength: objectives.length,
-    completedObjectivesCount,
-  })
-
   // Animation delay for modal appearance
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -150,24 +142,20 @@ export default function GameOverModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <AnimatePresence mode="wait">
         <motion.div
           key={showShareResults ? "share" : showScoreSubmission && !scoreSubmitted ? "submit" : "results"}
-          initial={{ scale: 0.9, opacity: 0, y: 0 }}
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{
             scale: isVisible ? 1 : 0.9,
             opacity: isVisible ? 1 : 0,
-            y: 0,
           }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto"
+          className="bg-slate-900 rounded-lg shadow-xl w-[90%] max-w-md overflow-y-auto m-4"
           style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
+            maxHeight: "80vh",
           }}
         >
           {showScoreSubmission && !scoreSubmitted ? (

@@ -259,6 +259,16 @@
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
+  z-index: 9999;
+}
+
+/* Game over modal specific fixes */
+.game-over-modal {
+  width: 90%;
+  max-width: 450px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 9999;
 }
 
 /* Ensure modals are centered on mobile */
@@ -266,5 +276,12 @@
   .modal-container {
     top: 50%;
     max-height: 85vh;
+  }
+}
+
+/* Fix for modal positioning on iOS */
+@supports (-webkit-touch-callout: none) {
+  .fixed {
+    position: fixed;
   }
 }

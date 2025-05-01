@@ -44,12 +44,27 @@ export default function CompactTopBar({
 }: CompactTopBarProps) {
   const [prevComboCount, setPrevComboCount] = useState(0)
   const [showComboAnimation, setShowComboAnimation] = useState(false)
+  const [initialTimeLeft, setInitialTimeLeft] = useState(timeLeft)
 
   // Get the completed objectives directly from the Redux store to ensure accuracy
   const completedObjectivesFromStore = useSelector((state: RootState) => state.game.completedObjectives.length)
 
+  // Set the initial time when the game becomes active
+  useEffect(() => {
+    if (gameActive && initialTimeLeft === 0) {
+      setInitialTimeLeft(timeLeft)
+    }
+  }, [gameActive, timeLeft, initialTimeLeft])
+
+  // Reset initial time when game is reset
+  useEffect(() => {
+    if (!gameActive) {
+      setInitialTimeLeft(0)
+    }
+  }, [gameActive])
+
   // Calculate progress percentage for the time bar
-  const timePercentage = (timeLeft / 300) * 100 // Assuming 5 minutes (300 seconds) total
+  const timePercentage = initialTimeLeft > 0 ? (timeLeft / initialTimeLeft) * 100 : 100
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -254,7 +269,7 @@ export default function CompactTopBar({
         <motion.div className="w-full h-0.5 bg-white/10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <motion.div
             className={`h-full ${themeColors.progress}`}
-            initial={{ width: `${timePercentage}%` }}
+            initial={{ width: "100%" }}
             animate={{ width: `${timePercentage}%` }}
             transition={{ duration: 0.5 }}
           />
