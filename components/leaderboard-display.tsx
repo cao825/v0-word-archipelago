@@ -300,7 +300,13 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
         <div
           ref={containerRef}
           className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container w-full"
-          style={{ scrollBehavior: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }} // Ensure smooth scrolling doesn't interfere with manual scrolling
+          style={{
+            scrollBehavior: "auto",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            width: "100%",
+            maxWidth: "100%",
+          }}
         >
           {entries.map((entry, index) => {
             // Check if this entry should be highlighted (only highlight the most recent matching entry)
@@ -313,7 +319,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
             return (
               <div
                 key={`${entry.playerInitials}-${entry.timestamp}-${index}`}
-                className={`bg-sky-900 rounded-md p-1.5 flex items-center border w-full ${
+                className={`bg-sky-900 rounded-md p-1.5 flex items-center border w-full overflow-hidden ${
                   isHighlighted ? "border-amber-400 shadow-lg shadow-amber-400/20 animate-pulse" : "border-sky-700"
                 }`}
                 ref={

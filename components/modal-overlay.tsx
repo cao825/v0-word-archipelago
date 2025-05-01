@@ -50,29 +50,30 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
           />
 
           {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-md mx-auto w-full"
-            style={{ maxHeight: "80vh" }}
-          >
-            <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg overflow-hidden w-full">
-              <div className="flex items-center justify-between p-3 border-b border-sky-700 w-full">
-                <h3 className="text-sm font-medium text-white">{title}</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-sky-200 hover:bg-sky-700 hover:text-white"
-                  onClick={onClose}
-                >
-                  <X size={16} />
-                </Button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="w-full max-w-md mx-auto pointer-events-auto px-4 sm:px-0"
+            >
+              <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg overflow-hidden w-full">
+                <div className="flex items-center justify-between p-3 border-b border-sky-700 w-full">
+                  <h3 className="text-sm font-medium text-white">{title}</h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-sky-200 hover:bg-sky-700 hover:text-white"
+                    onClick={onClose}
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+                <div className="p-3 max-h-[60vh] overflow-y-auto w-full">{children}</div>
               </div>
-              <div className="p-3 max-h-[60vh] overflow-y-auto w-full">{children}</div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

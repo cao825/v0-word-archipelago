@@ -25,6 +25,7 @@ import { professionWords } from "./categories/professions"
 import { placeWords } from "./categories/places"
 import { numberWords } from "./categories/numbers"
 import { slangWords } from "./categories/slang"
+import { gameTermWords } from "./categories/game-terms"
 
 // Combine all word lists into a single dictionary
 export const dictionary = [
@@ -54,6 +55,7 @@ export const dictionary = [
   ...placeWords,
   ...numberWords,
   ...slangWords,
+  ...gameTermWords,
 ]
 
 // Export individual categories for potential use in themed games
@@ -84,4 +86,5 @@ export {
   placeWords,
   numberWords,
   slangWords,
+  gameTermWords,
 }

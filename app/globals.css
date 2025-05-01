@@ -285,3 +285,24 @@
     position: fixed;
   }
 }
+
+/* Ensure modals are properly centered on all devices */
+.fixed.inset-0.flex.items-center.justify-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive modal width adjustments */
+@media (min-width: 640px) {
+  .max-w-md {
+    max-width: 28rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

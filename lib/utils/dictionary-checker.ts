@@ -55,3 +55,18 @@ export function getWordsWithPrefix(prefix: string): string[] {
     .filter((word) => word.startsWith(lowerPrefix))
     .sort()
 }
+
+/**
+ * Add a word to the dictionary
+ * @param word Word to add
+ * @returns Boolean indicating if the word was added (true) or already existed (false)
+ */
+export function addWordToDictionary(word: string): boolean {
+  const lowerWord = word.toLowerCase()
+  if (dictionarySet.has(lowerWord)) {
+    return false
+  }
+
+  dictionarySet.add(lowerWord)
+  return true
+}
