@@ -306,3 +306,40 @@
     padding-right: 1rem;
   }
 }
+
+/* Fix for scrollbars on modals */
+.bg-slate-900.rounded-lg.shadow-xl {
+  overflow: visible;
+}
+
+/* Ensure modal content fits without scrolling on desktop */
+@media (min-width: 768px) {
+  .p-5 {
+    padding: 1.25rem;
+  }
+
+  .game-over-modal .text-4xl {
+    font-size: 2.25rem;
+  }
+
+  .game-over-modal .text-2xl {
+    font-size: 1.5rem;
+  }
+}
+
+/* Hide scrollbars when not needed */
+.overflow-auto {
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+/* Only show scrollbars when content overflows */
+@media (min-width: 768px) {
+  .overflow-auto {
+    overflow: visible;
+  }
+
+  .overflow-y-auto {
+    overflow-y: visible;
+  }
+}

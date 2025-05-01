@@ -58,7 +58,7 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="w-full max-w-md mx-auto pointer-events-auto px-4 sm:px-0"
             >
-              <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg overflow-hidden w-full">
+              <div className="bg-sky-800/90 backdrop-blur-md border border-sky-700 rounded-lg shadow-lg w-full">
                 <div className="flex items-center justify-between p-3 border-b border-sky-700 w-full">
                   <h3 className="text-sm font-medium text-white">{title}</h3>
                   <Button
@@ -70,7 +70,9 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
                     <X size={16} />
                   </Button>
                 </div>
-                <div className="p-3 max-h-[60vh] overflow-y-auto w-full">{children}</div>
+                <div className="p-3 md:overflow-visible overflow-y-auto md:max-h-none max-h-[60vh] w-full">
+                  {children}
+                </div>
               </div>
             </motion.div>
           </div>

@@ -153,10 +153,7 @@ export default function GameOverModal({
           }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="bg-slate-900 rounded-lg shadow-xl w-[90%] max-w-md overflow-y-auto m-4"
-          style={{
-            maxHeight: "80vh",
-          }}
+          className="bg-slate-900 rounded-lg shadow-xl w-[90%] max-w-md m-4"
         >
           {showScoreSubmission && !scoreSubmitted ? (
             <div className="p-5">
