@@ -12,6 +12,7 @@ import {
   fetchDailyLeaderboard,
   fetchAllTimeLeaderboard,
   formatTimestamp,
+  formatTimestampWithDate,
   type LeaderboardEntry,
   addLeaderboardEntry,
   formatInitials,
@@ -365,7 +366,9 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
                   <div className={`font-bold text-base ${isHighlighted ? "text-amber-300" : "text-amber-400"}`}>
                     {entry.score}
                   </div>
-                  <div className="text-[10px] text-sky-300">{formatTimestamp(entry.timestamp)}</div>
+                  <div className="text-[10px] text-sky-300">
+                    {tabKey === "alltime" ? formatTimestampWithDate(entry.timestamp) : formatTimestamp(entry.timestamp)}
+                  </div>
                 </div>
               </div>
             )

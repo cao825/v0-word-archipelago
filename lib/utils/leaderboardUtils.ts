@@ -462,7 +462,7 @@ export function getAllTimeLeaderboard(): LeaderboardEntry[] {
   }
 }
 
-// Format timestamp to readable date/time
+// Format timestamp to readable time (hours and minutes)
 export function formatTimestamp(timestamp: number): string {
   try {
     const date = new Date(timestamp)
@@ -470,6 +470,33 @@ export function formatTimestamp(timestamp: number): string {
   } catch (error) {
     console.error("Error formatting timestamp:", error)
     return "Unknown time"
+  }
+}
+
+// Format timestamp to include date for all-time leaderboard
+export function formatTimestampWithDate(timestamp: number): string {
+  try {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const isToday = date.toDateString() === now.toDateString()
+    const isThisYear = date.getFullYear() === now.getFullYear()
+
+    // Format the time component
+    const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+    if (isToday) {
+      // Today: "Today, 3:45 PM"
+      return `Today, ${time}`
+    } else if (isThisYear) {
+      // This year: "Jan 15, 3:45 PM"
+      return `${date.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`
+    } else {
+      // Previous years: "Jan 15 '23, 3:45 PM"
+      return `${date.toLocaleDateString([], { month: "short", day: "numeric", year: "2-digit" })}, ${time}`
+    }
+  } catch (error) {
+    console.error("Error formatting timestamp with date:", error)
+    return "Unknown date"
   }
 }
 
