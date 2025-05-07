@@ -300,13 +300,14 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
       return (
         <div
           ref={containerRef}
-          className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 leaderboard-container w-full"
+          className="space-y-1.5 overflow-y-auto pr-1 leaderboard-container w-full"
           style={{
             scrollBehavior: "auto",
             overscrollBehavior: "contain",
             WebkitOverflowScrolling: "touch",
             width: "100%",
             maxWidth: "100%",
+            maxHeight: "250px", // Ensure consistent max height
           }}
         >
           {entries.map((entry, index) => {
@@ -317,10 +318,14 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
               entry.playerInitials === highlightInitials &&
               entry.timestamp === mostRecentMatchingEntry.timestamp
 
+            // Format timestamp based on tab
+            const formattedTime =
+              tabKey === "alltime" ? formatTimestampWithDate(entry.timestamp) : formatTimestamp(entry.timestamp)
+
             return (
               <div
                 key={`${entry.playerInitials}-${entry.timestamp}-${index}`}
-                className={`bg-sky-900 rounded-md p-1.5 flex items-center border w-full overflow-hidden ${
+                className={`bg-sky-900 rounded-md p-1.5 flex items-center border w-full ${
                   isHighlighted ? "border-amber-400 shadow-lg shadow-amber-400/20 animate-pulse" : "border-sky-700"
                 }`}
                 ref={
@@ -347,28 +352,37 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
                     : undefined
                 }
               >
-                <div className="w-6 h-6 rounded-full bg-amber-600 flex items-center justify-center font-bold mr-2 text-xs">
+                {/* Rank circle */}
+                <div className="w-6 h-6 min-w-6 rounded-full bg-amber-600 flex items-center justify-center font-bold mr-2 text-xs">
                   {index + 1}
                 </div>
-                <div className="flex-1 flex items-center">
-                  <div
-                    className={`bg-sky-950 px-2 py-0.5 rounded-md font-mono font-bold tracking-wider mr-2 uppercase text-xs ${
-                      isHighlighted ? "text-amber-300 ring-2 ring-amber-400" : "text-amber-300"
-                    }`}
-                  >
-                    {entry.playerInitials}
+
+                {/* Player info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center mb-0.5">
+                    <div
+                      className={`bg-sky-950 px-2 py-0.5 rounded-md font-mono font-bold tracking-wider mr-2 uppercase text-xs ${
+                        isHighlighted ? "text-amber-300 ring-2 ring-amber-400" : "text-amber-300"
+                      }`}
+                    >
+                      {entry.playerInitials}
+                    </div>
+                    <div className="text-[10px] text-sky-300 truncate">
+                      {entry.wordsFound} words · {entry.objectivesCompleted} obj
+                    </div>
                   </div>
-                  <div className="text-[10px] text-sky-300">
-                    {entry.wordsFound} words · {entry.objectivesCompleted} obj
-                  </div>
+
+                  {/* Date/time for all-time tab */}
+                  {tabKey === "alltime" && <div className="text-[10px] text-sky-300 truncate">{formattedTime}</div>}
                 </div>
-                <div className="text-right">
+
+                {/* Score and time */}
+                <div className="text-right ml-2 flex flex-col items-end min-w-[60px]">
                   <div className={`font-bold text-base ${isHighlighted ? "text-amber-300" : "text-amber-400"}`}>
                     {entry.score}
                   </div>
-                  <div className="text-[10px] text-sky-300">
-                    {tabKey === "alltime" ? formatTimestampWithDate(entry.timestamp) : formatTimestamp(entry.timestamp)}
-                  </div>
+                  {/* Only show time for hourly and daily tabs */}
+                  {tabKey !== "alltime" && <div className="text-[10px] text-sky-300">{formattedTime}</div>}
                 </div>
               </div>
             )
@@ -442,6 +456,8 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
           scrollbar-width: thin;
           scrollbar-color: rgba(56, 189, 248, 0.5) rgba(7, 89, 133, 0.1);
           width: 100%;
+          max-height: 250px !important; /* Force max height with !important */
+          overflow-y: auto !important; /* Force overflow with !important */
         }
         .leaderboard-container::-webkit-scrollbar {
           width: 6px;
@@ -453,6 +469,14 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
         .leaderboard-container::-webkit-scrollbar-thumb {
           background-color: rgba(56, 189, 248, 0.5);
           border-radius: 3px;
+        }
+        
+        /* Ensure modal content doesn't overflow on desktop */
+        @media (min-width: 768px) {
+          .leaderboard-container {
+            max-height: 250px !important;
+            overflow-y: auto !important;
+          }
         }
       `}</style>
     </div>

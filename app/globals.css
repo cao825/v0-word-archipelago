@@ -239,6 +239,8 @@
   -ms-overflow-style: -ms-autohiding-scrollbar;
   scrollbar-width: thin;
   touch-action: pan-y;
+  max-height: 250px !important;
+  overflow-y: auto !important;
 }
 
 /* Fix for iOS scrolling issues */
@@ -325,6 +327,13 @@
   .game-over-modal .text-2xl {
     font-size: 1.5rem;
   }
+
+  /* Fix for leaderboard scrolling on desktop */
+  .leaderboard-container {
+    max-height: 250px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
 }
 
 /* Hide scrollbars when not needed */
@@ -341,5 +350,10 @@
 
   .overflow-y-auto {
     overflow-y: visible;
+  }
+
+  /* Force scrolling for leaderboard containers */
+  .leaderboard-container {
+    overflow-y: auto !important;
   }
 }

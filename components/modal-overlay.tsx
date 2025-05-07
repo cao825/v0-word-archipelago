@@ -70,9 +70,7 @@ export default function ModalOverlay({ isOpen, onClose, title, children }: Modal
                     <X size={16} />
                   </Button>
                 </div>
-                <div className="p-3 md:overflow-visible overflow-y-auto md:max-h-none max-h-[60vh] w-full">
-                  {children}
-                </div>
+                <div className="p-3 w-full max-h-[calc(80vh-60px)] overflow-visible">{children}</div>
               </div>
             </motion.div>
           </div>
