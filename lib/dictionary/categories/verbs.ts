@@ -2,6 +2,8 @@
 export const verbWords = [
   // Basic verbs
   "add",
+  "ail",
+  "aim",
   "ask",
   "be",
   "beat",
@@ -191,6 +193,12 @@ export const verbWords = [
   "added",
   "adding",
   "adds",
+  "ailed",
+  "ailing",
+  "ails",
+  "aimed",
+  "aiming",
+  "aims",
   "asked",
   "asking",
   "asks",

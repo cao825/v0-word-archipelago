@@ -10,16 +10,17 @@ interface PointsAnimationProps {
 }
 
 export default function PointsAnimation({ points, isVisible, onComplete }: PointsAnimationProps) {
-  // Call onComplete after animation finishes
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
         onComplete()
-      }, 1500) // Match this to the animation duration
+      }, 1200)
 
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+      }
     }
-  }, [isVisible, onComplete])
+  }, [isVisible])
 
   return (
     <AnimatePresence>
@@ -29,25 +30,27 @@ export default function PointsAnimation({ points, isVisible, onComplete }: Point
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
           <motion.div
             className="text-5xl font-bold text-white drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]"
-            initial={{ scale: 0.5, y: 50 }}
+            initial={{ scale: 0.5, y: 50, opacity: 0 }}
             animate={{
               scale: 1.2,
               y: -20,
+              opacity: 1,
               transition: {
-                duration: 0.5,
+                duration: 0.3,
                 ease: "easeOut",
               },
             }}
             exit={{
-              scale: 1.5,
-              y: -100,
+              scale: 1.3,
+              y: -60,
               opacity: 0,
               transition: {
-                duration: 1,
-                ease: "easeOut",
+                duration: 0.6,
+                ease: "easeIn",
               },
             }}
           >

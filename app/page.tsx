@@ -5,6 +5,7 @@ import GameBoard from "@/components/game-board"
 import { Providers } from "@/components/providers"
 import { useAppSelector } from "@/lib/hooks/hooks"
 import ErrorBoundary from "@/components/error-boundary"
+import { getThemeGradient } from "@/lib/utils/theme-config"
 
 export default function Home() {
   // Add error handling for the entire app
@@ -31,20 +32,9 @@ export default function Home() {
   )
 }
 
-// Memoize the AppContent component to prevent unnecessary re-renders
 const AppContent = memo(function AppContent() {
   const { theme } = useAppSelector((state) => state.game)
-
-  // Set background gradient based on theme
-  let bgGradient = "bg-gradient-to-b from-sky-900 via-sky-800 to-sky-950"
-
-  if (theme === "sunset") {
-    bgGradient = "bg-gradient-to-b from-blue-900 via-orange-900 to-blue-950"
-  } else if (theme === "stormy") {
-    bgGradient = "bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950"
-  } else if (theme === "volcanic") {
-    bgGradient = "bg-gradient-to-b from-red-950 via-red-900 to-slate-950"
-  }
+  const bgGradient = getThemeGradient(theme)
 
   return (
     <main className={`min-h-screen ${bgGradient} text-white pb-6 font-sans`}>

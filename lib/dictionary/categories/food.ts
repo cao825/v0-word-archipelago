@@ -11,6 +11,7 @@ export const foodWords = [
   "beer",
   "beet",
   "berry",
+  "bran", // Adding "bran" (grain product)
   "bread",
   "broth",
   "burger",
@@ -89,12 +90,15 @@ export const foodWords = [
   "lime",
   "lunch",
   "maize",
+  "malt", // Adding "malt" and "malts" (brewing ingredient)
+  "malts",
   "meal",
   "meat",
   "melon",
   "menu",
   "milk",
   "mint",
+  "mints", // Adding "mints" (plural)
   "muffin",
   "munch",
   "nut",
@@ -128,6 +132,7 @@ export const foodWords = [
   "rice",
   "roast",
   "roll",
+  "rye", // Adding "rye" (grain)
   "salad",
   "salt",
   "sauce",
@@ -175,6 +180,7 @@ export const foodWords = [
   "yogurt",
   "yolk",
   "zest",
+  "zested",
 
   // Adding chef and other culinary terms
   "chef",

@@ -72,33 +72,40 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Updated font feature settings for better typography */
+    font-feature-settings: "rlig" 1, "calt" 1, "kern" 1;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Modern responsive font scaling using clamp() */
+@layer base {
+  html {
+    font-size: clamp(14px, 2vw, 16px);
   }
 }
 
 /* Responsive font size adjustments for small screens */
 @media (max-width: 400px) {
-  html {
-    font-size: 87.5%; /* Reduce font size by 12.5% */
-  }
-
   .text-3xl {
-    font-size: 1.75rem; /* Slightly smaller than default */
+    font-size: 1.75rem;
   }
 
   .text-2xl {
-    font-size: 1.375rem; /* Slightly smaller than default */
+    font-size: 1.375rem;
   }
 
   .text-xl {
-    font-size: 1.125rem; /* Slightly smaller than default */
+    font-size: 1.125rem;
   }
 
   .text-lg {
-    font-size: 1rem; /* Slightly smaller than default */
+    font-size: 1rem;
   }
 
-  /* Adjust padding for better fit */
   .p-4 {
     padding: 0.875rem;
   }
@@ -114,11 +121,12 @@
   }
 }
 
-/* Smooth transitions for all UI elements */
+/* Improved smooth transitions with better performance */
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
+  will-change: transform, opacity;
 }
 
 /* Improved responsive styles */
@@ -132,9 +140,9 @@
   }
 }
 
-/* Prevent layout shifts */
+/* Use modern CSS for layout stability */
 .layout-container {
-  min-height: calc(100vh - 4rem);
+  min-height: 100dvh;
 }
 
 /* Overlay styles */
@@ -193,12 +201,18 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Modern UI improvements */
+/* Modern frosted glass effect with better browser support */
 .frosted-glass {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   background-color: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@supports not (backdrop-filter: blur(8px)) {
+  .frosted-glass {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
 }
 
 .island-button {
@@ -234,13 +248,26 @@
   animation: gentle-pulse 2s infinite ease-in-out;
 }
 
-/* Ensure proper scrolling behavior for leaderboards */
+/* Modern scrollbar styling */
 .leaderboard-container {
-  -ms-overflow-style: -ms-autohiding-scrollbar;
   scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted)) transparent;
   touch-action: pan-y;
   max-height: 250px !important;
   overflow-y: auto !important;
+}
+
+.leaderboard-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.leaderboard-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.leaderboard-container::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 3px;
 }
 
 /* Fix for iOS scrolling issues */
@@ -328,7 +355,6 @@
     font-size: 1.5rem;
   }
 
-  /* Fix for leaderboard scrolling on desktop */
   .leaderboard-container {
     max-height: 250px !important;
     overflow-y: auto !important;
@@ -336,23 +362,31 @@
   }
 }
 
-/* Hide scrollbars when not needed */
-.overflow-auto {
-  overflow: auto;
+/* Modern scrollbar styling for all scrollable areas */
+.overflow-auto,
+.overflow-y-auto {
   scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted)) transparent;
 }
 
-/* Only show scrollbars when content overflows */
+.overflow-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 3px;
+}
+
 @media (min-width: 768px) {
-  .overflow-auto {
-    overflow: visible;
-  }
-
-  .overflow-y-auto {
-    overflow-y: visible;
-  }
-
-  /* Force scrolling for leaderboard containers */
   .leaderboard-container {
     overflow-y: auto !important;
   }

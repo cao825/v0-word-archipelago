@@ -69,6 +69,8 @@ export const materialWords = [
   "fiber",
   "paper",
   "cardboard",
+  "ream", // Added ream and reams (quantity of paper)
+  "reams",
   "drywall",
   "insulation",
   "shingle",

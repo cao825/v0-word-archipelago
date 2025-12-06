@@ -139,6 +139,7 @@ export const adjectiveWords = [
   "tough",
   "true",
   "ugly",
+  "vain",
   "warm",
   "weak",
   "wet",

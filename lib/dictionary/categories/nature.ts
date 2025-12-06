@@ -61,6 +61,8 @@ export const natureWords = [
   "shore",
   "soil",
   "stream",
+  "tide",
+  "tides",
   "valley",
   "volcano",
   "water",
@@ -93,6 +95,11 @@ export const natureWords = [
   "slope",
   "swamp",
   "vale",
+  "clay", // added clay
+  "dirt", // added dirt
+  "mud", // added mud
+  "stone", // added stone
+  "stones", // added plural
 
   // Plants
   "bark",
