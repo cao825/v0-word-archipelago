@@ -1,4 +1,4 @@
-"use cache"
+// This file contains synchronous utility functions that should not be cached
 
 export type GameTheme = "default" | "sunset" | "stormy" | "volcanic"
 
@@ -24,12 +24,10 @@ export const THEME_CONFIGS: Record<GameTheme, ThemeConfig> = {
     gradient: "bg-gradient-to-b from-red-950 via-red-900 to-slate-950",
     name: "Volcanic",
   },
-}
+} as const
 
-export function getThemeGradient(theme: GameTheme): string {
-  return THEME_CONFIGS[theme]?.gradient || THEME_CONFIGS.default.gradient
-}
+// Simple getter functions - no caching needed
+export const getThemeGradient = (theme: GameTheme): string =>
+  THEME_CONFIGS[theme]?.gradient || THEME_CONFIGS.default.gradient
 
-export function getThemeName(theme: GameTheme): string {
-  return THEME_CONFIGS[theme]?.name || THEME_CONFIGS.default.name
-}
+export const getThemeName = (theme: GameTheme): string => THEME_CONFIGS[theme]?.name || THEME_CONFIGS.default.name

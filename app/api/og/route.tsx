@@ -1,7 +1,5 @@
 import { ImageResponse } from "next/og"
 
-export const runtime = "edge"
-
 export async function GET() {
   try {
     const interBold = await fetch(
