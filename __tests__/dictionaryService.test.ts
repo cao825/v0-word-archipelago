@@ -1,16 +1,15 @@
-import { validateWord, couldBeValidWord, getWordDifficulty } from "../lib/services/dictionaryService"
-import { dictionary } from "../lib/utils/dictionary"
+import { validateWord, couldBeValidWord, getWordDifficulty, dictionary } from "../lib/services/dictionaryService"
 
 describe("Dictionary Service", () => {
   describe("validateWord", () => {
     it("should validate common words correctly", () => {
-      // Test a variety of common words
-      expect(validateWord("at")).toBe(true)
+      // Test a variety of common words (3+ letters)
       expect(validateWord("the")).toBe(true)
       expect(validateWord("and")).toBe(true)
       expect(validateWord("loud")).toBe(true)
       expect(validateWord("water")).toBe(true)
       expect(validateWord("computer")).toBe(true)
+      expect(validateWord("nods")).toBe(true) // Ensure plurals work
     })
 
     it("should be case insensitive", () => {
@@ -25,7 +24,8 @@ describe("Dictionary Service", () => {
       expect(validateWord("asdfgh")).toBe(false)
     })
 
-    it("should reject words less than 2 characters", () => {
+    it("should reject words less than 3 characters (game rule)", () => {
+      expect(validateWord("at")).toBe(false)
       expect(validateWord("a")).toBe(false)
       expect(validateWord("")).toBe(false)
     })
@@ -64,7 +64,7 @@ describe("Dictionary Service", () => {
 
   describe("getWordDifficulty", () => {
     it("should assign higher difficulty to longer words", () => {
-      const shortWordDifficulty = getWordDifficulty("at")
+      const shortWordDifficulty = getWordDifficulty("cat")
       const mediumWordDifficulty = getWordDifficulty("loud")
       const longWordDifficulty = getWordDifficulty("computer")
 
@@ -80,7 +80,7 @@ describe("Dictionary Service", () => {
     })
 
     it("should return a value between 1 and 10", () => {
-      const words = ["a", "at", "cat", "loud", "water", "computer", "xylophone", "quizzical"]
+      const words = ["cat", "loud", "water", "computer", "xylophone", "quizzical"]
 
       words.forEach((word) => {
         const difficulty = getWordDifficulty(word)
@@ -91,64 +91,41 @@ describe("Dictionary Service", () => {
   })
 
   describe("Dictionary Content", () => {
-    it("should contain common English words", () => {
+    it("should contain common English words (3+ letters)", () => {
       const commonWords = [
         "the",
-        "be",
-        "to",
-        "of",
         "and",
-        "a",
-        "in",
         "that",
         "have",
-        "I",
-        "it",
         "for",
         "not",
-        "on",
         "with",
-        "he",
-        "as",
         "you",
-        "do",
-        "at",
         "this",
         "but",
         "his",
-        "by",
         "from",
         "they",
-        "we",
         "say",
         "her",
         "she",
-        "or",
-        "an",
         "will",
-        "my",
         "one",
         "all",
         "would",
         "there",
         "their",
         "what",
-        "so",
-        "up",
         "out",
-        "if",
         "about",
         "who",
         "get",
         "which",
-        "go",
-        "me",
         "when",
         "make",
         "can",
         "like",
         "time",
-        "no",
         "just",
         "him",
         "know",
@@ -192,17 +169,16 @@ describe("Dictionary Service", () => {
         "give",
         "day",
         "most",
-        "us",
         "loud",
         "sound",
         "noise",
-        "volume",
         "hear",
         "voice",
         "speak",
         "shout",
         "quiet",
         "silent",
+        "nods", // Ensure plurals are included
       ]
 
       commonWords.forEach((word) => {
@@ -210,8 +186,8 @@ describe("Dictionary Service", () => {
       })
     })
 
-    it("should contain at least 1000 words", () => {
-      expect(dictionary.length).toBeGreaterThanOrEqual(1000)
+    it("should contain at least 10000 words (comprehensive dictionary)", () => {
+      expect(dictionary.length).toBeGreaterThanOrEqual(10000)
     })
 
     it("should not contain duplicate words", () => {
@@ -223,6 +199,12 @@ describe("Dictionary Service", () => {
       const invalidCharRegex = /[^a-z]/i
       dictionary.forEach((word) => {
         expect(invalidCharRegex.test(word)).toBe(false)
+      })
+    })
+
+    it("should only contain words with 3+ letters", () => {
+      dictionary.forEach((word) => {
+        expect(word.length).toBeGreaterThanOrEqual(3)
       })
     })
   })
