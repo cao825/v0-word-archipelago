@@ -1,5 +1,5 @@
 import type { Island } from "../slices/gameSlice"
-import { dictionary } from "../dictionary"
+import { dictionary } from "../services/dictionaryService"
 
 // Check if a word can be formed with the available islands
 export function canFormWord(word: string, islands: Island[]): boolean {
