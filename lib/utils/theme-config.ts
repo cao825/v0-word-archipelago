@@ -1,6 +1,11 @@
 // This file contains synchronous utility functions that should not be cached
 
-export type GameTheme = "default" | "sunset" | "stormy" | "volcanic"
+// Single source of truth for the theme union lives in the Redux slice; import it
+// here so the theme registry can't drift from the stored theme value (type-only
+// import — erased at compile time, no runtime dependency on the slice).
+import type { GameTheme } from "@/lib/slices/gameSlice"
+
+export type { GameTheme }
 
 export interface ThemeConfig {
   gradient: string
@@ -8,7 +13,7 @@ export interface ThemeConfig {
 }
 
 export const THEME_CONFIGS: Record<GameTheme, ThemeConfig> = {
-  default: {
+  tropical: {
     gradient: "bg-gradient-to-b from-sky-900 via-sky-800 to-sky-950",
     name: "Ocean Blue",
   },
@@ -28,6 +33,6 @@ export const THEME_CONFIGS: Record<GameTheme, ThemeConfig> = {
 
 // Simple getter functions - no caching needed
 export const getThemeGradient = (theme: GameTheme): string =>
-  THEME_CONFIGS[theme]?.gradient || THEME_CONFIGS.default.gradient
+  THEME_CONFIGS[theme]?.gradient || THEME_CONFIGS.tropical.gradient
 
-export const getThemeName = (theme: GameTheme): string => THEME_CONFIGS[theme]?.name || THEME_CONFIGS.default.name
+export const getThemeName = (theme: GameTheme): string => THEME_CONFIGS[theme]?.name || THEME_CONFIGS.tropical.name

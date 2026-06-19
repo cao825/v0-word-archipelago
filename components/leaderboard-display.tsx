@@ -264,7 +264,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
     (
       entries: LeaderboardEntry[],
       isLoadingState: boolean,
-      containerRef: React.RefObject<HTMLDivElement>,
+      containerRef: React.RefObject<HTMLDivElement | null>,
       tabKey: "hourly" | "daily" | "alltime",
     ) => {
       if (fetchError) {

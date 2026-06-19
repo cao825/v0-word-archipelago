@@ -284,7 +284,7 @@ export async function GET() {
       },
     )
   } catch (e) {
-    console.log(`${e.message}`)
+    console.log(`${e instanceof Error ? e.message : String(e)}`)
     return new Response(`Failed to generate the image`, {
       status: 500,
     })

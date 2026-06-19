@@ -3,7 +3,7 @@
 import words from "an-array-of-english-words"
 import { Trie } from "./trie"
 import { canFormWord, getWordDifficulty } from "./word-utils"
-import { applyValidationRules } from "./validation-rules"
+import { applyValidationRules, validationRules } from "./validation-rules"
 
 // Minimum word length for validation (game rule)
 const MIN_WORD_LENGTH = 3
@@ -52,7 +52,7 @@ export function couldBeValidWord(prefix: string): boolean {
   const lowerPrefix = prefix.toLowerCase()
 
   // Apply prefix validation rules
-  if (!applyValidationRules.qRequiresU(lowerPrefix)) return false
+  if (!validationRules.qRequiresU(lowerPrefix)) return false
 
   // Check trie for prefix
   return dictionaryTrie.startsWith(lowerPrefix)

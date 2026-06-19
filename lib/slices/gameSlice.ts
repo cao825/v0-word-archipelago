@@ -502,10 +502,6 @@ export const gameSlice = createSlice({
       state.theme = action.payload
     },
 
-    hidePointsAnimation: (state) => {
-      state.pointsAnimation.isVisible = false
-    },
-
     hideObjectiveNotification: (state) => {
       state.objectiveCompletionNotification.isVisible = false
     },
