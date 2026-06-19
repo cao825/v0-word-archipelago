@@ -223,6 +223,12 @@ jobs:
         with:
           # OAuth via Craig's Max subscription — same auth ClawApp uses.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Use the workflow's built-in GITHUB_TOKEN for GitHub API ops (posting
+          # the review). Without this, the action falls back to an OIDC→GitHub
+          # App token exchange that requires the Claude Code GitHub App to be
+          # installed on the repo (it is not), failing with a 401. The job already
+          # grants pull-requests/issues: write, so github-actions[bot] can comment.
+          github_token: ${{ github.token }}
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
