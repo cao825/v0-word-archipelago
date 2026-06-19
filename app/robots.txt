@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://word-archipelago.vercel.app/sitemap.xml
+Sitemap: https://wordisles.com/sitemap.xml

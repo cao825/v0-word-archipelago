@@ -12,11 +12,8 @@ const inter = Inter({
 // metadataBase resolves relative metadata URLs (openGraph/twitter images) to
 // absolute ones for scrapers/crawlers. Without it, relative image paths can't
 // resolve and shared links unfurl without an image.
-// NOTE: https://v0-word-archipelago.vercel.app is the live production origin
-// (verified 200; matches the Vercel project slug). The previous openGraph.url
-// (word-isles.vercel.app) and the robots/sitemap domain (word-archipelago.vercel.app)
-// both 404. Swap this to a branded custom domain once one is configured in Vercel.
-const SITE_URL = "https://v0-word-archipelago.vercel.app"
+// Canonical production domain (confirmed + live-serving the deployment).
+const SITE_URL = "https://wordisles.com"
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

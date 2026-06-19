@@ -260,7 +260,7 @@ export async function GET() {
               margin: 0,
             }}
           >
-            Play the daily puzzle at word-isles.vercel.app
+            Play the daily puzzle at wordisles.com
           </p>
         </div>
       </div>,
