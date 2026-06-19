@@ -1,4 +1,4 @@
-import { hasAtLeastNVowels, checkWordAgainstObjective, generateObjectives } from "../lib/utils/objectiveGenerator"
+import { hasAtLeastNVowels, checkWordAgainstObjective, generateObjectives, type Objective } from "../lib/utils/objectiveGenerator"
 import { describe, it, expect } from "@jest/globals"
 
 describe("Objective Generator", () => {
@@ -18,7 +18,7 @@ describe("Objective Generator", () => {
 
   describe("checkWordAgainstObjective", () => {
     it("should check long word objective", () => {
-      const objective = {
+      const objective: Objective = {
         id: "find-long-word",
         type: "length",
         description: "Find a word with 5 or more letters",
@@ -30,19 +30,19 @@ describe("Objective Generator", () => {
     })
 
     it("should check startsWith objective", () => {
-      const objective = {
+      const objective: Objective = {
         id: "starts-with-h",
         type: "startsWith",
         description: "Find a word starting with 'h'",
         parameter: "h",
-        ompleted: false,
+        completed: false,
       }
       expect(checkWordAgainstObjective("hello", objective)).toBe(true)
       expect(checkWordAgainstObjective("world", objective)).toBe(false)
     })
 
     it("should check endsWith objective", () => {
-      const objective = {
+      const objective: Objective = {
         id: "ends-with-d",
         type: "endsWith",
         description: "Find a word ending with 'd'",
@@ -54,7 +54,7 @@ describe("Objective Generator", () => {
     })
 
     it("should check contains objective", () => {
-      const objective = {
+      const objective: Objective = {
         id: "contains-o",
         type: "contains",
         description: "Find a word containing 'o'",

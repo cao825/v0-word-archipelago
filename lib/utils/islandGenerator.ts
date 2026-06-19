@@ -49,7 +49,9 @@ export function generateIslands(seed: () => number): Island[] {
   // Generate islands with positions
   for (let i = 0; i < numIslands; i++) {
     let validPosition = false
-    let x, y
+    // Initialized to 0; always reassigned in the placement loop / fallback below.
+    let x = 0,
+      y = 0
 
     // Try to find a valid position that's not too close to other islands
     let attempts = 0
