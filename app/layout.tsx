@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
@@ -9,16 +9,33 @@ const inter = Inter({
   variable: "--font-inter",
 })
 
+// metadataBase resolves relative metadata URLs (openGraph/twitter images) to
+// absolute ones for scrapers/crawlers. Without it, relative image paths can't
+// resolve and shared links unfurl without an image.
+// NOTE: https://v0-word-archipelago.vercel.app is the live production origin
+// (verified 200; matches the Vercel project slug). The previous openGraph.url
+// (word-isles.vercel.app) and the robots/sitemap domain (word-archipelago.vercel.app)
+// both 404. Swap this to a branded custom domain once one is configured in Vercel.
+const SITE_URL = "https://v0-word-archipelago.vercel.app"
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Word Isles | Hourly Word Puzzle Game",
   description:
     "Navigate between tropical isles to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
   keywords: "word game, puzzle game, word isles, hourly puzzle, word challenge, isle game",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-light-32x32.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "Word Isles | Hourly Word Puzzle Game",
     description:
       "Navigate between tropical isles to form words in this hourly word puzzle game. Challenge yourself with new objectives every hour!",
-    url: "https://word-isles.vercel.app",
+    url: SITE_URL,
     siteName: "Word Isles",
     images: [
       {
@@ -43,6 +60,13 @@ export const metadata: Metadata = {
     follow: true,
   },
     generator: 'v0.app'
+}
+
+// themeColor lives in the Viewport export, not metadata (Next 15/16 moved it —
+// themeColor in `metadata` is ignored). #0c4a6e = Tailwind sky-900, the top of
+// the app's default "tropical" theme gradient (from-sky-900 … to-sky-950).
+export const viewport: Viewport = {
+  themeColor: "#0c4a6e",
 }
 
 export default function RootLayout({
