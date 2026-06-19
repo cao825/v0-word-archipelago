@@ -185,9 +185,11 @@ jobs:
       # review. Both setup actions are SHA-pinned like the rest of the workflow.
       - name: Set up pnpm
         if: steps.check-author.outputs.skip != 'true'
+        # No `version:` here on purpose — pnpm/action-setup reads the pinned
+        # version from package.json `packageManager` (pnpm@11.8.0), the single
+        # source of truth shared with local Corepack. An explicit `version:` that
+        # disagrees with packageManager errors on newer action-setup.
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
-        with:
-          version: 9
 
       - name: Set up Node
         if: steps.check-author.outputs.skip != 'true'
