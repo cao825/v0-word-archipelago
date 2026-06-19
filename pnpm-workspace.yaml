@@ -1,2 +1,10 @@
 packages:
   - '.'
+
+# Approve build scripts for these packages so `pnpm install` does not leave them
+# unbuilt (pnpm 10+ ignores dependency build scripts unless explicitly allowed).
+# Explicit allowlist — NOT a global enable. sharp (native image processing) and
+# unrs-resolver (native resolver) both ship postinstall build steps.
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
