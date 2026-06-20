@@ -1,141 +1,123 @@
-# RECON — word-archipelago ground truth (v2, refreshed)
+# RECON — word-archipelago ground truth (v3, refreshed)
 
-**This supersedes the PR #6 recon.** That version is now substantially stale (6 PRs merged since) and several of its claims were **falsified** — see Part B. Read this, not the old assertions.
+**Supersedes the v2 recon (PR #13).** 5 PRs merged since (#14–#18): **Track 1 (type-safety) is now COMPLETE** and the build enforces types. This adds the full fleet best-practice scorecard (Part B). Re-verified against disk/GitHub — do not carry v2 claims unchecked.
 
 **Scope:** Read-only re-recon. No source/workflow/config changed — this PR touches only `RECON.md` and `plan.md`.
-**Date:** 2026-06-19 · **Branch:** `plan-refresh-v2` (from latest main) · **gh:** `cao825` · **main HEAD:** `e1fed2f` (next 16.2.6 bump, #12)
-**Package name:** `word-isles` · **Repo:** `cao825/v0-word-archipelago`
+**Date:** 2026-06-19 · **Branch:** `plan-refresh-v3` (from latest main) · **gh:** `cao825` · **main HEAD:** `aa8d39e4` (#18)
+**Package:** `word-isles` · **Canonical domain:** `https://wordisles.com` (set in #15)
 
-Findings tagged **OBSERVED** (command run, output seen) vs **INFERRED** (reasoned). Caveats carry equal weight — collected at the end.
+OBSERVED (ran it, saw output) vs INFERRED (reasoned). Caveats carry equal weight — collected at the end.
 
 ---
 
-## PART A — Current state (re-verified, not carried from the old doc)
+## PART A — Current state (re-verified)
 
-### A0. Load-bearing invariant (NEW — was absent from the old recon)
-**The repo runs on pnpm 10, pinned.** `package.json` has `"packageManager": "pnpm@10.34.4"`; the committed `pnpm-lock.yaml` is a **pnpm-10 artifact** (`lockfileVersion '9.0'`). **Vercel and CI resolve pnpm from this field.** Any work that regenerates the lockfile **MUST** run under pnpm 10.34.4 (`corepack use pnpm@10.34.4` first). A local pnpm 11 rewrites the lockfile as a pnpm-11 artifact → Vercel detects the lockfile-author/declared-version mismatch and **fails the deploy** (this exact failure happened and was fixed during the #7→#12 sequence). This invariant governs every future PR that touches deps.
+### A0. Load-bearing invariants (unchanged, still governing)
+- **pnpm 10 only:** `packageManager` pins `pnpm@10.34.4`; lockfile is a pnpm-10 artifact (`lockfileVersion '9.0'`); Vercel/CI resolve pnpm from it. Lockfile work MUST run under `corepack use pnpm@10.34.4` or the deploy breaks.
+- **`pnpm.overrides` is LIVE** under pnpm 10 (now 17 entries from #16). Raise floors / add scoped `pkg@major` pins; don't delete.
+- **No branch protection** (private repo, no Pro — API 403). All checks are advisory/non-gating; merges are manual.
+- **Canonical domain = `wordisles.com`** (the Vercel slug `v0-word-archipelago.vercel.app` is live too but secondary).
 
-### A1. Merged-PR state — OBSERVED (`gh pr list --state merged`)
-The fleet-port sequence (all merged, in order):
-| PR | What landed |
+### A1. What landed since v2 — OBSERVED
+| PR | Outcome |
 |---|---|
-| **#7** | Advisory `claude-review.yml` (Next.js + pnpm + jest, SHA-pinned, **no** auto-merge) |
-| **#8** | Jest harness repair — `ts-jest` preset → **`next/jest`**; `onlyBuiltDependencies` allowlist (sharp, unrs-resolver) |
-| **#9** | Type fixes — **tsc 27 → 4**; deleted 5 dead v0 components; `dictionaryService` runtime bug; GameTheme reconciled |
-| **#10** | Review-auth fix — `github_token: ${{ github.token }}` (action no longer needs the Claude GitHub App) |
-| **#11** | Added a real `.gitignore` (repo had none) |
-| **#12** | **next 16.0.10 → 16.2.6** (cleared all next advisories) |
-(Plus #6 = the original recon docs this PR replaces; #1–#5 = earlier v0/Dependabot work.)
-**Vercel on main HEAD: `success`** (OBSERVED). Auto-deploy dashboard state itself remains **unverifiable from the repo** (flagged).
+| **#14** | Productionization: metadataBase, viewport/themeColor, favicon wiring, PWA `app/manifest.ts` |
+| **#15** | Canonical domain → `wordisles.com` (metadataBase, openGraph.url, robots, sitemap, OG-image footer) |
+| **#16** | Security: 26 → 5 transitive alerts via exact `pnpm.overrides` (critical `shell-quote` **cleared**) |
+| **#17** | react/react-dom 19.0.0 → **19.2.7**, @types 19.2.x → **tsc 4 → 0** (the experimental APIs graduated to stable in 19.2; bump, not rewrite) |
+| **#18** | Removed `typescript.ignoreBuildErrors` → **`next build` now enforces types** |
+**Vercel on main HEAD: `success`** (OBSERVED). Dashboard auto-deploy state still unverifiable from repo (flagged).
 
-### A2. TypeScript — OBSERVED (`npx tsc --noEmit`)
-**Exactly 4 errors** — the React-19-experimental quarantine, unchanged by the next bump:
-```
-components/game-board.tsx(4,55)       Module '"react"' has no exported member 'useEffectEvent'
-components/game-board.tsx(21,10)      Module '"react"' has no exported member 'Activity'
-lib/hooks/use-game-timer.ts(3,29)     useEffectEvent
-lib/hooks/use-puzzle-checker.ts(3,29) useEffectEvent
-```
-Still masked by `next.config.mjs` `typescript.ignoreBuildErrors: true` (untouched — its removal is gated on tsc reaching 0). **INFERRED:** these are React-package type errors (the installed `@types/react`/`react` don't export these unstable APIs as used), independent of next — confirmed by the #12 bump leaving the count at 4.
+### A2. TypeScript — OBSERVED: clean AND enforced
+- **`tsc --noEmit` = 0.**
+- **`pnpm build` runs the type pass** — output shows **`Running TypeScript … Finished TypeScript`** (was `Skipping validation of types` pre-#18). So a type regression now **fails the build** (and the Vercel deploy). Track 1 is done.
+- Minor: build warns TypeScript 5.0.2 < recommended 5.1.0 (non-fatal; `typescript: "^5"`).
 
-### A3. Tests — OBSERVED (pnpm 10.34.4, `pnpm test`, run 4×)
-**80 passed / 10 failed / 90 total** (9 suites: 4 pass, 5 fail). Within a single hour the failing set is **stable at 10**. Across runs in the prior task it flipped 79↔80 — the flipper is **`Leaderboard Utils › getHourlyLeaderboard › …current hour`** (wall-clock dependent).
+### A3. Tests — OBSERVED (pnpm 10.34.4)
+**80 passed / 10 failed / 90** (5 suites fail). Within-hour stable at 10; flips 79↔80 across hours via the wall-clock-dependent `getHourlyLeaderboard`.
+- **Flaky (time/seed-coupled):** `getHourlyLeaderboard`, `Island Generator Q-U` (hourly-seeded), `Game Slice submitWord` combo trio (`Date.now()`). Need deterministic seeding / fake timers.
+- **Deterministic assertion bugs:** `Leaderboard Utils` (addLeaderboardEntry, formatTimestamp, getLeaderboardEntries), `Objective System` (checkObjectives, generateObjectives 'his'), `Word Utils findPossibleWords`.
+- Caveat: split is INFERRED from source coupling + the 79↔80 flip, not isolated per-test with fake timers.
 
-**Flaky (time/seed-coupled) vs deterministic split** (matters for the test-fixes PR):
-- **Time/seed-coupled** (OBSERVED `Date.now()`/`Math.random()`/`seedRandom(hourlyTimestamp)` in `lib/slices/gameSlice.ts` + `lib/utils/islandGenerator.ts`): `getHourlyLeaderboard` (current hour), `Island Generator › Q islands have a U neighbor` (hourly-seeded generation), the `Game Slice › submitWord` combo-timing trio (`Date.now()`). These need deterministic seeding / fake timers, not assertion fixes.
-- **Deterministic assertion failures** (stable every run): `Leaderboard Utils` (addLeaderboardEntry, formatTimestamp, getLeaderboardEntries), `Objective System` (checkObjectives, generateObjectives 'his'), `Word Utils › findPossibleWords`. These are real logic/assertion mismatches.
-- **Caveat:** the flaky/deterministic split is INFERRED from source coupling + the observed 79↔80 flip; I did not isolate each test with fake timers. Treat the boundary as a starting hypothesis for the test-fixes PR.
+### A4. Security — OBSERVED: 26 → 5, **none genuinely "stuck"** (corrects the brief's premise)
+**5 open** (3 high, 2 medium). All transitive, dev/build-chain, in `pnpm-lock.yaml`. **The critical `shell-quote` was cleared by #16.** code-scanning + secret-scanning: **still off.**
 
-### A4. Security backlog — OBSERVED (`gh api … dependabot/alerts`)
-**26 open** (down from 64 pre-#12). Severity: **1 critical, 12 high, 9 medium, 4 low**.
-- **0 `next` alerts remain** — #12 cleared all 44 next alerts (22 advisories × 2 manifests). OBSERVED.
-- **All 26 remaining are transitive** (every one in `pnpm-lock.yaml`; **none in `package.json`** — no direct-dep advisories left). Clustered:
-
-| pkg | sev | | pkg | sev |
+| pkg | sev | resolved now | patched | status — corrected |
 |---|---|---|---|---|
-| **shell-quote** | **critical** | | ws | 4 (3 high, 1 med) |
-| minimatch | 3 high | | picomatch | 4 (2 high, 2 med) |
-| flatted | 2 high | | js-yaml | 2 med |
-| glob | high | | form-data | high |
-| brace-expansion | 2 (med, low) | | yaml / postcss / ajv | med |
-| @tootallnate/once, @eslint/plugin-kit, @babel/core | low | | | |
+| **js-yaml** | medium | **4.2.0** | 4.2.0 | **STALE alert** — already at the patched version (#16's `js-yaml@4` override). Should auto-close on Dependabot re-scan; not a real open vuln. |
+| **picomatch** | high + medium | 4.0.3 | 4.0.4 | **NEW advisory** (published after #16; #16 only scoped `picomatch@2`). Fixable with a same-major scoped override `picomatch@4: 4.0.4`. |
+| **ws** | high | 7.5.10 | 7.5.11 | **NEW advisory** (#16 scoped `ws@8`; the 7.x wasn't flagged then). Fixable with `ws@7: 7.5.11`. |
 
-- **Code scanning: not enabled. Secret scanning: not enabled.** (Both OBSERVED via API.)
-- These are dev/build-chain transitives — clearable via lockfile refresh + Dependabot transitive PRs + raising the (live) overrides floor (see B1). Not a direct-dependency problem.
+**Correction:** the brief assumed these 5 were "stuck — couldn't be forced without a major jump." **Not so.** js-yaml is already patched (stale); picomatch@4→4.0.4 and ws@7→7.5.11 are **same-major patch bumps**, safely forceable via scoped overrides — they're simply **newly-published advisories** that appeared after #16. None require a major jump or a runtime-dep bump.
+**Root-cause note (INFERRED from `pnpm why`):** ws@6/7 and the picomatch@4 chain come through **`react-native@0.79.2` → metro**, pulled transitively by **`react-spring`** (a runtime dep) for its native/three modules — a large native toolchain this web app never uses. That chain is the recurring source of build-chain alerts; trimming it is a runtime-dep architectural question (out of scope), not required to clear these 5.
 
----
+### A5. Lint — OBSERVED: BROKEN (real gap)
+`pnpm exec next lint` → **`Invalid project directory provided, no such directory: …/lint`** — Next 16 **removed `next lint`** (it parses `lint` as a positional dir). **No eslint flat or legacy config exists.** So linting does not run anywhere (not in CI, not in build — Next 16 doesn't lint on build). Any future lint-gating depends on first adding a flat config + script (`plan: eslint-setup`).
 
-## PART B — Falsified claims from the old recon (corrected with evidence)
-
-### B1. "pnpm.overrides is DEAD / ignored" → **FALSE. It is LIVE.** (OBSERVED)
-The old doc called the `package.json` `pnpm.overrides` block dead because pnpm **11** prints `The "pnpm" field in package.json is no longer read`. But the repo runs **pnpm 10.34.4**, which **does** honor it. Evidence: the committed `pnpm-lock.yaml` contains a top-level block —
-```
-overrides:
-  minimatch: '>=3.1.3'
-  lodash: '>=4.18.0'
-```
-— which only exists because pnpm 10 read the field and wrote it into the lockfile. `minimatch` resolves to a single deduped `9.0.5`. The deprecation warning was a **pnpm-11-LOCAL artifact**, not the repo's runtime.
-**Nuance:** the override is *honored* but its floor `>=3.1.3` is **too permissive** to clear the current minimatch advisory (3 high alerts persist — the patched version is above what `>=3.1.3` forces). So "live but the pin needs raising," not "dead."
-
-### B2. "harness blocked by ts-jest AND ERR_PNPM_IGNORED_BUILDS" → **half FALSE.** (OBSERVED in #8)
-The `ERR_PNPM_IGNORED_BUILDS` hard-fail was a **pnpm-11-only** behavior. Under the repo's pnpm 10.34.4, ignored build scripts (sharp, unrs-resolver) are a **warning**, not a blocker — `pnpm install`/`pnpm test` do not hard-fail on them. The **sole** real blocker was the missing `ts-jest` preset, fixed by switching `jest.config.js` to **`next/jest`** (#8). The `onlyBuiltDependencies` allowlist (#8) is good hygiene (and protects pnpm-11 environments) but was not the actual unblock.
-
-### B3. "next ≥ 16.1.7 clears all next advisories" → **FALSE.** (OBSERVED via #12)
-16.1.7 cleared only **8** of the 22. The verified floor was **16.2.6**, now merged (#12). Post-merge: **0 open next alerts** (A4). The old doc's INFERRED "≥16.1.7 clears the bulk" was wrong on the floor.
-
-### B4. Lockfile/pnpm invariant — **was entirely absent from the old doc.** Now documented at A0 and at the top of `plan.md` as a hard, load-bearing invariant for all future dep work.
+### A6. Process/docs files — OBSERVED
+**`CLAUDE.md` ABSENT. `SECURITY.md` ABSENT. `.github/copilot-instructions.md` ABSENT.** All three siblings have CLAUDE.md and SECURITY.md → real parity gaps.
 
 ---
 
-## PART C — Fleet productionization + CI/CD + process inventory (NEW)
+## PART B — Full fleet best-practice scorecard
 
-Siblings read on disk: `/Users/craigoleyagent/Developer/{neon-drift,rogue-descent,wild-trails}`. neon-drift & rogue-descent carry the **full 9-workflow set**; wild-trails a 7-subset. **Key framing:** siblings are **Vite + Three.js** static games; word-archipelago is **Next.js 16 + React 19 + Redux**, so most productionization items have a **different idiomatic mechanism** (Next Metadata/route conventions, not hand-edited `index.html`), and much of it **already ships** in the v0 scaffold.
+Extracted from the sibling **`CLAUDE.md`** files on disk (`neon-drift`, `rogue-descent`, `wild-trails`) + their workflow/process surface. Scored against word-archipelago. **Game-loop/Three.js practices are marked N-A with a reason** (this is a turn-based Redux+DOM word game, no canvas, no rAF loop) — they are NOT "missing gaps."
 
-### C1. CI/CD + security workflows
-| Item | Sibling | word-archipelago | Disposition |
-|---|---|---|---|
-| `claude-review.yml` | ✅ | **PRESENT** (#7 advisory; #10 auth) | done |
-| `dependabot.yml` | ✅ | **PRESENT** (`.github/dependabot.yml`) | done — don't re-add |
-| `ci.yml` (lint/typecheck/test gate) | ✅ | **ABSENT** | **ADAPT** — retarget to `pnpm`/`jest`/`tsc`; red until tsc=0 + tests green |
-| `codeql.yml` | ✅ | **ABSENT** | portable ~as-is (JS/TS) |
-| `osv-scanner.yml` | ✅ | **ABSENT** | portable as-is |
-| `dependency-review.yml` | ✅ | **ABSENT** | portable as-is |
-| `semgrep.yml` | ✅ (not wild-trails) | **ABSENT** | **ADAPT** — repoint purity rule (C4) |
-| `lighthouse.yml` | ✅ (neon/rogue) | **ABSENT** | **ADAPT** — *more* applicable here (real web app) than to the Three games |
-| `e2e.yml` / `validation.yml` | ✅ | **ABSENT** | **N-A as-written** — no Playwright installed; needs a fresh pw setup (defer) |
+### B1. Process / discipline (universal)
+| Practice | Status | Note |
+|---|---|---|
+| branch → PR → review → merge; never push main / never auto-`gh pr merge` | **PRESENT** | Followed across #7–#18; all merges manual (advisory review). |
+| Recon-first (Step 0 reads disk, reports before coding) | **PRESENT** | This doc + every prior PR's recon phase. |
+| Diagnose-before-patch; tests pin behavior | **PRESENT** | e.g. #17 diagnosed a version mismatch (not a rewrite); #16 traced why-chains before overriding. |
+| `CLAUDE.md` (hard-rules doc) | **ABSENT** | All siblings have one → `plan: claude-md` (adapt for Next/Redux). |
+| `SECURITY.md` | **ABSENT** | All siblings have one → `plan: security-md`. |
+| `.github/copilot-instructions.md` | **ABSENT** | Optional (Copilot review hints). |
+| `build must pass before PR` / Node pinned | **PARTIAL** | Build-gate effectively enforced via Vercel + #18; Node pinned via `engines: 22.x` but **no `.nvmrc`** (siblings have one). |
 
-### C2. PR process
-- **`pr-pipeline.sh`** (`/Users/craigoleyagent/Scripts/pr-pipeline.sh`, launchd every 60s on the Mac mini): PR-watcher that iMessages on merge / claude-held / orphan-branch(>20min) / failed-auto-rebase, and retriggers claude-review where present. **REPOS = `ClawApp, cologne-service, askthebot, neon-drift, rogue-descent, wild-trails`** — **word-archipelago is NOT in it** (and the array is `craigoley/`-owned; this repo is `cao825/`). This repo currently gets **none** of that automation. (OBSERVED. Enrolling means editing a Scripts file *outside this repo* — flagged.)
-- **Branch protection / required checks: UNVERIFIABLE** — API returns 403 ("Upgrade to GitHub Pro or make this repository public"). Branch protection is unavailable on this private repo, so the advisory checks are non-gating **by infrastructure**, not just by design. (OBSERVED 403.)
-- **Draft-gating / auto-merge:** claude-review is **advisory only** — auto-merge deliberately omitted in #7 (TODO(PR6) markers). All merges so far were manual.
+### B2. CI/CD + security workflows
+| Workflow | Status | Disposition |
+|---|---|---|
+| `claude-review.yml` | **PRESENT** | Advisory (auto-merge intentionally off; `plan: enforce-review`). |
+| `dependabot.yml` | **PRESENT** | Don't re-add. |
+| `codeql.yml` | **ABSENT** | `plan: code-scanning` — portable ~as-is. |
+| `osv-scanner.yml` | **ABSENT** | `plan: code-scanning`. |
+| `dependency-review.yml` | **ABSENT** | `plan: code-scanning`. |
+| `semgrep.yml` | **ABSENT** | `plan: semgrep-purity` — repoint rule (B3). |
+| `lighthouse.yml` | **ABSENT** | Optional; more applicable here than to the Three games. |
+| `ci.yml` (typecheck/test/lint gate) | **ABSENT** | `plan: ci-workflow` (lint step blocked on `plan: eslint-setup`). |
+| `pr-pipeline.sh` enrollment | **ABSENT** | `cao825/v0-word-archipelago` not in the REPOS array (which is `craigoley/`-owned). Out-of-repo. |
 
-### C3. Productionization (Next.js mechanism — much already present)
-| Item | Fleet (Vite) | word-archipelago (Next) | Disposition |
-|---|---|---|---|
-| Title / description / keywords | `<head>` | **PRESENT** — `metadata` export in `app/layout.tsx` | done |
-| OG + Twitter tags | hand `<meta>` | **PRESENT** — `metadata.openGraph` + `metadata.twitter` (summary_large_image) | done |
-| OG share image | Playwright PNG | **PRESENT** — static `public/og-image.png` (1200×630) **and** dynamic `app/api/og/route.tsx` (next/og `ImageResponse`). Playwright N-A. | done |
-| `metadataBase` | n/a | **ABSENT** — build warns "metadataBase not set"; relative OG URLs resolve to `localhost` | **ADAPT** — set `metadataBase` |
-| `viewport` / `theme-color` | `<meta>` | **ABSENT** — no Next `viewport` export | **ADAPT** — add `app` viewport export |
-| favicon | static file | **PARTIAL / UNWIRED** — icon files exist in `public/` (`icon.svg`, `apple-icon.png`, light/dark 32px) but are **not wired** (no `app/icon.*` route, no `metadata.icons`, no `public/favicon.ico`) → browser default likely served | **ADAPT** — wire via `app/` icon convention or `metadata.icons` |
-| PWA manifest + Apple home-screen | manifest.json + `<link>` | **ABSENT** — no `app/manifest.ts`, no `metadata.manifest` | **ADAPT** — add typed `app/manifest.ts` |
-| robots / sitemap | n/a | **PRESENT** as **static** `app/robots.txt` + `app/sitemap.xml` | optional **ADAPT** — upgrade to typed `app/robots.ts`/`sitemap.ts` (low priority; static works) |
-| Lighthouse CI gate | ✅ | **ABSENT** | **ADAPT** (C1) |
+### B3. Architecture (map to Redux/Next analogue, or N-A)
+| Fleet practice | Status | Note |
+|---|---|---|
+| pure/render split (`src/game/` zero-three) | **ADAPT → PRESENT** | Analogue: no React/DOM in `lib/services` & `lib/slices`. **Spot-check: clean** (grep, OBSERVED). Enforce via `plan: semgrep-purity`. |
+| no magic numbers; tuning in `constants.ts` | **ADAPT → ABSENT (gap)** | **No constants module.** Tuning is inline in `lib/slices/gameSlice.ts`: `timeLeft: 120` (×3), `comboTimeWindow: 15000`, `word.length * 10`, multiplier probs `0.2`/`0.05`. → optional `plan: constants-extract`. |
+| `?debug=1` funnel/telemetry on pipelines | **ADAPT → ABSENT** | No `?debug` instrumentation found. App has real pipelines (dictionary→validation→scoring; leaderboard digest→display) that could use it, but low priority for a turn-based game. |
+| strict TypeScript | **PRESENT** | `strict: true`, and now **build-enforced** (#18). |
+| palette/theme centralized | **ADAPT → PARTIAL** | Theme colors centralized in `lib/utils/theme-config.ts` (`THEME_CONFIGS`); not a single palette constant but reasonable. |
+| three.js zero-import rule | **N-A** | No `three`, no canvas — Redux/DOM rendering. |
+| procedural / zero art assets | **N-A** | DOM/SVG UI; static icons/og-image are productionization, not game art. |
+| synthesized Web Audio (no audio files) | **N-A** | Uses sound files in `public/sounds/`; fine for a non-game-loop app. |
+| bounded pools / no per-frame allocation | **N-A** | No requestAnimationFrame game loop. |
+| fixed-timestep loop; input via state not rAF | **N-A** | Turn-based; no simulation loop. |
+| touch/keyboard joystick parity | **N-A** | Tap-based DOM UI (responsive), not a joystick game. |
+| draft-gate for on-device-playtest visual PRs | **N-A** | No device-playtest flow (the `ready_for_review` trigger exists in claude-review but is unused). |
 
-### C4. Architectural-invariant gate
-The fleet's Semgrep gate enforces "no `three`/DOM/`Math.random` under `src/game/`." **This repo has no `src/game/`** — the analogue is **"no React/DOM imports in `lib/services` & `lib/slices` (reducers/selectors pure)."** **Spot-check (OBSERVED):** `grep` for `react`/`react-dom`/`document.`/`window.`/`localStorage` across `lib/services` + `lib/slices` → **clean**; the boundary is currently respected. **Caveat:** spot-check, not an exhaustive audit. (Note: `Math.random` in `lib/utils/islandGenerator.ts` is the source of test flakiness but is *outside* this purity rule's scope — it's a determinism issue for the test-fixes PR.) **ADAPT** — encode as a semgrep/eslint rule so it stays clean.
-
-### C5. Validation sweep
-The fleet's game-validation template targets render/physics determinism — **largely N-A** for a turn-based word game. The meaningful analogue is the **existing jest suite** (once de-flaked, A3). No separate validation harness warranted.
+### B4. Productionization (mostly done — confirmed PRESENT)
+| Item | Status |
+|---|---|
+| metadata / OG / Twitter / metadataBase / viewport / themeColor / icons / PWA manifest | **PRESENT** (#14) |
+| canonical domain `wordisles.com` everywhere | **PRESENT** (#15) |
+| robots / sitemap | **PRESENT** (static `app/robots.txt`, `app/sitemap.xml`) — optional `plan: prod-seo` typed `robots.ts`/`sitemap.ts` upgrade |
+| OG share image (static + dynamic `next/og` route) | **PRESENT** |
 
 ---
 
-## Caveats roll-up (equal weight to the conclusions)
-1. **Vercel auto-deploy dashboard state** — unverifiable from the repo (only commit-status `success` is observable).
-2. **Branch-protection state** — unverifiable (403: private repo without Pro). Advisory checks are non-gating by infra.
-3. **Flaky/deterministic test split (A3)** — INFERRED from source coupling + the 79↔80 flip; not each isolated with fake timers.
-4. **minimatch override (B1)** — live and honored, but the `>=3.1.3` floor is too low to clear the current advisory; "raise the pin," not "revive a dead block."
-5. **Purity spot-check (C4)** — `lib/services`+`lib/slices` clean on a grep spot-check, not an exhaustive audit.
-6. **`pr-pipeline.sh` enrollment** — adding this repo is **out-of-repo** work (a Scripts file, `craigoley/`-owned array vs this `cao825/` repo); flagged, not actioned here.
-7. **React-experimental tsc errors (A2)** — INFERRED to be wrong-import/version artifacts; whether the fix is a code change or a types bump is for the dedicated PR to determine.
-8. This recon ran `pnpm install`/`pnpm test`/`tsc` under pnpm 10.34.4; any lockfile/`packageManager`-hash changes were reverted — **this PR is docs-only**.
+## Caveats roll-up (equal weight to conclusions)
+1. **Vercel dashboard / branch-protection** — unverifiable from repo (403 on branch-protection: private, no Pro). Checks are non-gating by infra.
+2. **The 5 Dependabot alerts are NOT stuck** — js-yaml is stale (already 4.2.0); picomatch@4 / ws@7 are new same-major advisories, scoped-override-fixable. The brief's "couldn't be forced" premise was wrong; corrected in A4.
+3. **Flaky/deterministic test split** — INFERRED from source coupling + the 79↔80 flip, not per-test fake-timer isolation.
+4. **Purity spot-check** — grep over `lib/services`+`lib/slices`, not an exhaustive audit. `Math.random` in `lib/utils/islandGenerator.ts` is a determinism (test-flake) issue, outside the purity rule's scope.
+5. **react-native/metro bloat** — INFERRED via `pnpm why` to come from `react-spring`'s native modules; trimming it is a runtime-dep decision, out of scope here.
+6. **`pr-pipeline.sh` enrollment** is out-of-repo (a `craigoley/`-owned Scripts file vs this `cao825/` repo) — flagged, not actioned.
+7. This recon ran tsc/build/test under pnpm 10.34.4; all lockfile/`packageManager`-hash drift reverted — **this PR is docs-only.**
