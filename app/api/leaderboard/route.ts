@@ -2,6 +2,13 @@ import { NextResponse } from "next/server"
 import { redis, LEADERBOARD_KEY, LEADERBOARD_DATA_KEY, type LeaderboardRecord } from "@/lib/redis/client"
 import type { LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
 
+// Neutralize log injection (CWE-117): strip CR/LF/line-separators and other
+// control chars from attacker-controlled values before they reach a log sink,
+// so a request can't forge log lines. Keeps the real value, just newline-safe.
+function sanitizeForLog(value: string): string {
+  return value.replace(/[\r\n\u2028\u2029]+/g, " ").replace(/[\u0000-\u001f\u007f]/g, "")
+}
+
 // Helper to generate unique entry ID
 function generateEntryId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -71,7 +78,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    console.log("Received leaderboard submission:", body)
+    console.log("Received leaderboard submission:", sanitizeForLog(JSON.stringify(body)))
 
     // Validate the request body
     if (!body.player_initials || typeof body.score !== "number") {
@@ -101,7 +108,7 @@ export async function POST(request: Request) {
     // Store entry data in hash
     await redis.hset(LEADERBOARD_DATA_KEY, { [entryId]: JSON.stringify(record) })
 
-    console.log("Successfully added leaderboard entry for:", formattedInitials)
+    console.log("Successfully added leaderboard entry for:", sanitizeForLog(formattedInitials))
     return NextResponse.json({ success: true, message: "Leaderboard entry added successfully" })
   } catch (error) {
     console.error("Error in leaderboard API:", error)
