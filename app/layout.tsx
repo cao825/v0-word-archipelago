@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
+import { SITE_URL } from "@/lib/site-config"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,10 +12,8 @@ const inter = Inter({
 
 // metadataBase resolves relative metadata URLs (openGraph/twitter images) to
 // absolute ones for scrapers/crawlers. Without it, relative image paths can't
-// resolve and shared links unfurl without an image.
-// Canonical production domain (confirmed + live-serving the deployment).
-const SITE_URL = "https://wordisles.com"
-
+// resolve and shared links unfurl without an image. SITE_URL is the canonical
+// origin, shared with robots.ts/sitemap.ts via lib/site-config.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Word Isles | Hourly Word Puzzle Game",
