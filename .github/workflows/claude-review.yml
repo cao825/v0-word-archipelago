@@ -212,7 +212,14 @@ jobs:
       # deterministic checks (verify / Analyze / Vercel), NOT this job — a
       # flaky-action day means merge-by-hand, not repo-lockout.
       - id: claude
-        uses: anthropics/claude-code-action@2fee15510437d71399d9139ed60433470484a8fb  # v1
+        # Pinned to the commit the WORKING siblings (rogue-descent + neon-drift) use,
+        # which runs with permission_denials_count=0 and auto-merges. Our previous pin
+        # (@2fee1551, Claude Code 2.1.185) had a claude_args whitespace-split bug
+        # (issue #844) that shredded the space-containing --allowedTools Bash patterns
+        # → denials → thrash. NOTE this is a DOWNGRADE: @d5726de0 (2.1.177) is the
+        # last-known-good; the bug is a regression in the newer release. A future
+        # forward-bump must re-verify denials=0 before adopting.
+        uses: anthropics/claude-code-action@d5726de019ec4498aa667642bc3a80fca83aa102  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
           # Anthropic model auth (OAuth via Craig's Max subscription) — same auth
