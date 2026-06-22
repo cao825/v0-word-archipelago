@@ -13,6 +13,7 @@ export function IslandFeedback({ isActive, position }: IslandFeedbackProps) {
 
   useEffect(() => {
     if (isActive) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Auto-dismiss feedback: shows when isActive turns true, then hides via the timer below. Time-based visibility that cannot be derived during render.
       setVisible(true)
       const timer = setTimeout(() => {
         setVisible(false)

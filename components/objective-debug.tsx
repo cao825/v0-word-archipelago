@@ -51,7 +51,7 @@ export default function ObjectiveDebug() {
 
       {Object.keys(results).length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-white font-semibold">Results for "{testWord}":</h4>
+          <h4 className="text-white font-semibold">Results for &ldquo;{testWord}&rdquo;:</h4>
 
           {objectives.map((objective) => (
             <div key={objective.id} className={`p-2 rounded ${results[objective.id] ? "bg-green-800" : "bg-red-800"}`}>

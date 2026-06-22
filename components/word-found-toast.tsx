@@ -30,6 +30,7 @@ export default function WordFoundToast({
         clearTimeout(timer)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally keyed on isVisible only. onClose is a fire-once dismiss callback; including it would re-run the effect (clearing/resetting the 1500ms timer) on every parent re-render, so the toast could never auto-close.
   }, [isVisible])
 
   return (

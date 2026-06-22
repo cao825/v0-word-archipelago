@@ -52,6 +52,7 @@ export default function CompactTopBar({
   // Set the initial time when the game becomes active
   useEffect(() => {
     if (gameActive && initialTimeLeft === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Captures a one-time snapshot of timeLeft at the moment the game becomes active (used as the progress-bar denominator); the guard prevents re-capture/loops. A transition snapshot can't be derived during render.
       setInitialTimeLeft(timeLeft)
     }
   }, [gameActive, timeLeft, initialTimeLeft])
@@ -59,6 +60,7 @@ export default function CompactTopBar({
   // Reset initial time when game is reset
   useEffect(() => {
     if (!gameActive) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Clears the captured time snapshot when the game ends so it can be re-captured on the next start; paired with the capture effect above.
       setInitialTimeLeft(0)
     }
   }, [gameActive])
@@ -76,6 +78,7 @@ export default function CompactTopBar({
   // Animate combo count when it changes
   useEffect(() => {
     if (comboCount > prevComboCount && comboCount > 1) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Triggers a transient combo animation when the combo count increases, then hides via the timer below. Time-based animation flag, not derivable during render.
       setShowComboAnimation(true)
       const timer = setTimeout(() => {
         setShowComboAnimation(false)
