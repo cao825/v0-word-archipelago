@@ -11,13 +11,15 @@
       }
     },
     "assert": {
-      "//": "WARN only — never error. Floors set BELOW the measured desktop baseline",
-      "//2": "(local LH 13, median of 3: perf 97, a11y 100, best-practices 100, seo 100)",
-      "//3": "so current wordisles.com passes with margin and only a real regression warns.",
-      "//4": "perf is floored at 0.85 (not the siblings' 0.55 — they ship a WebGL canvas;",
-      "//5": "this is a light DOM word game that scores high). Nothing here gates the merge.",
+      "//": "WARN only — never error; nothing here gates the merge. Floors set BELOW the",
+      "//2": "measured baseline so current wordisles.com passes and only a real regression",
+      "//3": "warns. a11y/best-practices/seo are stable across environments (CI: 100/100/100,",
+      "//4": "local desktop: 100/100/100). PERFORMANCE differs by environment: local desktop",
+      "//5": "scores ~97, but the shared GitHub CI runner (throttled, no GPU) scores ~79 — so",
+      "//6": "perf is floored at 0.70 (below the CI baseline, well above the siblings' 0.55",
+      "//7": "WebGL floor) to flag a genuine perf regression without warning on every CI run.",
       "assertions": {
-        "categories:performance": ["warn", { "minScore": 0.85 }],
+        "categories:performance": ["warn", { "minScore": 0.7 }],
         "categories:accessibility": ["warn", { "minScore": 0.9 }],
         "categories:best-practices": ["warn", { "minScore": 0.95 }],
         "categories:seo": ["warn", { "minScore": 0.95 }]
