@@ -208,15 +208,17 @@ jobs:
 
       # HANDS-OFF FIX + MERGE (PR6): the gates (npx tsc --noEmit, pnpm test, pnpm
       # lint) are green on main and the `verify` CI check enforces them, so the
-      # reviewer now fixes-to-green and merges. --allowedTools (below) grants the
-      # write/git tools the Fix + Merge phases use (Edit, Write, Bash(git:*),
-      # Bash(gh pr:*), Bash(pnpm lint:*)) — tools and prompt are RE-ALIGNED (the
-      # #35 advisory fork removed both; this restores both together, never tools
-      # without the matching prompt phase). The is_error fail-safe step after this
-      # one fails the check if the action errors, so a broken run is never
+      # reviewer now fixes-to-green and merges. --allowedTools (below) MATCHES the
+      # working sibling list (neon-drift / rogue-descent), pnpm-adapted: Edit,
+      # Write, Bash(git:*), Bash(gh pr:*), Bash(gh api:*), Bash(pnpm lint:*). The
+      # `gh api` grant is load-bearing — the action's review/merge flow calls the
+      # GitHub API under the hood; #38 dropped it and the reviewer thrashed to the
+      # turn cap on denied gh-api calls (PR #39: error_max_turns, 42 denials, no
+      # merge). The failure-dump + is_error steps after this one capture the actual
+      # denied tools and fail the check on any error, so a broken run is never
       # hollow-green or a silent no-merge. Branch protection requires only the
-      # deterministic checks (verify/Analyze/scan-pr/Dependency review/Vercel), NOT
-      # this job — a flaky-action day means merge-by-hand, not repo-lockout.
+      # deterministic checks (verify / Analyze / Vercel), NOT this job — a
+      # flaky-action day means merge-by-hand, not repo-lockout.
       - id: claude
         uses: anthropics/claude-code-action@2fee15510437d71399d9139ed60433470484a8fb  # v1
         if: steps.check-author.outputs.skip != 'true'
@@ -317,7 +319,50 @@ jobs:
           claude_args: |
             --model claude-opus-4-6
             --max-turns 50
-            --allowedTools Edit,Write,Read,Bash(git:*),Bash(gh pr:*),Bash(npx tsc:*),Bash(pnpm test:*),Bash(pnpm lint:*),mcp__github_inline_comment__create_inline_comment
+            --allowedTools Edit,Write,Read,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(npx tsc:*),Bash(pnpm test:*),Bash(pnpm lint:*),mcp__github_inline_comment__create_inline_comment
+
+      # FAILURE TELEMETRY: the execution_file is ephemeral on the runner and the
+      # streamed log does NOT contain the per-denial tool names (only a count), so
+      # past thrashes (PR #39) could only be inferred. This step prints the result
+      # summary + the ACTUAL denied tool calls. `if: always()` so it runs even when
+      # the action hard-fails — that is exactly the case we keep being unable to
+      # inspect. It never fails the job itself (telemetry only; exits 0).
+      - name: Dump claude-code-action execution telemetry
+        if: always() && steps.check-author.outputs.skip != 'true'
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          FILE="${EXEC_FILE:-$RUNNER_TEMP/claude-execution-output.json}"
+          if [[ ! -f "$FILE" ]]; then
+            echo "No execution file at '$FILE' — nothing to dump."
+            exit 0
+          fi
+          echo "::group::result summary"
+          jq -r '[.[] | select(.type=="result")] | last
+                 | "subtype=\(.subtype)  is_error=\(.is_error)  num_turns=\(.num_turns)  permission_denials_count=\(.permission_denials_count // 0)  cost_usd=\(.total_cost_usd // 0)"' "$FILE" 2>/dev/null || echo "(could not parse result message)"
+          echo "::endgroup::"
+          echo "::group::permission denials (actual denied tool calls)"
+          # Structured permission_denials array, if this action version emits one.
+          jq -r '[.[] | select(.type=="result")] | last | .permission_denials // [] | .[]
+                 | "DENIED tool=\(.tool_name // .name // "?")  input=\(((.tool_input // .input) // {}) | tostring | .[0:200])"' "$FILE" 2>/dev/null || true
+          # Fallback: tool_result entries flagged is_error (denials surface here).
+          jq -r '.[] | select(.type=="user") | (.message.content // [])[]?
+                 | select((.type=="tool_result") and (.is_error == true))
+                 | "ERROR tool_result: \((.content | tostring) | .[0:200])"' "$FILE" 2>/dev/null || true
+          echo "::endgroup::"
+          exit 0
+
+      # Durable copy of the full execution log so a future thrash is analyzable
+      # offline (the streamed run log truncates large JSON). Never fails the job.
+      - name: Upload claude-code-action execution log
+        if: always() && steps.check-author.outputs.skip != 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: claude-execution-output
+          path: ${{ steps.claude.outputs.execution_file }}
+          if-no-files-found: ignore
+          retention-days: 14
 
       # is_error FAIL-SAFE (hardening beyond the sibling baseline — siblings have
       # none). The action can exit 0 yet have errored internally (the documented
@@ -325,10 +370,13 @@ jobs:
       # unchecked that is a HOLLOW-GREEN run or a SILENT no-merge. Parse the
       # execution log's final result message and fail the job unless is_error is
       # explicitly false — any error, or a missing/malformed result, fails LOUDLY.
-      # review-and-merge is NOT a required check, so this red never locks the repo;
-      # it just surfaces a broken run so it gets a manual look (admin escape hatch).
+      # `if: always()` makes this the CANONICAL verdict in every path — including
+      # when the action hard-fails first (in #39 it was skipped, so the action's
+      # own exit-1 was the only signal). review-and-merge is NOT a required check,
+      # so this red never locks the repo; it surfaces a broken run for a manual
+      # look (admin escape hatch).
       - name: Fail the check if the action errored (no hollow-green / no silent no-merge)
-        if: steps.check-author.outputs.skip != 'true'
+        if: always() && steps.check-author.outputs.skip != 'true'
         env:
           EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |

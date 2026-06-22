@@ -66,8 +66,7 @@ routes (`app/api/leaderboard`) backed by Upstash Redis.
 
 Branch from latest `main` → PR → checks → **auto-merge on green**. `main` is
 protected: required checks are `verify` (tsc+test+lint), `Analyze
-(javascript-typescript)` (CodeQL), `scan-pr / osv-scan` (OSV), `Dependency review
-(non-blocking)`, and `Vercel`; `enforce_admins` is false (admin escape hatch);
-auto-merge is on and **claude-review** drives it (reviews, fixes-to-green, then
-`gh pr merge --squash --auto`). Claude Code **never pushes to `main`** and never
-bypasses branch protection — let the pipeline merge.
+(javascript-typescript)` (CodeQL), and `Vercel`; `enforce_admins` is false (admin
+escape hatch); auto-merge is on and **claude-review** drives it (reviews,
+fixes-to-green, then `gh pr merge --squash --auto`). Claude Code **never pushes to
+`main`** and never bypasses branch protection — let the pipeline merge.
