@@ -45,11 +45,13 @@ concurrency:
 
 jobs:
   review-and-merge:
-    # The action pushes commits using ${{ github.token }} (the workflow's
-    # default GITHUB_TOKEN), so commits authored by this workflow appear under
-    # `github-actions[bot]`, NOT `claude[bot]`. Both guards below check
-    # `github-actions[bot]`. If you ever switch to the Claude GitHub App by
-    # passing `github_token` to the action, change both checks to `claude[bot]`.
+    # Loop-prevention identity: the action's push-back commits resolve to
+    # `github-actions[bot]` (the same login the working siblings guard on), so the
+    # two guards below skip when this workflow authored the last commit. NOTE: GitHub
+    # auth is now the OIDC Claude App token (no `github_token` — see the action step),
+    # which runs in trusted mode. If the App's push-back ever appears under a
+    # different login (e.g. `claude[bot]`), update BOTH guards to match — verify on
+    # the first auto-fix push.
     #
     # TRUST GATE (pull_request path): run only on PRs whose head branch lives in
     # THIS repo (head.repo.full_name == github.repository) — i.e. created by a
@@ -101,9 +103,11 @@ jobs:
         id: check-author
         if: github.event_name == 'pull_request'
         run: |
-          # The action commits via ${{ github.token }} → author is
-          # `github-actions[bot]`. If the workflow authored the last commit we
+          # The action's push-back commits resolve to `github-actions[bot]` (same
+          # as the working siblings). If the workflow authored the last commit we
           # skip, so Claude's own push-backs don't re-trigger an endless loop.
+          # (Watch-point: if the OIDC App push ever lands as a different login,
+          # update this check and the job `if:` above to match — see job comment.)
           AUTHOR=$(gh pr view ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
             --json commits --jq '.commits[-1].authors[0].login // ""')
@@ -223,14 +227,18 @@ jobs:
         uses: anthropics/claude-code-action@2fee15510437d71399d9139ed60433470484a8fb  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
-          # OAuth via Craig's Max subscription — same auth ClawApp uses.
+          # Anthropic model auth (OAuth via Craig's Max subscription) — same auth
+          # ClawApp uses. This is a SEPARATE axis from GitHub auth below; keep it.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Use the workflow's built-in GITHUB_TOKEN for GitHub API ops (posting
-          # the review). Without this, the action falls back to an OIDC→GitHub
-          # App token exchange that requires the Claude Code GitHub App to be
-          # installed on the repo (it is not), failing with a 401. The job already
-          # grants pull-requests/issues: write, so github-actions[bot] can comment.
-          github_token: ${{ github.token }}
+          # GitHub auth: intentionally NO `github_token` input. Omitting it makes
+          # the action mint a Claude Code GitHub App token via the OIDC exchange
+          # (the App is now installed on this repo; the job's `id-token: write` is
+          # what that exchange requires). The App token runs the action in TRUSTED
+          # mode, where --allowedTools (below) is HONORED. Passing the default
+          # GITHUB_TOKEN instead (OVERRIDE_GITHUB_TOKEN) forced UNTRUSTED mode,
+          # which DISCARDS --allowedTools and denied every Bash tool → the
+          # auto-merge thrash in #39/#40/#41 (confirmed via the failure telemetry).
+          # Matches the working siblings, which pass only claude_code_oauth_token.
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
