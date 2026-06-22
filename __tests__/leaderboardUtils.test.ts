@@ -33,15 +33,25 @@ describe("Leaderboard Utils", () => {
   beforeEach(() => {
     localStorageMock.clear()
     jest.clearAllMocks()
+    // jsdom does not provide fetch. addLeaderboardEntry/getLeaderboardEntries
+    // call it; without this, fetch() throws synchronously and the function
+    // reports failure. A rejecting mock mirrors "API unavailable" — the code
+    // still writes locally and returns success, and the rejection is caught.
+    global.fetch = jest.fn().mockRejectedValue(new Error("no network (test)")) as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    // Safety net: ensure no test leaves fake timers enabled for the next one.
+    jest.useRealTimers()
   })
 
   describe("getLeaderboardEntries", () => {
-    it("should return an empty array if no entries exist and generate initial data", () => {
+    it("should return an empty array if no entries exist", () => {
       const entries = getLeaderboardEntries()
 
-      // Should have generated initial data
-      expect(entries.length).toBeGreaterThan(0)
-      expect(localStorageMock.setItem).toHaveBeenCalled()
+      // There is no client-side seeding: with empty storage and no API data,
+      // the function returns an empty array (data comes from localStorage/API).
+      expect(entries).toEqual([])
     })
 
     it("should return entries from localStorage if they exist", () => {
@@ -170,6 +180,12 @@ describe("Leaderboard Utils", () => {
 
   describe("getHourlyLeaderboard", () => {
     it("should return entries from the current hour", () => {
+      // Pin the clock to a fixed mid-hour instant. Without this the test is
+      // flaky: in the first 10 minutes of any real hour the "10 minutes ago"
+      // entry falls into the PREVIOUS hour and is excluded, flipping the count.
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date("2024-01-01T10:30:00Z"))
+
       const now = Date.now()
       const hourAgo = now - 60 * 60 * 1000
 

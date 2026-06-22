@@ -105,7 +105,10 @@ describe("Game Slice", () => {
       state = gameReducer(state, submitWord())
       expect(state.invalidSubmission).toBe(true)
       expect(state.message).toContain("at least 2 letters")
-      expect(state.selectedIslands).toEqual([])
+      // The too-short guard returns early and intentionally PRESERVES the
+      // in-progress selection so the player can keep adding islands (unlike the
+      // completed-submission paths, which clear it).
+      expect(state.selectedIslands).toEqual(["island-0"])
     })
 
     it("should accept valid words and add to found words", () => {
@@ -126,7 +129,12 @@ describe("Game Slice", () => {
       let state = {
         ...initialState,
         islands: [
-          ...initialState.islands,
+          initialState.islands[0],
+          initialState.islands[1],
+          // island-2 must list island-3 as a connection — selectIsland checks the
+          // LAST island's connections, so without this island-3 is rejected and
+          // only one island stays selected (hitting the too-short path instead).
+          { ...initialState.islands[2], connections: ["island-1", "island-3"] },
           {
             id: "island-3",
             letter: "X",
@@ -158,7 +166,9 @@ describe("Game Slice", () => {
       state = gameReducer(state, selectIsland("island-1")) // 'T'
       state = gameReducer(state, submitWord()) // 'AT' again
 
-      expect(state.invalidSubmission).toBe(true)
+      // A repeat word sets the dedicated duplicateSubmission flag (distinct from
+      // invalidSubmission, which is for words that fail dictionary validation).
+      expect(state.duplicateSubmission).toBe(true)
       expect(state.message).toContain("already found")
     })
 

@@ -1,6 +1,17 @@
 import { canFormWord, findPossibleWords } from "../lib/utils/wordUtils"
 import type { Island } from "../lib/slices/gameSlice"
-import { describe, it, expect, jest } from "@jest/globals"
+
+// NOTE: use the GLOBAL jest (no `import { jest } from "@jest/globals"`). With the
+// @jest/globals import, next/jest's SWC transform does not hoist jest.mock above
+// the imports, so the mock would not apply (the real dictionary would load first).
+//
+// findPossibleWords filters `dictionary` imported from services/dictionaryService
+// (NOT lib/utils/wordValidator). Mock that module at the TOP LEVEL so the call is
+// hoisted above the imports and findPossibleWords runs against this small, fixed
+// dictionary instead of the real ~thousands-word list.
+jest.mock("../lib/services/dictionaryService", () => ({
+  dictionary: ["loud", "old", "do", "lo", "out", "lot", "doll", "love"],
+}))
 
 describe("Word Utils", () => {
   // Mock islands for testing
@@ -48,11 +59,6 @@ describe("Word Utils", () => {
   })
 
   describe("findPossibleWords", () => {
-    // Mock the dictionary module
-    jest.mock("../lib/utils/wordValidator", () => ({
-      dictionary: ["loud", "old", "do", "lo", "out", "lot", "doll", "love"],
-    }))
-
     it("should find all possible words that can be formed with available islands", () => {
       // This test depends on the mocked dictionary
       const possibleWords = findPossibleWords(mockIslands)

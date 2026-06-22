@@ -162,12 +162,13 @@ describe("Objective System", () => {
         },
       ]
 
-      // Test with "hi" - shouldn't complete any objectives
+      // Test with "hi" — completes only startsWith-h: "hi" starts with "h",
+      // is 2 letters (not length-3), and ends with "i" (not endsWith-s).
       const completedWithHi = checkObjectives("hi", objectives, [])
       expect(completedWithHi).not.toContain("length-3")
-      expect(completedWithHi).not.toContain("startsWith-h")
+      expect(completedWithHi).toContain("startsWith-h")
       expect(completedWithHi).not.toContain("endsWith-s")
-      expect(completedWithHi.length).toBe(0)
+      expect(completedWithHi.length).toBe(1)
 
       // Test with "his" - should complete length-3, startsWith-h and endsWith-s
       const completedWithHis = checkObjectives("his", objectives, [])
@@ -304,12 +305,13 @@ describe("Objective System", () => {
 
       const mockSeed = jest
         .fn()
-        .mockReturnValueOnce(0) // First call: select "length" type
-        .mockReturnValueOnce(0) // Second call: select length 3
-        .mockReturnValueOnce(0.25) // Third call: select "startsWith" type
-        .mockReturnValueOnce(0) // Fourth call: select letter "h"
-        .mockReturnValueOnce(0.5) // Fifth call: select "endsWith" type
-        .mockReturnValueOnce(0.66) // Sixth call: select letter "s"
+        .mockReturnValueOnce(0) // 1: select "length" — floor(0*4)=0 of [length,startsWith,endsWith,contains]
+        .mockReturnValueOnce(0) // 2: length parameter -> 3
+        .mockReturnValueOnce(0.25) // 3: select "startsWith" — floor(0.25*3)=0 of [startsWith,endsWith,contains]
+        .mockReturnValueOnce(0) // 4: letter "h" — index 0 of [h,i,s]
+        .mockReturnValueOnce(0) // 5: select "endsWith" — floor(0*2)=0 of [endsWith,contains]
+        .mockReturnValueOnce(0.7) // 6: letter "s" — floor(0.7*3)=2 of [h,i,s]
+        .mockReturnValue(0) // default for any further seed() calls
 
       const objectives = generateObjectives(mockSeed, mockIslands)
 

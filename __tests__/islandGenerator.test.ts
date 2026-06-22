@@ -1,4 +1,5 @@
 import { generateIslands } from "../lib/utils/islandGenerator"
+import { seedRandom } from "../lib/utils/seedRandom"
 
 describe("Island Generator", () => {
   // Mock seed function that returns predictable values
@@ -40,47 +41,30 @@ describe("Island Generator", () => {
   })
 
   it("should ensure Q islands have at least one U neighbor", () => {
-    // Create a seed function that will generate a Q island
-    const qSeed = jest.fn().mockImplementation(() => {
-      // This implementation will ensure we get a Q island
-      // by returning specific values for the first island
-      qSeed.mock.calls.length === 1
-        ? 0.5
-        : // Number of islands
-          qSeed.mock.calls.length === 2
-          ? 0.3
-          : // X position
-            qSeed.mock.calls.length === 3
-            ? 0.7
-            : // Y position
-              qSeed.mock.calls.length === 4
-              ? 0.01
-              : // Letter selection (Q is low frequency)
-                qSeed.mock.calls.length === 5
-                ? 0.6
-                : // Size
-                  qSeed.mock.calls.length === 6
-                  ? 0.4
-                  : // Number of connections
-                    0.5 // Default for remaining calls
-    })
+    // Generate many DETERMINISTIC boards via the real seeded RNG and assert the
+    // generator's invariant: every Q island it produces has at least one
+    // connected "U" island. (The previous test fed an undefined-returning mock
+    // seed and force-set a letter to "Q" AFTER generation — which both crashed
+    // and bypassed the guarantee logic this test exists to verify.)
+    let qIslandsChecked = 0
 
-    // Force a Q island by directly modifying the first island
-    const islands = generateIslands(qSeed)
-    if (islands.length > 0) {
-      islands[0].letter = "Q"
+    for (let i = 0; i < 60; i++) {
+      const islands = generateIslands(seedRandom(`q-u-board-${i}`))
 
-      // Check if Q has a U neighbor
-      const qIsland = islands.find((island) => island.letter === "Q")
-      if (qIsland) {
+      for (const qIsland of islands.filter((island) => island.letter === "Q")) {
+        qIslandsChecked++
         const hasUNeighbor = qIsland.connections.some((connId) => {
-          const connectedIsland = islands.find((i) => i.id === connId)
-          return connectedIsland && connectedIsland.letter === "U"
+          const connectedIsland = islands.find((island) => island.id === connId)
+          return connectedIsland?.letter === "U"
         })
 
         expect(hasUNeighbor).toBe(true)
       }
     }
+
+    // Guard against a vacuous pass: confirm the invariant was actually exercised
+    // (i.e. these deterministic seeds really do produce at least one Q island).
+    expect(qIslandsChecked).toBeGreaterThan(0)
   })
 
   it("should not have duplicate connections", () => {

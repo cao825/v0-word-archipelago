@@ -298,6 +298,12 @@ export function getAllTimeLeaderboard(): LeaderboardEntry[] {
 export function formatTimestamp(timestamp: number): string {
   try {
     const date = new Date(timestamp)
+    // An invalid timestamp (e.g. NaN) yields an Invalid Date whose
+    // toLocaleTimeString() returns "Invalid Date" rather than throwing, so the
+    // catch below never fires. Guard explicitly to honor graceful handling.
+    if (isNaN(date.getTime())) {
+      return "Unknown time"
+    }
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   } catch (error) {
     console.error("Error formatting timestamp:", error)
