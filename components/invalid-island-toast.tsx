@@ -11,6 +11,7 @@ export default function InvalidIslandToast() {
 
   useEffect(() => {
     if (invalidIslandSelection) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Auto-dismiss toast: shows in response to an external Redux trigger, then hides via the timer below. This visibility is time-based and cannot be derived during render.
       setVisible(true)
       const timer = setTimeout(() => {
         setVisible(false)

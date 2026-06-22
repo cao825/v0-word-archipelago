@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAppSelector, useAppDispatch } from "@/lib/hooks/hooks"
 import { hideObjectiveNotification } from "@/lib/slices/gameSlice"
@@ -14,8 +14,6 @@ export default function ObjectiveCompleteNotification() {
   const [isVisible, setIsVisible] = useState(false)
   const [count, setCount] = useState(0)
 
-  // Add a ref to track if we've already shown a notification for all objectives
-  const allObjectivesNotifiedRef = useRef(false)
   const totalObjectives = objectives.length
 
   // Find the completed objective descriptions
@@ -32,6 +30,7 @@ export default function ObjectiveCompleteNotification() {
 
       // Only show notification if there are verified completed objectives
       if (verifiedIds.length > 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Auto-dismiss notification: shown in response to an external Redux trigger (objectiveCompletionNotification) once objectives are verified, then hidden via the 3000ms timer below. Time-based visibility that cannot be derived during render.
         setIsVisible(true)
         setCount(verifiedIds.length)
 
@@ -51,18 +50,12 @@ export default function ObjectiveCompleteNotification() {
     }
   }, [objectiveCompletionNotification, completedObjectives, dispatch])
 
-  // Check if all objectives are completed
-  useEffect(() => {
-    if (completedObjectives.length === totalObjectives) {
-      allObjectivesNotifiedRef.current = true
-    } else {
-      allObjectivesNotifiedRef.current = false
-    }
-  }, [completedObjectives.length, totalObjectives])
+  // Derive (not a ref read during render) whether every objective is complete.
+  const allObjectivesNotified = completedObjectives.length === totalObjectives
 
   // Only show notification if there are new completed objectives and not showing "all completed" repeatedly
   const shouldShowNotification =
-    isVisible && count > 0 && (completedObjectiveDescriptions.length > 0 || !allObjectivesNotifiedRef.current)
+    isVisible && count > 0 && (completedObjectiveDescriptions.length > 0 || !allObjectivesNotified)
 
   return (
     <AnimatePresence>

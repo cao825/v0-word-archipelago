@@ -40,6 +40,7 @@ export default function MobileSettingsSheet({ isOpen, onClose, currentTheme, onS
   // Sync with audio settings when opened
   useEffect(() => {
     if (isOpen && typeof window !== "undefined" && window.gameAudio) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncs local UI state from the external imperative window.gameAudio system when the sheet opens; reading from a non-React store is a legitimate effect.
       setAudioEnabled(window.gameAudio.isAudioEnabled())
       setAmbientEnabled(window.gameAudio.isAmbientEnabled())
     }

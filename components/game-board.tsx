@@ -80,7 +80,6 @@ export default function GameBoard() {
   const [invalidIslandClick, setInvalidIslandClick] = useState(false)
   const [invalidClickPosition, setInvalidClickPosition] = useState({ x: 0, y: 0 })
   const [allObjectivesNotificationShown, setAllObjectivesNotificationShown] = useState(false)
-  const [showGameOver, setShowGameOver] = useState(false)
 
   // Refs
   const gameAreaRef = useRef<HTMLDivElement>(null)
@@ -101,10 +100,6 @@ export default function GameBoard() {
 
   const onResetInvalidSubmission = useEffectEvent(() => {
     dispatch(resetInvalidSubmission())
-  })
-
-  const onHidePointsAnimation = useEffectEvent(() => {
-    dispatch(hidePointsAnimation())
   })
 
   const onShowMiniAchievement = useEffectEvent((title: string) => {
@@ -132,7 +127,7 @@ export default function GameBoard() {
   }, [invalidSubmission, duplicateSubmission])
 
   const handlePointsAnimationComplete = () => {
-    onHidePointsAnimation()
+    dispatch(hidePointsAnimation())
   }
 
   // Keyboard handlers
@@ -289,6 +284,7 @@ export default function GameBoard() {
       prevCompletedObjectivesCountRef.current !== completedObjectivesCount
     ) {
       onShowMiniAchievement("All Objectives Completed!")
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time latch: the guard (!allObjectivesNotificationShown) makes this fire at most once and prevents a re-render loop; it intentionally records that the "all objectives" achievement was shown.
       setAllObjectivesNotificationShown(true)
     }
 
@@ -302,13 +298,8 @@ export default function GameBoard() {
     allObjectivesNotificationShown,
   ])
 
-  useEffect(() => {
-    if (!gameActive && timeLeft === 0) {
-      setShowGameOver(true)
-    } else {
-      setShowGameOver(false)
-    }
-  }, [gameActive, timeLeft])
+  // Game over is fully derived from game state — no effect/state needed.
+  const showGameOver = !gameActive && timeLeft === 0
 
   const handleShareResults = () => {
     setShowShareModal(true)

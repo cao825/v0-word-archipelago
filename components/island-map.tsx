@@ -67,6 +67,7 @@ export default function IslandMap({
   useEffect(() => {
     // When invalidSubmission becomes true, we want to trigger the animation
     // When it becomes false, we want to reset the state
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Resets the one-shot shake latch whenever a new invalid submission arrives so the shake animation can replay; intentional reset-on-prop-change.
     setHasShaken(false)
   }, [invalidSubmission])
 
@@ -83,6 +84,7 @@ export default function IslandMap({
   // Add effect to handle invalid island selection from Redux
   useEffect(() => {
     if (invalidIslandSelection) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Auto-dismiss highlight: driven by an external Redux trigger, then cleared via the timer below. Time-based state that cannot be derived during render.
       setIncorrectIsland(invalidIslandSelection)
 
       // Clear the invalid island selection after a short delay

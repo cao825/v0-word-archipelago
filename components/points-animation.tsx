@@ -20,6 +20,7 @@ export default function PointsAnimation({ points, isVisible, onComplete }: Point
         clearTimeout(timer)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally keyed on isVisible only. onComplete is a fire-once completion callback; including it would re-run the effect (clearing/resetting the 1200ms timer) on every parent re-render, so the animation could never complete.
   }, [isVisible])
 
   return (
