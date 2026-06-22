@@ -18,6 +18,7 @@ import {
 import { useGameTimer } from "@/lib/hooks/use-game-timer"
 import { usePuzzleChecker } from "@/lib/hooks/use-puzzle-checker"
 import { useViewport } from "@/lib/hooks/use-viewport"
+import { BONUS_WORD_MIN_LENGTH, COMBO_BONUS_THRESHOLD } from "@/lib/constants"
 import { Activity } from "react"
 
 import IslandMap from "./island-map"
@@ -268,11 +269,11 @@ export default function GameBoard() {
         onShowMiniAchievement("First Word Found!")
       }
 
-      if (newWord.length >= 6) {
+      if (newWord.length >= BONUS_WORD_MIN_LENGTH) {
         onShowMiniAchievement(`${newWord.length}-Letter Word!`)
       }
 
-      if (comboCount >= 3) {
+      if (comboCount >= COMBO_BONUS_THRESHOLD) {
         onShowMiniAchievement(`${comboCount}x Combo!`)
       }
     }

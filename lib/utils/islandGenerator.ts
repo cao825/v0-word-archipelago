@@ -1,4 +1,12 @@
 import type { Island } from "../slices/gameSlice"
+import {
+  MIN_ISLANDS,
+  ISLAND_COUNT_VARIANCE,
+  BOARD_SIZE,
+  MIN_ISLAND_DISTANCE,
+  MULTIPLIER_CHANCE,
+  TRIPLE_MULTIPLIER_CHANCE,
+} from "../constants"
 
 // Letters with their frequencies (roughly based on English letter frequency)
 const letterFrequencies = {
@@ -40,11 +48,9 @@ Object.entries(letterFrequencies).forEach(([letter, frequency]) => {
 
 export function generateIslands(seed: () => number): Island[] {
   // Determine number of islands (12-16)
-  const numIslands = Math.floor(seed() * 5) + 12
+  const numIslands = Math.floor(seed() * ISLAND_COUNT_VARIANCE) + MIN_ISLANDS
 
   const islands: Island[] = []
-  const boardSize = 600 // Size of the game board
-  const minDistance = 85 // Increased from 70 to provide more breathing room (about 20% more)
 
   // Generate islands with positions
   for (let i = 0; i < numIslands; i++) {
@@ -56,14 +62,14 @@ export function generateIslands(seed: () => number): Island[] {
     let attempts = 0
     while (!validPosition && attempts < 100) {
       // Add more padding around edges (from 50px to 60px)
-      x = Math.floor(seed() * (boardSize - 120)) + 60
-      y = Math.floor(seed() * (boardSize - 120)) + 60
+      x = Math.floor(seed() * (BOARD_SIZE - 120)) + 60
+      y = Math.floor(seed() * (BOARD_SIZE - 120)) + 60
 
       validPosition = true
       for (const island of islands) {
         const distance = Math.sqrt(Math.pow(x - island.position.x, 2) + Math.pow(y - island.position.y, 2))
 
-        if (distance < minDistance) {
+        if (distance < MIN_ISLAND_DISTANCE) {
           validPosition = false
           break
         }
@@ -74,8 +80,8 @@ export function generateIslands(seed: () => number): Island[] {
 
     // If we couldn't find a valid position after many attempts, adjust
     if (!validPosition) {
-      x = Math.floor(seed() * boardSize)
-      y = Math.floor(seed() * boardSize)
+      x = Math.floor(seed() * BOARD_SIZE)
+      y = Math.floor(seed() * BOARD_SIZE)
     }
 
     // Select a random letter with weighting
@@ -87,9 +93,9 @@ export function generateIslands(seed: () => number): Island[] {
 
     // Add multiplier to some islands (about 20% chance)
     let multiplier = 1
-    if (seed() < 0.2) {
+    if (seed() < MULTIPLIER_CHANCE) {
       // 20% chance of having a multiplier
-      multiplier = seed() < 0.05 ? 3 : 2 // 5% chance of 3x, 15% chance of 2x
+      multiplier = seed() < TRIPLE_MULTIPLIER_CHANCE ? 3 : 2
     }
 
     islands.push({

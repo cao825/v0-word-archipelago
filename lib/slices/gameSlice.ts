@@ -3,6 +3,15 @@ import { generateIslands } from "../utils/islandGenerator"
 import { validateWord } from "../services/dictionaryService"
 import { generateObjectives, checkObjectives, type Objective } from "../utils/objectiveGenerator"
 import { seedRandom } from "../utils/seedRandom"
+import {
+  GAME_DURATION_SECONDS,
+  COMBO_TIME_WINDOW_MS,
+  POINTS_PER_LETTER,
+  COMBO_BONUS_THRESHOLD,
+  COMBO_BONUS_RATE,
+  OBJECTIVE_COMPLETION_BONUS,
+  BONUS_WORD_MIN_LENGTH,
+} from "../constants"
 
 export interface Island {
   id: string
@@ -87,7 +96,7 @@ const initialState: GameState = {
   selectedIslands: [],
   foundWords: [],
   score: 0,
-  timeLeft: 120, // Always 2 minutes
+  timeLeft: GAME_DURATION_SECONDS,
   gameActive: false,
   gameOver: false, // Initialize as false
   objectives: initialObjectives,
@@ -97,7 +106,7 @@ const initialState: GameState = {
   // Properties
   comboCount: 0,
   lastWordTime: 0,
-  comboTimeWindow: 15000, // 15 seconds for combo
+  comboTimeWindow: COMBO_TIME_WINDOW_MS,
   invalidSubmission: false,
   duplicateSubmission: false,
   successfulSubmission: false,
@@ -230,7 +239,7 @@ export const gameSlice = createSlice({
         state.lastWordTime = now
 
         // Calculate base word score
-        const baseWordScore = word.length * 10
+        const baseWordScore = word.length * POINTS_PER_LETTER
 
         // Apply island multipliers if any
         const usedIslands = state.selectedIslands
@@ -249,8 +258,8 @@ export const gameSlice = createSlice({
         let comboBonus = 0
 
         // Apply combo bonus for 3+ words in a row
-        if (state.comboCount >= 3) {
-          comboBonus = Math.floor(baseWordScore * (state.comboCount - 2) * 0.5) // 50% bonus per combo level above 2
+        if (state.comboCount >= COMBO_BONUS_THRESHOLD) {
+          comboBonus = Math.floor(baseWordScore * (state.comboCount - (COMBO_BONUS_THRESHOLD - 1)) * COMBO_BONUS_RATE)
           wordScore += comboBonus
         }
 
@@ -262,7 +271,7 @@ export const gameSlice = createSlice({
         state.successfulSubmission = true
 
         // Check if this is a bonus word (length >= 6)
-        if (word.length >= 6) {
+        if (word.length >= BONUS_WORD_MIN_LENGTH) {
           state.bonusWords.push(word)
         }
 
@@ -290,7 +299,7 @@ export const gameSlice = createSlice({
           newCompletedObjectives.forEach((objId) => {
             if (!state.completedObjectives.includes(objId)) {
               state.completedObjectives.push(objId)
-              state.score += 50 // Bonus for completing an objective
+              state.score += OBJECTIVE_COMPLETION_BONUS
             }
           })
 
@@ -321,14 +330,14 @@ export const gameSlice = createSlice({
           }
 
           // Set appropriate message
-          if (state.comboCount >= 3) {
+          if (state.comboCount >= COMBO_BONUS_THRESHOLD) {
             state.message = `Word found! +${wordScore} points (${comboBonus} combo bonus) and ${newCompletedObjectives.length} objective${newCompletedObjectives.length > 1 ? "s" : ""} completed!`
           } else {
             state.message = `Word found! +${wordScore} points and ${newCompletedObjectives.length} objective${newCompletedObjectives.length > 1 ? "s" : ""} completed!`
           }
         } else {
           // No objectives completed
-          if (state.comboCount >= 3) {
+          if (state.comboCount >= COMBO_BONUS_THRESHOLD) {
             state.message = `Word found! +${wordScore} points (${comboBonus} combo bonus)`
           } else if (highestMultiplier > 1) {
             state.message = `Word found! +${wordScore} points (${highestMultiplier}x multiplier)`
@@ -393,7 +402,7 @@ export const gameSlice = createSlice({
         state.score = 0
       }
 
-      state.timeLeft = 120 // Always 2 minutes
+      state.timeLeft = GAME_DURATION_SECONDS
       state.gameActive = true
       state.gameOver = false // Reset gameOver state
       state.selectedIslands = []
@@ -428,7 +437,7 @@ export const gameSlice = createSlice({
         state.selectedIslands = []
         state.foundWords = []
         state.score = 0
-        state.timeLeft = 120 // Always 2 minutes
+        state.timeLeft = GAME_DURATION_SECONDS
         state.gameActive = false
         state.gameOver = false // Reset gameOver state
         state.completedObjectives = []
@@ -467,7 +476,7 @@ export const gameSlice = createSlice({
       state.selectedIslands = []
       state.foundWords = []
       state.score = 0
-      state.timeLeft = 120
+      state.timeLeft = GAME_DURATION_SECONDS
       state.gameActive = false
       state.gameOver = false
       state.completedObjectives = []
