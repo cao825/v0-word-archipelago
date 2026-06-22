@@ -1,14 +1,16 @@
 # plan.md — state + roadmap (v4)
 
-**Supersedes v3 (PR #19).** 24 PRs merged since (#20–#43): the full hardening pass
+**Supersedes v3 (PR #19).** 29 PRs merged since (#20–#48): the full hardening pass
 landed — scanners, lint, deterministic tests, Tailwind v4, CI gate, branch
-protection, CLAUDE.md, constants. This records the DONE state, the load-bearing
-invariants, the auto-merge saga with its **confirmed** root cause + exact one-PR
-finish, and the remaining tail.
+protection, CLAUDE.md, constants, typed SEO routes — and **hands-off auto-merge now
+WORKS** (root cause found + fixed in #47, proven in #48). This records the DONE state,
+the load-bearing invariants, the auto-merge saga with its confirmed root cause, and
+the remaining tail.
 
 This is the **state/roadmap** doc. [`CLAUDE.md`](./CLAUDE.md) is the **hard-rules**
-doc — they agree; where CLAUDE.md says "auto-merge on green," that's the target
-design, and the one gap below (`plan: auto-merge-format-fix`) is what makes it real.
+doc — they agree: CLAUDE.md says "auto-merge on green," and as of #47/#48 that is
+**LIVE** — claude-review reviews and merges hands-off (`mergedBy=app/claude`). See
+the saga below for the root cause and the forward-bump watch-point.
 
 ## Naming convention
 - **GitHub `#N`** = a real merged/open PR. **`plan: <slug>`** = pending work, no PR yet.
@@ -48,6 +50,15 @@ design, and the one gap below (`plan: auto-merge-format-fix`) is what makes it r
 - **Telemetry:** claude-review failure-dump — `claude-execution-output` artifact +
   parsed denials, `if: always()` (#40 / #42) — makes a future thrash diagnosable in
   ONE run (it's what finally cracked the auto-merge root cause).
+- **HANDS-OFF AUTO-MERGE: CONFIRMED WORKING (#47 / #48).** The thrash was a stale
+  `claude-code-action` SHA carrying a whitespace-split regression; #47 pinned the
+  siblings' last-known-good commit and #48 (lib/-only) then auto-merged hands-off —
+  `permission_denials_count=0`, allowlist intact, 14 turns, `mergedBy=app/claude`. See
+  the saga below (incl. the forward-bump watch-point and the full ruled-out list).
+- **Determinism:** the last `Math.random()` leak (`assignMultipliers` in
+  `islandGenerator.ts`) is now hour-seeded too — boards fully reproducible (#48).
+- **Typed SEO routes:** `app/robots.ts` + `app/sitemap.ts` (Metadata Routes) replace
+  the static files; `SITE_URL` centralized in `lib/site-config.ts` (#46).
 
 ---
 
@@ -74,71 +85,85 @@ design, and the one gap below (`plan: auto-merge-format-fix`) is what makes it r
    `.ripgreprc` — make claude-review run untrusted. Keep workflow/config edits in
    their **own** PR (`paths-ignore` then skips claude-review) and never bundle them
    with source.
+10. **`claude-code-action` is pinned to `@d5726de0` (Claude Code 2.1.177) — the
+   last-known-good BEFORE the `claude_args` whitespace-split regression.** The `# v1`
+   comment is cosmetic; the SHA is what matters (it matches the working siblings). A
+   forward-bump MUST re-verify `permission_denials_count=0` on a test PR first —
+   bumping blindly to a newer commit can re-introduce the regression. Pin by SHA, and
+   when comparing to siblings, **diff the SHA, not the tag**.
 
 ---
 
-## AUTO-MERGE SAGA + CONFIRMED ROOT CAUSE (the critical handoff)
+## AUTO-MERGE SAGA + CONFIRMED ROOT CAUSE (RESOLVED)
 
-**State:** branch protection + the gates + the fail-safes (is_error gate) + the
-telemetry all **WORK**. Hands-off auto-merge does **NOT yet work**. The root cause is
-now **confirmed** (not inferred):
+**State: SOLVED.** Branch protection + the gates + the fail-safes (is_error gate) +
+the telemetry all work, and **hands-off auto-merge now fires** (#47 fix, #48 proof).
+The root cause is confirmed by direct evidence, not inference.
 
-### THE BUG (source-confirmed via `anthropics/claude-code-action` issue #844)
-`claude-review.yml` passes `claude_args` as a **multiline YAML block scalar**
-(`claude_args: |`). In that form the action's parser splits `--allowedTools` on
-**whitespace**, so every Bash pattern **containing a space** — `Bash(gh pr:*)`,
-`Bash(gh api:*)`, `Bash(npx tsc:*)`, `Bash(pnpm test:*)`, `Bash(pnpm lint:*)` — is
-shredded into garbage tokens (`"Bash(gh"`, `"pr:*)"`, …). Only space-free entries
-survive (`Edit`, `Write`, `Read`, `Bash(git:*)`, `mcp__…`). The reviewer is then
-**denied** `gh pr` / `gh api` / `tsc` / `pnpm test` / `pnpm lint` → thrashes to the
-50-turn cap → never merges. The #43 telemetry showed the split array **directly**.
+### THE ROOT CAUSE — a stale `claude-code-action` SHA
+`claude-review.yml` pinned `claude-code-action@2fee1551` (**Claude Code 2.1.185**,
+2026-06-20), which carries a `claude_args` **whitespace-split regression**: it splits
+`--allowedTools` on whitespace, shredding every space-containing Bash pattern —
+`Bash(gh pr:*)` → `"Bash(gh"`, `"pr:*)"`; `Bash(npx tsc:*)`, `Bash(pnpm test:*)`,
+`Bash(pnpm lint:*)` likewise. Only space-free entries survived (`Edit`, `Read`,
+`Bash(git:*)`, the mcp tool), so the reviewer was **denied** `gh pr` / `tsc` / `pnpm`
+→ thrashed to the 50-turn cap → never merged.
 
-### WHY SIX PRIOR HYPOTHESES WERE WRONG (don't re-chase them)
-1. **Missing Grep/Glob** — falsified: siblings lack them too and work fine.
-2. **Missing `Bash(gh api:*)` (#40)** — falsified: it has a space, was shredded too;
-   adding it never took effect.
-3. **Config files force untrusted (#40)** — falsified: #43 was lib/-only and still thrashed.
-4. **Untrusted token / OIDC (#42)** — REAL + necessary but **additive, not the whole
-   cause.** Removing `github_token` + installing the Claude App got us to **trusted**
-   mode (log: "OIDC token obtained → App token obtained", no "PR head is untrusted").
-   But trusted mode *honors* the allowlist, and the allowlist was still mangled → still
-   thrashed. So **#42 is correct and is KEEP** — a prerequisite, not the bug.
-5. **"Siblings have the same bug / likely thrash" (a #43 claim)** — FALSIFIED:
-   rogue-descent's `review-and-merge` shows 8 consecutive `success` runs on real
-   `pull_request` events. Siblings DO auto-merge. The difference is **FORMAT, not content.**
-6. **Space-free patterns as THE fix (a #43 proposal)** — UNVERIFIED and likely the
-   wrong frame: the issue is the YAML **serialization**, not the pattern content.
+The working siblings (rogue-descent + neon-drift) pin `@d5726de0` (**2.1.177**,
+2026-06-13 — **8 commits EARLIER**, the last-known-good before the regression). Same
+`claude_args`, same `# v1` tag — **the only differentiator was the action commit.**
 
-### THE FIX (next session — verify FIRST, then one PR)
-- **STEP 1 — verify the format differentiator (do NOT skip):** diff our
-  `claude-review.yml` `claude_args` block against a sibling's (rogue-descent /
-  neon-drift) **verbatim**. Confirm whether siblings use a single-line **quoted**
-  `--allowedTools "...,..."` while ours uses the multiline `claude_args: |` block.
-  Per issue #844 the fix is the quoted single-line form. **Match whatever format the
-  WORKING siblings use, exactly.**
-- **STEP 2 — the fix PR:** change ONLY the `claude_args` **serialization** in
-  `claude-review.yml` to the working form (quoted single-line `--allowedTools`, or the
-  exact sibling format). **Keep the allowlist CONTENT** (incl. `Bash(gh pr:*)` etc.) —
-  content was never the bug. Manual-merge (edits claude-review.yml → `paths-ignore`
-  skips its own review).
-- **STEP 3 — prove it:** after merge, a NORMAL lib/-only PR should auto-merge
-  hands-off. If it does → auto-merge DONE. If not → the telemetry dumps the denials;
-  read them.
+### THE FIX + PROOF
+- **#47** downgraded our pin `@2fee1551 → @d5726de0` (one line; everything else
+  unchanged).
+- **#48** (lib/-only, normal PR) then **AUTO-MERGED hands-off**:
+  `permission_denials_count=0` (vs 30–51 before), allowlist parsed **intact** (no
+  shredding), `subtype=success`, **14 turns** (vs the 51-turn cap),
+  `mergedBy=app/claude`. **CONFIRMED.**
 
-**WATCH-POINT:** the loop-prevention guards check `github-actions[bot]` as the
-push-back author; with the OIDC App token the push-back may author as a different bot
-login. If a fix-push ever loops, update **both** guards (job `if:` + check-author step)
-to the App's actual login.
+### ⚠️ CRITICAL WATCH-POINT — this is a DOWNGRADE, not an upgrade
+`@d5726de0` is *older* than the buggy `@2fee1551`. A future **forward-bump** of
+`claude-code-action` MUST re-verify `permission_denials_count=0` on a test PR before
+trusting it — bumping blindly to "latest v1" **re-introduces** the regression. **Pin
+by SHA; diff the SHA, not the `# v1` tag** (the tag camouflaged an 8-commit gap from
+the siblings — both said `# v1`).
+
+### RULED-OUT HYPOTHESES (all were symptoms / adjacent layers — never re-chase)
+1. **Missing Grep/Glob** — siblings lack them too and work.
+2. **Missing `Bash(gh api:*)` (#40)** — it has a space, was shredded too; never took effect.
+3. **Config files force untrusted (#40)** — #43 was lib/-only and still thrashed.
+4. **Untrusted token / OIDC (#42)** — REAL + necessary but **additive, not the cause**:
+   removing `github_token` + the Claude App install got us to *trusted* mode; **KEEP it**
+   (a prerequisite — trusted mode is what lets the now-intact allowlist be honored).
+5. **"Siblings also thrash"** — falsified: rogue-descent had 8 consecutive `success` runs.
+6. **YAML block-scalar format / issue #844 (the prior "confirmed" claim)** — FALSIFIED:
+   the siblings use the **byte-identical** `claude_args: |` block scalar and merge fine;
+   the format was never the variable. (The block scalar IS whitespace-split — but only
+   by *our* action version, not the siblings'.)
+7. **Pre-action env setup (#45)** — falsified: removing the pnpm/Node/install steps that
+   ran before the action changed the split **not at all** (#46 still thrashed identically).
+
+→ **The bug traveled with the ACTION VERSION.** Lesson: when a config looks identical
+to a working sibling's, **diff the pinned SHA** — a shared `# v1` tag can hide a
+multi-commit gap, and a regression can live entirely inside the action.
+
+**SECONDARY WATCH-POINT (bot login):** the loop-prevention guards check
+`github-actions[bot]` as the push-back author. With the OIDC App token a *fix-push*
+may author as a different login (e.g. `claude[bot]`); #48 only exercised review→merge
+(no fix-push). If a fix-push ever loops, update **both** guards (job `if:` +
+check-author step) to the App's actual login.
 
 ---
 
 ## REMAINING TAIL (all lower-risk, none blocking)
 
-- **`plan: auto-merge-format-fix`** — STEP 1/2/3 above. **THE next thing.**
+- **`plan: review-pnpm-readd`** — re-add pnpm/Node setup **AFTER** the action so the
+  fix-PUSH path has `pnpm test`/`pnpm lint` (#45 removed those pre-action steps; #48
+  proved the review→merge happy path doesn't need them, but a reviewer pushing a fix
+  would). Workflow-only → its own PR; keep the action SHA untouched.
 - **`plan: security-jsyaml`** — `js-yaml@3.14.2` old major in the tree (`pnpm why` →
   scoped override or accept-with-reason; root: an unused `react-spring`→metro native chain).
 - **`plan: security-md`** — add `SECURITY.md` (root file → its own PR; untrusted mode).
-- **`plan: prod-seo`** — typed `app/robots.ts` / `app/sitemap.ts` (static versions work today).
 - **`plan: lighthouse-ci`** — `lighthouse.yml` (low priority).
 - **`plan: semgrep-purity`** — enforce no React/DOM in `lib/services` + `lib/slices`.
 - **`plan: nvmrc`** — add `.nvmrc` (22) to match `engines` + the fleet (trivial).
@@ -151,16 +176,21 @@ to the App's actual login.
 ## PROCESS NOTES (what worked — keep doing)
 
 - **Recon-first + falsify-before-claiming** caught every latent bug as a ratchet
-  (the #16 override pairing, the log-injection, the 6 auto-merge hypotheses). Keep it.
+  (the #16 override pairing, the log-injection, the 7 ruled-out auto-merge hypotheses).
+  Keep it — note how often a "confirmed" cause (e.g. the #844/YAML claim) was later
+  falsified; hold diagnoses loosely until a PROOF run lands.
 - **Add telemetry BEFORE changing filter logic** — the #40 execution-dump is what
-  finally cracked auto-merge after 5 inference-driven misses.
+  finally cracked auto-merge after several inference-driven misses.
 - **"Match the siblings" is sound ONLY against VERIFIED-working sibling runs** —
-  confirm a sibling actually succeeds before treating its config as ground truth
-  (the #43 lesson: a sibling config was assumed broken when its runs were green).
+  confirm a sibling actually succeeds before treating its config as ground truth.
+- **When configs look identical to a working peer, diff the pinned SHA, not just the
+  text** — the auto-merge bug lived entirely in the action commit; a shared `# v1`
+  tag hid an 8-commit gap (the #47/#48 lesson).
 
 ## Explicitly NOT proposed (done / N-A — do not create)
 - ❌ scanners, `ci.yml`, branch protection, lint, deterministic tests, CLAUDE.md,
-  constants, productionization, canonical domain — **done**.
+  constants, productionization, canonical domain, **hands-off auto-merge** (#47/#48),
+  **typed SEO routes** (#46) — **done**.
 - ❌ "add strict TS" / "enforce build types" — done (#9 / #17 / #18).
 - ❌ Three.js purity, procedural assets, synthesized audio, game-loop / pool /
   timestep, joystick parity, visual-PR draft-gate — **N-A for this stack** (see CLAUDE.md).
