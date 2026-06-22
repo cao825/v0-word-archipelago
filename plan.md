@@ -21,12 +21,12 @@ the saga below for the root cause and the forward-bump watch-point.
 
 - **Type-safety:** `tsc` 27→**0**; `next build` ENFORCES types (#9 / #17 / #18) — a
   type regression fails the build + Vercel deploy.
-- **Security:** ~64 → ~1 alerts. Critical `shell-quote` cleared (#16); real CVEs
-  cleared via exact `pnpm.overrides` (#16) + the dependency batch (#24–#33). CodeQL
-  **caught a REAL log-injection** vuln in `app/api/leaderboard/route.ts` which we
-  fixed (#20 added scanners, #21 sanitized input, CWE-117). Secret scanning + push
-  protection **ON** (repo is public). 1 remaining alert = `js-yaml@3.14.2` old-major
-  in the dep tree (`plan: security-jsyaml`).
+- **Security:** ~64 → **0** Dependabot alerts. Critical `shell-quote` cleared (#16);
+  real CVEs cleared via exact `pnpm.overrides` (#16) + the dependency batch (#24–#33);
+  the last alert (js-yaml@3.14.2, still ≤ 4.1.1 vulnerable) cleared by forcing 4.2.0
+  (#51, detail below). CodeQL **caught a REAL log-injection** vuln in
+  `app/api/leaderboard/route.ts` which we fixed (#20 added scanners, #21 sanitized
+  input, CWE-117). Secret scanning + push protection **ON** (repo is public).
 - **Scanners live:** `codeql.yml`, `osv-scanner.yml`, `dependency-review.yml` (#20),
   reporting to the Security tab.
 - **Productionization:** metadata / manifest / viewport / OG (#14); canonical domain
@@ -40,13 +40,19 @@ the saga below for the root cause and the forward-bump watch-point.
 - **Tailwind v3→v4** migrated + visually verified on wordisles.com (#27, in batch).
 - **CI gate:** `ci.yml` **`verify`** job (tsc + test + lint) on PR + push-to-main (#37).
 - **Branch protection:** required = `["verify", "Analyze (javascript-typescript)",
-  "Vercel"]` — the 3 that report on **every** PR including Dependabot (Analyze
-  verified to run on dependabot via PR #33). `enforce_admins: false` (admin escape
-  hatch); `strict: true`. OSV / dependency-review run **advisory** (not required —
-  they skip dependabot / are non-blocking, so requiring them would lock dependabot PRs).
+  "Vercel", "Semgrep arch-invariants"]` — the 4 that report on **every** PR including
+  Dependabot (Analyze verified to run on dependabot via PR #33; Semgrep added in
+  #52/PR-B). `enforce_admins: false` (admin escape hatch); `strict: true`. OSV /
+  dependency-review run **advisory** (not required — they skip dependabot / are
+  non-blocking, so requiring them would lock dependabot PRs).
 - **Constants:** `lib/constants.ts` — 16 named/typed/grouped constants; magic numbers
   extracted (#43).
-- **CLAUDE.md** hard-rules doc added (#39); required-checks line corrected to the 3 (#40).
+- **CLAUDE.md** hard-rules doc added (#39); required-checks line corrected (#40, now 4 with Semgrep).
+- **Purity gate:** `semgrep.yml` + `.github/workflows/semgrep.yml` — the **`Semgrep
+  arch-invariants`** check enforces the pure-logic-layer split (#52 = gate + rules,
+  ported from rogue-descent; PR-B = the required-check wiring). 3 gating ERROR rules
+  (no React / no render-layer import / no DOM-or-storage in `lib/services`+`lib/slices`)
+  + 1 advisory WARNING rule (Math.random in the generators).
 - **Telemetry:** claude-review failure-dump — `claude-execution-output` artifact +
   parsed denials, `if: always()` (#40 / #42) — makes a future thrash diagnosable in
   ONE run (it's what finally cracked the auto-merge root cause).
@@ -59,7 +65,12 @@ the saga below for the root cause and the forward-bump watch-point.
   `islandGenerator.ts`) is now hour-seeded too — boards fully reproducible (#48).
 - **Typed SEO routes:** `app/robots.ts` + `app/sitemap.ts` (Metadata Routes) replace
   the static files; `SITE_URL` centralized in `lib/site-config.ts` (#46).
-
+- **Last Dependabot alert cleared:** js-yaml forced to the patched `4.2.0` via a scoped
+  override (was `3.14.2`, still `<= 4.1.1` vulnerable) — `pnpm why js-yaml` now shows
+  only 4.2.0 (#51).
+- **Fix-push path:** a reviewer-pushed fix is gated by the required `verify` CI job (its
+  own install + tsc/test/lint); the Fix Phase prompt was updated to the CI-gate model,
+  so no pnpm setup is needed in claude-review.yml (#50, resolving the #45 gap).
 ---
 
 ## ⚠️ LOAD-BEARING INVARIANTS — carry forward, every PR
@@ -75,16 +86,26 @@ the saga below for the root cause and the forward-bump watch-point.
 5. **`KV_REST_API_URL` / `KV_REST_API_TOKEN`** = live Upstash Redis secrets;
    `process.env` only; push protection is on.
 6. **Lint = the ESLint CLI** (`pnpm lint` → `eslint`; `next lint` was removed in Next 16).
-7. **Branch-protection contexts = the 3 all-PR checks** (verify / Analyze / Vercel);
-   `enforce_admins: false` is the escape hatch. **Never require a check that skips
-   dependabot** (e.g. OSV `scan-pr`) — it would lock dependabot PRs.
-8. **Logic layer is pure:** `lib/services/` + `lib/slices/` — no React / no DOM; render
-   in `components/`.
-9. **Config-touching PRs force UNTRUSTED mode.** Files in the action's restore list —
-   `.claude*`, `.mcp.json`, `CLAUDE.md`, `.github/**`, `.husky`, `.gitmodules`,
-   `.ripgreprc` — make claude-review run untrusted. Keep workflow/config edits in
-   their **own** PR (`paths-ignore` then skips claude-review) and never bundle them
-   with source.
+7. **Branch-protection contexts = the 4 all-PR checks** (verify / Analyze / Vercel /
+   `Semgrep arch-invariants`); `enforce_admins: false` is the escape hatch. **Never
+   require a check that skips dependabot** (e.g. OSV `scan-pr`) — it would lock
+   dependabot PRs.
+8. **Logic layer is pure — and ENFORCED.** `lib/services/` + `lib/slices/` are pure
+   TypeScript: no React, no DOM/storage, no import of the render layer
+   (`components/`, `lib/hooks/`). The required **`Semgrep arch-invariants`** check
+   blocks any violation at merge. Render-bound code lives in `components/`.
+   Determinism (Math.random in the generators) is **advisory** (non-gating).
+9. **Two SEPARATE mechanisms gate claude-review on workflow/config PRs — don't conflate
+   them.** (a) **paths-ignore SKIP:** a PR whose changes are confined to
+   `.github/workflows/claude-review.yml` is skipped by claude-review entirely (its
+   `paths-ignore`) → effectively manual-merge. (b) **UNTRUSTED-RESTORE:** a PR that
+   MODIFIES the action's restored config files — the list is `.claude*`, `.claude.json`,
+   `.mcp.json`, `CLAUDE.md`, `CLAUDE.local.md`, `.gitmodules`, `.ripgreprc`, `.husky`
+   — gets those files restored from `main` (the reviewer can't act on un-restored
+   config). **`.github/**` is NOT in the restore list** — workflow/CI PRs auto-merge
+   normally (confirmed #52: `semgrep.yml` + `.github/workflows/semgrep.yml`
+   auto-merged hands-off, denials=0). The earlier "all of `.github/**` forces
+   untrusted" claim was imprecise and is corrected here.
 10. **`claude-code-action` is pinned to `@d5726de0` (Claude Code 2.1.177) — the
    last-known-good BEFORE the `claude_args` whitespace-split regression.** The `# v1`
    comment is cosmetic; the SHA is what matters (it matches the working siblings). A
@@ -157,15 +178,9 @@ check-author step) to the App's actual login.
 
 ## REMAINING TAIL (all lower-risk, none blocking)
 
-- **`plan: review-pnpm-readd`** — re-add pnpm/Node setup **AFTER** the action so the
-  fix-PUSH path has `pnpm test`/`pnpm lint` (#45 removed those pre-action steps; #48
-  proved the review→merge happy path doesn't need them, but a reviewer pushing a fix
-  would). Workflow-only → its own PR; keep the action SHA untouched.
-- **`plan: security-jsyaml`** — `js-yaml@3.14.2` old major in the tree (`pnpm why` →
-  scoped override or accept-with-reason; root: an unused `react-spring`→metro native chain).
-- **`plan: security-md`** — add `SECURITY.md` (root file → its own PR; untrusted mode).
+- **`plan: security-md`** — add `SECURITY.md` (root file — NOT in the untrusted-restore
+  list, so it auto-merges like any source/docs PR).
 - **`plan: lighthouse-ci`** — `lighthouse.yml` (low priority).
-- **`plan: semgrep-purity`** — enforce no React/DOM in `lib/services` + `lib/slices`.
 - **`plan: nvmrc`** — add `.nvmrc` (22) to match `engines` + the fleet (trivial).
 - **OUT-OF-REPO — `plan: pr-pipeline-enroll`** — add `cao825/v0-word-archipelago` to
   the `REPOS` array in `/Users/craigoleyagent/Scripts/pr-pipeline.sh` (operator

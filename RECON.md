@@ -48,16 +48,16 @@ This is a **turn-based Redux + DOM** game: no `<canvas>`, no WebGL, no
 - **Build:** `next build` succeeds; Vercel green on main HEAD.
 - **Security:** ~64 → ~1 Dependabot alerts. Critical `shell-quote` cleared (#16);
   real CVEs cleared via exact `pnpm.overrides` (**15 entries**, LIVE) + the dependency
-  batch (#24–#33). 1 remaining = `js-yaml@3.14.2` old-major in tree
-  (`plan: security-jsyaml`). Code scanning (CodeQL) + secret scanning + push
-  protection: **ON** (repo public).
+  batch (#24–#33); the last alert (js-yaml@3.14.2, ≤ 4.1.1 vulnerable) cleared by
+  forcing 4.2.0 (#51) → **0 open alerts**. Code scanning (CodeQL) + secret scanning +
+  push protection: **ON** (repo public).
 
 ---
 
 ## C. Workflow / CI / auto-merge stack
 
 `.github/workflows/`: `ci.yml`, `claude-review.yml`, `codeql.yml`,
-`dependency-review.yml`, `osv-scanner.yml`.
+`dependency-review.yml`, `osv-scanner.yml`, `semgrep.yml`.
 
 - **`ci.yml`** — the **`verify`** job (tsc + test + lint) on `pull_request` +
   push-to-`main`; SHA-pinned actions; `permissions: contents: read` (#37).
@@ -67,21 +67,35 @@ This is a **turn-based Redux + DOM** game: no `<canvas>`, no WebGL, no
   **advisory**.
 - **`dependency-review.yml`** — `Dependency review (non-blocking)` on PRs —
   **advisory** (`continue-on-error`).
+- **`semgrep.yml`** — the **`Semgrep arch-invariants`** gate (#52): a local-rules
+  architectural check (NOT a SAST scanner — no SARIF). Gating ERROR rules enforce the
+  pure-logic-layer split (no React / render-import / DOM-or-storage in
+  `lib/services`+`lib/slices`) via `semgrep==1.167.0 --error`; a `continue-on-error`
+  advisory step surfaces the WARNING determinism rule. PR + push-to-`main`, no
+  dependabot `if:` / no paths filter. **REQUIRED** as of PR-B.
 - **`claude-review.yml`** — the auto-merge driver. Pins `claude-code-action@d5726de0`
   (the siblings' last-known-good commit, #47 — see below); trust gate
   (`head.repo.full_name == github.repository`; OWNER/MEMBER for `@claude` comments);
   TOCTOU-guarded untrusted checkout (`ref: <pr-sha>`); `paths-ignore` skips its own
   edits. Uses the **OIDC Claude App token** (no `github_token`, #42) → trusted mode.
   Has a Fix + Merge prompt, an **is_error fail-safe**, and **failure telemetry** (dump
-  + `claude-execution-output` artifact, #40/#42). NOTE: #45 removed the pre-action
-  pnpm/Node/install steps, so a fix-PUSH lacks pnpm (`plan: review-pnpm-readd`).
+  + `claude-execution-output` artifact, #40/#42). A reviewer fix-PUSH is validated by
+  the required `verify` CI job (its own install), not by local pnpm — the Fix Phase
+  prompt states this CI-gate model (#50).
 
-**Branch protection on `main`** (REST, #38; corrected #40):
-required status checks = `["verify", "Analyze (javascript-typescript)", "Vercel"]`
-(the 3 that report on **every** PR incl. dependabot); `strict: true`;
-`enforce_admins: false` (admin escape hatch); no required reviews. `review-and-merge`
-is **not** required (a flaky-action day = merge-by-hand, not lockout). Auto-merge is
-enabled on the repo.
+**Untrusted-restore (precise):** the action's `Restoring … from main (PR head is
+untrusted)` precaution restores only `.claude*`, `.claude.json`, `.mcp.json`,
+`CLAUDE.md`, `CLAUDE.local.md`, `.gitmodules`, `.ripgreprc`, `.husky`. **`.github/**`
+is NOT in that list** — workflow/CI PRs auto-merge normally (confirmed #52). The only
+special-cased workflow file is `claude-review.yml`, which `paths-ignore` SKIPS (a
+separate mechanism from the restore).
+
+**Branch protection on `main`** (REST, #38; corrected #40; Semgrep added PR-B):
+required status checks = `["verify", "Analyze (javascript-typescript)", "Vercel",
+"Semgrep arch-invariants"]` (the 4 that report on **every** PR incl. dependabot);
+`strict: true`; `enforce_admins: false` (admin escape hatch); no required reviews.
+`review-and-merge` is **not** required (a flaky-action day = merge-by-hand, not
+lockout). Auto-merge is enabled on the repo.
 
 **Auto-merge status: CONFIRMED WORKING (#47 / #48).** The thrash was a stale
 `claude-code-action` SHA (`@2fee1551`, Claude Code 2.1.185) carrying a `claude_args`
@@ -98,9 +112,11 @@ ruled-out list in [`plan.md`](./plan.md) → "AUTO-MERGE SAGA").
 1. **Auto-merge is RESOLVED + CONFIRMED (#47/#48)** — root cause was the stale action
    SHA (not the earlier YAML/#844 claim, which was falsified). The one live caveat is
    the forward-bump watch-point: never blind-bump the action; re-verify `denials=0`.
-2. **Purity is a grep spot-check**, not an exhaustive audit (`plan: semgrep-purity`
-   would enforce it). The former `Math.random` determinism leak in
-   `lib/utils/islandGenerator.ts` (`assignMultipliers`) is now hour-seeded (#48).
+2. **Purity is now ENFORCED** by the required `Semgrep arch-invariants` check (#52) —
+   a violation (React/DOM/storage/render-import in `lib/services`+`lib/slices`) blocks
+   merge, not just a hand-grep. The former `Math.random` determinism leak in
+   `lib/utils/islandGenerator.ts` (`assignMultipliers`) is now hour-seeded (#48);
+   re-introducing it triggers the advisory (non-gating) Semgrep WARNING.
 3. **The `js-yaml@3` alert** root-causes (INFERRED via `pnpm why`) to an unused
    `react-spring` → metro native chain — trimming it is a runtime-dep decision.
 4. **`pr-pipeline.sh` enrollment** is out-of-repo (a `craigoley`-owned Scripts file);

@@ -31,6 +31,11 @@ Part of the OleyArcade fleet — but a DOM/Redux web app, not a Three.js game (s
   Next 16; config is `eslint.config.mjs` (flat).
 - **Tests pin behavior** (`pnpm test`, jest via next/jest). Green is 90/90 and
   deterministic — keep it that way (no time/seed-coupled flakiness).
+- **Logic-layer purity is ENFORCED.** `lib/services/` + `lib/slices/` must not import
+  React, touch the DOM/storage (`window`/`document`/`localStorage`/`sessionStorage`),
+  or import the render layer (`components/`, `lib/hooks/`). The required **`Semgrep
+  arch-invariants`** check (semgrep, `semgrep.yml` rules) blocks any violation at
+  merge. Determinism (no `Math.random()` in the seeded generators) is **advisory**.
 - **Canonical domain is `wordisles.com`** — not the `*.vercel.app` slug. Use it in
   metadata/canonical/OG.
 - **Secrets are `process.env` only.** `KV_REST_API_URL` / `KV_REST_API_TOKEN` are
@@ -66,7 +71,10 @@ routes (`app/api/leaderboard`) backed by Upstash Redis.
 
 Branch from latest `main` → PR → checks → **auto-merge on green**. `main` is
 protected: required checks are `verify` (tsc+test+lint), `Analyze
-(javascript-typescript)` (CodeQL), and `Vercel`; `enforce_admins` is false (admin
-escape hatch); auto-merge is on and **claude-review** drives it (reviews,
-fixes-to-green, then `gh pr merge --squash --auto`). Claude Code **never pushes to
-`main`** and never bypasses branch protection — let the pipeline merge.
+(javascript-typescript)` (CodeQL), `Vercel`, and `Semgrep arch-invariants` (purity
+gate); `enforce_admins` is false (admin escape hatch); auto-merge is on and
+**claude-review** drives it (reviews, fixes-to-green, then `gh pr merge --squash
+--auto`). Claude Code **never pushes to `main`** and never bypasses branch protection
+— let the pipeline merge. (A PR editing only `.github/workflows/claude-review.yml` is
+skipped by `paths-ignore` → manual-merge; other workflow PRs auto-merge — `.github/**`
+is NOT in the action's untrusted-restore list.)
