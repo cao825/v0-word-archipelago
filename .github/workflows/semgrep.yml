@@ -1,0 +1,60 @@
+name: Semgrep (architectural-invariant gate)
+
+# A GATING CI CHECK — NOT a code-scanner. Runs the LOCAL semgrep.yml rules that codify
+# the pure-logic-layer split (lib/services + lib/slices: no React / no render-layer
+# import / no DOM-or-storage) and FAILS the job on any ERROR finding (--error → non-zero
+# exit), like the lint gate. Deliberately NO SARIF, NO Security tab, NO
+# security-events:write — findings gate the PR; they do NOT become code-scanning alerts.
+# (For SAST scanning we have CodeQL + OSV; this gate enforces our architecture.)
+#
+# Ported from the rogue-descent fleet gate (src/game/ → lib/services + lib/slices; "no
+# three" → "no React"; the Three.js / game-loop rules dropped as N/A). The rules are
+# proven zero-false-positive on current main, and the lint gate is already blocking →
+# consistent. A separate ADVISORY step surfaces the WARNING determinism rule without
+# gating.
+#
+# Triggers: pull_request + push-to-main, with NO dependabot-excluding `if:` and NO paths
+# filter — so this can be made a REQUIRED status check (a follow-up PR) that reports on
+# EVERY PR including Dependabot (a required check that skips dependabot locks its PRs).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege: only reads the repo to lint the source. NOT a scanner, so NO
+# security-events:write (that permission is for SARIF uploads, which this does not do).
+permissions:
+  contents: read
+
+# Cancel superseded runs for the same branch / PR (mirrors ci.yml).
+concurrency:
+  group: semgrep-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: Semgrep arch-invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.12'
+      # Pinned for a DETERMINISTIC gate — a future Semgrep release must not silently
+      # change rule behavior. Bump deliberately + re-prove. This is the version the
+      # rules were authored/proven on (matches the rogue-descent fleet pin).
+      - run: pip install semgrep==1.167.0
+
+      # GATE: the ERROR-severity purity rules. `--error` exits non-zero on any finding;
+      # `--severity ERROR` scopes the gate to the ERROR rules only (so the advisory
+      # WARNING rule below can never fail this job). `--metrics=off` = no telemetry.
+      - name: Semgrep purity gate (ERROR rules)
+        run: semgrep scan --config semgrep.yml --error --severity ERROR --metrics=off .
+
+      # ADVISORY: surface the WARNING-severity determinism rule WITHOUT gating
+      # (continue-on-error + no --error). Reports drift; never blocks the merge.
+      - name: Semgrep determinism advisory (WARNING rules)
+        continue-on-error: true
+        run: semgrep scan --config semgrep.yml --severity WARNING --metrics=off .
