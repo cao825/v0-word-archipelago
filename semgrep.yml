@@ -1,0 +1,86 @@
+# Architectural-invariant gate (Semgrep) — codifies the pure-logic-layer split the
+# recons check by hand on every PR. Ported from the rogue-descent fleet rules and
+# adapted for this stack (Next.js + React + Redux, NOT Three.js):
+#   * the pure layer here is `lib/services/` + `lib/slices/` (vs rogue's `src/game/`)
+#   * the "no three" rule becomes "no React" (the equivalent purity line for us)
+#   * the Three.js / fixed-timestep game-loop rules (no-timers, no-wallclock) are
+#     DROPPED — N/A for a turn-based Redux/DOM app, and wall-clock reads are LEGIT
+#     here (formatTimestamp, getHourlyLeaderboard), so a wallclock rule would
+#     false-positive.
+#
+# The ERROR rules GATE the PR (semgrep ... --error --severity ERROR); they are proven
+# zero-false-positive on current main (lib/services + lib/slices are clean). The lone
+# WARNING rule is ADVISORY (a separate non-gating step) — it catches future
+# determinism drift in the seeded generators without blocking.
+rules:
+  # ── PURE LOGIC LAYER (gating) ─────────────────────────────────────────────────────
+  - id: pure-layer-no-react
+    languages: [typescript]
+    severity: ERROR
+    paths:
+      include:
+        - /lib/services/
+        - /lib/slices/
+    patterns:
+      - pattern-either:
+          # `import … from 'react'` / `'react-dom'` / subpaths (default, named, namespace, type)
+          - pattern-regex: "(?m)^\\s*import\\b[^\\n]*\\bfrom\\s+['\"]react(-dom)?(/[^'\"]*)?['\"]"
+          # bare side-effect import: `import 'react'`
+          - pattern-regex: "(?m)^\\s*import\\s+['\"]react(-dom)?(/[^'\"]*)?['\"]"
+    message: >-
+      lib/services/ + lib/slices/ must not import React (the load-bearing purity rule).
+      Reducers/selectors/services are pure TypeScript — same inputs, same outputs.
+      React-bound code belongs in components/ and lib/hooks/.
+
+  - id: pure-layer-no-render-import
+    languages: [typescript]
+    severity: ERROR
+    paths:
+      include:
+        - /lib/services/
+        - /lib/slices/
+    patterns:
+      - pattern-either:
+          # `import … from '(@/|../…)(components|lib/hooks|hooks)/…'`
+          - pattern-regex: "(?m)^\\s*import\\b[^\\n]*\\bfrom\\s+['\"](@/)?(\\.\\./)*(components|lib/hooks|hooks)/[^'\"]*['\"]"
+          # bare side-effect import of those layers
+          - pattern-regex: "(?m)^\\s*import\\s+['\"](@/)?(\\.\\./)*(components|lib/hooks|hooks)/[^'\"]*['\"]"
+    message: >-
+      lib/services/ + lib/slices/ must not import the render layer (components/) or
+      React hooks (lib/hooks/). The logic layer is depended-on, never depends on
+      React-bound code (../utils, ../dictionary, sibling services/slices are fine).
+
+  - id: pure-layer-no-dom-or-storage
+    languages: [typescript]
+    severity: ERROR
+    paths:
+      include:
+        - /lib/services/
+        - /lib/slices/
+    pattern-either:
+      # window/document via MEMBER ACCESS (precise — won't false-positive on a local
+      # identifier; all real DOM use is property/method access).
+      - pattern: window.$X
+      - pattern: document.$X
+      # storage globals — any reference is a violation, so match the bare identifier.
+      - pattern: localStorage
+      - pattern: sessionStorage
+    message: >-
+      lib/services/ + lib/slices/ must not touch the DOM or storage
+      (window./document./localStorage/sessionStorage). The logic layer is pure; DOM
+      lives in components/, persistence in the app/api routes (Upstash Redis) — the
+      slice receives data as pure input, never reads it directly.
+
+  # ── DETERMINISM (advisory — non-gating; see the WARNING-severity step) ────────────
+  - id: generator-no-math-random
+    languages: [typescript]
+    severity: WARNING
+    paths:
+      include:
+        - /lib/utils/islandGenerator.ts
+        - /lib/utils/objectiveGenerator.ts
+    pattern: Math.random(...)
+    message: >-
+      Board/objective generation is hour-seeded (deterministic per hour) — prefer the
+      injected seed() over Math.random() so boards stay reproducible (the
+      assignMultipliers leak was fixed in #48). ADVISORY: this does not gate the PR.
