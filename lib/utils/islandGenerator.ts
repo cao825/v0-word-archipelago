@@ -229,17 +229,25 @@ export function generateIslands(seed: () => number): Island[] {
     // Determine how many islands should have multipliers (about 15%)
     const multiplierCount = Math.max(1, Math.floor(islands.length * 0.15))
 
-    // Randomly select islands to have multipliers
+    // Select islands to have multipliers using the same hour-seeded RNG as the rest
+    // of generation, so multiplier placement is reproducible within the hour (was
+    // raw Math.random(), the one determinism leak in the generator). The attempt
+    // cap mirrors the placement loop above: it bounds the search so a low-entropy
+    // RNG (e.g. one returning a constant) can't spin forever — it just assigns
+    // fewer multipliers instead of hanging.
     const indices = new Set<number>()
-    while (indices.size < multiplierCount) {
-      indices.add(Math.floor(Math.random() * islands.length))
+    let multiplierAttempts = 0
+    const maxMultiplierAttempts = islands.length * 10
+    while (indices.size < multiplierCount && multiplierAttempts < maxMultiplierAttempts) {
+      indices.add(Math.floor(seed() * islands.length))
+      multiplierAttempts++
     }
 
     // Assign multipliers (2x or 3x) to the selected islands
     indices.forEach((index) => {
       islandsWithMultipliers[index] = {
         ...islandsWithMultipliers[index],
-        multiplier: Math.random() < 0.7 ? 2 : 3, // 70% chance of 2x, 30% chance of 3x
+        multiplier: seed() < 0.7 ? 2 : 3, // 70% chance of 2x, 30% chance of 3x
       }
     })
 
