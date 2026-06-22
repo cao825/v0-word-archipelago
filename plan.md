@@ -1,98 +1,167 @@
-# plan.md — remaining roadmap (v3, refreshed)
+# plan.md — state + roadmap (v4)
 
-**Supersedes the v2 plan (PR #13).** Re-derived from `RECON.md` (v3). **Track 1 (type-safety) is COMPLETE** (#17 tsc→0, #18 build enforces types). This records all merged work and sequences the tail.
+**Supersedes v3 (PR #19).** 24 PRs merged since (#20–#43): the full hardening pass
+landed — scanners, lint, deterministic tests, Tailwind v4, CI gate, branch
+protection, CLAUDE.md, constants. This records the DONE state, the load-bearing
+invariants, the auto-merge saga with its **confirmed** root cause + exact one-PR
+finish, and the remaining tail.
+
+This is the **state/roadmap** doc. [`CLAUDE.md`](./CLAUDE.md) is the **hard-rules**
+doc — they agree; where CLAUDE.md says "auto-merge on green," that's the target
+design, and the one gap below (`plan: auto-merge-format-fix`) is what makes it real.
 
 ## Naming convention
 - **GitHub `#N`** = a real merged/open PR. **`plan: <slug>`** = pending work, no PR yet.
 
 ---
 
-## ⚠️ LOAD-BEARING INVARIANTS — read before any PR
-1. **pnpm 10 only.** `packageManager` pins `pnpm@10.34.4`; the lockfile is a pnpm-10 artifact (`lockfileVersion '9.0'`); Vercel/CI resolve pnpm from it. Any lockfile-touching PR: `corepack use pnpm@10.34.4` first, verify `pnpm --version`, revert any sha512 appended to `packageManager`. A pnpm-11 install breaks the Vercel deploy.
-2. **`pnpm.overrides` is LIVE** (17 entries). Use **exact** pins or scoped `pkg@major` (a range like `>=x` forces the *latest* major — dangerous). Don't delete the block.
-3. **No branch protection** (private, no Pro). Every check is non-gating; merges are manual until `plan: enforce-review`.
-4. **Canonical domain = `wordisles.com`** (set in #15). Don't reintroduce `*.vercel.app` as canonical.
-5. **Build now enforces types** (#18). A type regression fails `next build` + the Vercel deploy — keep `tsc --noEmit` at 0.
+## STATE: DONE (verified this session)
+
+- **Type-safety:** `tsc` 27→**0**; `next build` ENFORCES types (#9 / #17 / #18) — a
+  type regression fails the build + Vercel deploy.
+- **Security:** ~64 → ~1 alerts. Critical `shell-quote` cleared (#16); real CVEs
+  cleared via exact `pnpm.overrides` (#16) + the dependency batch (#24–#33). CodeQL
+  **caught a REAL log-injection** vuln in `app/api/leaderboard/route.ts` which we
+  fixed (#20 added scanners, #21 sanitized input, CWE-117). Secret scanning + push
+  protection **ON** (repo is public). 1 remaining alert = `js-yaml@3.14.2` old-major
+  in the dep tree (`plan: security-jsyaml`).
+- **Scanners live:** `codeql.yml`, `osv-scanner.yml`, `dependency-review.yml` (#20),
+  reporting to the Security tab.
+- **Productionization:** metadata / manifest / viewport / OG (#14); canonical domain
+  `wordisles.com` (#15).
+- **Lint: WORKS.** Next 16 removed `next lint`; `eslint.config.mjs` flat config + the
+  ESLint CLI (#22). The 26 findings were triaged to **0/0** (#34) — real bugs fixed,
+  intentional cases suppressed-with-reason, the rules kept armed.
+- **Tests: STABLE 90/90** across 5 runs (#36) — de-flaked the time/seed coupling
+  (fake timers / seeded RNG); fixed 1 real code bug (`formatTimestamp` `isNaN`
+  guard); 8 test-wrong fixes (verified test-vs-code for each).
+- **Tailwind v3→v4** migrated + visually verified on wordisles.com (#27, in batch).
+- **CI gate:** `ci.yml` **`verify`** job (tsc + test + lint) on PR + push-to-main (#37).
+- **Branch protection:** required = `["verify", "Analyze (javascript-typescript)",
+  "Vercel"]` — the 3 that report on **every** PR including Dependabot (Analyze
+  verified to run on dependabot via PR #33). `enforce_admins: false` (admin escape
+  hatch); `strict: true`. OSV / dependency-review run **advisory** (not required —
+  they skip dependabot / are non-blocking, so requiring them would lock dependabot PRs).
+- **Constants:** `lib/constants.ts` — 16 named/typed/grouped constants; magic numbers
+  extracted (#43).
+- **CLAUDE.md** hard-rules doc added (#39); required-checks line corrected to the 3 (#40).
+- **Telemetry:** claude-review failure-dump — `claude-execution-output` artifact +
+  parsed denials, `if: always()` (#40 / #42) — makes a future thrash diagnosable in
+  ONE run (it's what finally cracked the auto-merge root cause).
 
 ---
 
-## DONE (merged — complete record)
-| PR | Outcome |
-|---|---|
-| #7 | Advisory `claude-review.yml` (SHA-pinned; no auto-merge) |
-| #8 | Jest harness `ts-jest`→`next/jest`; `onlyBuiltDependencies` allowlist |
-| #9 | tsc 27→4; deleted 5 dead components; `dictionaryService` bug; GameTheme single-source |
-| #10 | claude-review auth via `github_token` (no GitHub App needed) |
-| #11 | Added `.gitignore` |
-| #12 | next 16.0.10 → 16.2.6 (cleared all next advisories) |
-| #13 | Docs refresh v2 |
-| #14 | Productionization: metadataBase, viewport/themeColor, favicon, PWA manifest |
-| #15 | Canonical domain → `wordisles.com` |
-| #16 | Security 26→5 transitive (critical `shell-quote` cleared) via exact overrides |
-| #17 | react 19.0→**19.2.7**, @types 19.2.x → **tsc 4→0** |
-| #18 | Removed `ignoreBuildErrors` → **build enforces types** |
+## ⚠️ LOAD-BEARING INVARIANTS — carry forward, every PR
 
-**Current baseline:** tsc **0** (build-enforced), tests **80/90**, **5** transitive Dependabot alerts (0 critical), Vercel green, lint **broken**.
-
----
-
-## PENDING — sequenced
-
-### Track 2 — security tail
-**`plan: security-newdrift`** · auto-review eligible · no deps
-The 5 open alerts are **not stuck** (RECON A4 corrects this):
-- **js-yaml** — already at 4.2.0 (patched); the alert is **stale**, should auto-close on Dependabot re-scan. Verify, no action likely needed.
-- **picomatch@4** (high+med) → add scoped override `"picomatch@4": "4.0.4"` (same-major patch).
-- **ws@7** (high) → add scoped override `"ws@7": "7.5.11"` (same-major patch).
-Two scoped overrides under pnpm 10.34.4 clear the real ones. (Deeper: `react-spring` drags in `react-native`/metro — the recurring alert source; trimming that is a separate runtime-dep decision, not required here.)
-
-**`plan: code-scanning`** · auto-review eligible · no deps
-Add `codeql.yml` + `osv-scanner.yml` + `dependency-review.yml` (port ~as-is). Enable **secret scanning** in repo settings (settings change — may be outside a PR). Both code- + secret-scanning are off (RECON A4).
-
-### Track 3 — lint + CI gating (ordered)
-**`plan: eslint-setup`** · auto-review eligible · no deps · **prereq for any lint-gating**
-Lint is **broken** (RECON A5: Next 16 removed `next lint`; no flat config). Add a flat `eslint.config.mjs` (on `eslint-config-next` flat) + a working `lint` script (`eslint .`). Decide on `@eslint/plugin-kit`/eslint version alignment (the #16 override forced plugin-kit 0.3.4; a real eslint setup may need eslint ≥9.18).
-
-**`plan: ci-workflow`** · auto-review eligible · **depends on** `eslint-setup` (for the lint step)
-Add `ci.yml` (typecheck + test + lint), retargeted to pnpm/jest/tsc. Typecheck+test can land first (both green); add lint once `eslint-setup` lands. Report-only → required.
-
-**`plan: enforce-review`** (the `TODO(PR6)` work) · **manual-merge** · **depends on** `ci-workflow` + stable tests
-Re-enable claude-review auto-merge (restore Fix/Merge phase → `gh pr merge --squash --delete-branch`), drop the install step's `continue-on-error`, and **fail the step on `is_error: true`** (a green check currently doesn't prove a real review ran). Track 1 is green, but **stabilize the flaky tests first** (`plan: test-fixes`) so auto-merge doesn't trip on the 79↔80 flip.
-
-**`plan: semgrep-purity`** · auto-review eligible · low priority
-`semgrep.yml` enforcing the adapted invariant: no React/DOM imports in `lib/services` & `lib/slices` (RECON B3 — currently clean).
-
-### Track 4 — process/docs parity
-**`plan: claude-md`** · auto-review eligible · no deps
-Add `CLAUDE.md` (all siblings have one). Adapt the fleet hard-rules for this stack: pure `lib/services`/`lib/slices`, strict TS (build-enforced), pnpm@10.34.4 invariant, canonical domain, branch→PR→manual-merge. **Mark the Three.js/game-loop rules N-A** (see RECON B3) so a future session doesn't force a game architecture onto a Redux word game.
-
-**`plan: security-md`** · auto-review eligible · no deps
-Add `SECURITY.md` (siblings have it; portable text).
-
-### Track 5 — test quality (gates enforcement)
-**`plan: test-fixes`** · auto-review eligible · depends on harness (#8, done)
-- **De-flake** the time/seed-coupled tests (fake timers / deterministic seeds): `getHourlyLeaderboard`, `Island Generator Q-U`, `Game Slice submitWord` combo trio. This is what flips 79↔80.
-- **Fix the deterministic assertion failures**: `Leaderboard Utils` (3), `Objective System` (2), `Word Utils findPossibleWords`.
-Goal: stable green `pnpm test` — a prerequisite for trustworthy `plan: enforce-review`.
-
-### Track 6 — productionization tail + optional
-- **`plan: constants-extract`** (optional) — extract scattered tuning (`timeLeft: 120`, `comboTimeWindow: 15000`, `word.length * 10`, multiplier probs) into a `lib/constants.ts` (RECON B3 ADAPT gap).
-- **`plan: prod-seo`** (optional) — typed `app/robots.ts` / `app/sitemap.ts` (static versions work today).
-- **`plan: lighthouse-ci`** (optional, low priority) — `lighthouse.yml`.
-- **`plan: nvmrc`** (trivial) — add `.nvmrc` (22) to match the `engines` pin and the fleet.
-
-### Out-of-repo (flagged, not a PR here)
-**`plan: pr-pipeline-enroll`** — add `cao825/v0-word-archipelago` to the REPOS array in `/Users/craigoleyagent/Scripts/pr-pipeline.sh` (RECON B2). Edits a file outside this repo; the array is `craigoley/`-owned, so confirm the owner prefix. Needs your action.
+1. **pnpm 10 ONLY.** `packageManager` pins `pnpm@10.34.4`; the lockfile is a pnpm-10
+   artifact (`lockfileVersion '9.0'`); Vercel + CI resolve pnpm from it. Lockfile
+   work MUST `corepack use pnpm@10.34.4` **first** (and revert any sha512 appended to
+   `packageManager`) — a pnpm-11 install rewrites the lockfile and breaks Vercel.
+2. **`pnpm.overrides` is LIVE** (pnpm 10 honors it). Raise floors / use exact or
+   scoped `pkg@major` pins; don't delete the block.
+3. **Canonical domain = `wordisles.com`** — not the `*.vercel.app` slug.
+4. **Build ENFORCES types** — `tsc` 0 or `next build` + Vercel fail.
+5. **`KV_REST_API_URL` / `KV_REST_API_TOKEN`** = live Upstash Redis secrets;
+   `process.env` only; push protection is on.
+6. **Lint = the ESLint CLI** (`pnpm lint` → `eslint`; `next lint` was removed in Next 16).
+7. **Branch-protection contexts = the 3 all-PR checks** (verify / Analyze / Vercel);
+   `enforce_admins: false` is the escape hatch. **Never require a check that skips
+   dependabot** (e.g. OSV `scan-pr`) — it would lock dependabot PRs.
+8. **Logic layer is pure:** `lib/services/` + `lib/slices/` — no React / no DOM; render
+   in `components/`.
+9. **Config-touching PRs force UNTRUSTED mode.** Files in the action's restore list —
+   `.claude*`, `.mcp.json`, `CLAUDE.md`, `.github/**`, `.husky`, `.gitmodules`,
+   `.ripgreprc` — make claude-review run untrusted. Keep workflow/config edits in
+   their **own** PR (`paths-ignore` then skips claude-review) and never bundle them
+   with source.
 
 ---
 
-## Banked review nits (fold into a later touching PR — don't PR these alone)
-- `lib/utils/theme-config.ts` — the `?? THEME_CONFIGS.tropical` fallback is unreachable dead code (the `Record<GameTheme,…>` is complete). Drop when next touching the file (fits `plan: constants-extract`).
-- `lib/utils/islandGenerator.ts:52` — the `// Initialized to 0…` comment restates the code; drop it (fits `plan: test-fixes`, which touches islandGenerator).
-- The exact-pin override maintenance surface (#16 review) — consider floor-with-upper-bound ranges (`>=x.y.z <nextMajor`) for single-major packages so Dependabot can auto-patch (fits `plan: security-newdrift`).
+## AUTO-MERGE SAGA + CONFIRMED ROOT CAUSE (the critical handoff)
 
-## Explicitly NOT proposed (present / N-A — do not create)
-- ❌ `dependabot.yml`, `claude-review.yml`, productionization/metadata/canonical-domain — done. ❌ "Add strict TS" / "enforce build types" — done (#9/#17/#18). ❌ Three.js purity, procedural assets, synthesized audio, game-loop/pool/timestep, joystick parity, visual-PR draft-gate — **N-A for this stack** (RECON B3). ❌ "kill dead pnpm.overrides" — it's LIVE.
+**State:** branch protection + the gates + the fail-safes (is_error gate) + the
+telemetry all **WORK**. Hands-off auto-merge does **NOT yet work**. The root cause is
+now **confirmed** (not inferred):
 
-## Suggested order
-`security-newdrift` + `test-fixes` (parallel, both unblock other things) → `eslint-setup` → `ci-workflow` → `enforce-review` (turn gates on, once tests stable). In parallel/anytime: `claude-md`, `security-md`, `code-scanning` (all no-dep, low-risk). `constants-extract` / `prod-seo` / `lighthouse-ci` / `nvmrc` / `semgrep-purity` are the low-priority tail.
+### THE BUG (source-confirmed via `anthropics/claude-code-action` issue #844)
+`claude-review.yml` passes `claude_args` as a **multiline YAML block scalar**
+(`claude_args: |`). In that form the action's parser splits `--allowedTools` on
+**whitespace**, so every Bash pattern **containing a space** — `Bash(gh pr:*)`,
+`Bash(gh api:*)`, `Bash(npx tsc:*)`, `Bash(pnpm test:*)`, `Bash(pnpm lint:*)` — is
+shredded into garbage tokens (`"Bash(gh"`, `"pr:*)"`, …). Only space-free entries
+survive (`Edit`, `Write`, `Read`, `Bash(git:*)`, `mcp__…`). The reviewer is then
+**denied** `gh pr` / `gh api` / `tsc` / `pnpm test` / `pnpm lint` → thrashes to the
+50-turn cap → never merges. The #43 telemetry showed the split array **directly**.
+
+### WHY SIX PRIOR HYPOTHESES WERE WRONG (don't re-chase them)
+1. **Missing Grep/Glob** — falsified: siblings lack them too and work fine.
+2. **Missing `Bash(gh api:*)` (#40)** — falsified: it has a space, was shredded too;
+   adding it never took effect.
+3. **Config files force untrusted (#40)** — falsified: #43 was lib/-only and still thrashed.
+4. **Untrusted token / OIDC (#42)** — REAL + necessary but **additive, not the whole
+   cause.** Removing `github_token` + installing the Claude App got us to **trusted**
+   mode (log: "OIDC token obtained → App token obtained", no "PR head is untrusted").
+   But trusted mode *honors* the allowlist, and the allowlist was still mangled → still
+   thrashed. So **#42 is correct and is KEEP** — a prerequisite, not the bug.
+5. **"Siblings have the same bug / likely thrash" (a #43 claim)** — FALSIFIED:
+   rogue-descent's `review-and-merge` shows 8 consecutive `success` runs on real
+   `pull_request` events. Siblings DO auto-merge. The difference is **FORMAT, not content.**
+6. **Space-free patterns as THE fix (a #43 proposal)** — UNVERIFIED and likely the
+   wrong frame: the issue is the YAML **serialization**, not the pattern content.
+
+### THE FIX (next session — verify FIRST, then one PR)
+- **STEP 1 — verify the format differentiator (do NOT skip):** diff our
+  `claude-review.yml` `claude_args` block against a sibling's (rogue-descent /
+  neon-drift) **verbatim**. Confirm whether siblings use a single-line **quoted**
+  `--allowedTools "...,..."` while ours uses the multiline `claude_args: |` block.
+  Per issue #844 the fix is the quoted single-line form. **Match whatever format the
+  WORKING siblings use, exactly.**
+- **STEP 2 — the fix PR:** change ONLY the `claude_args` **serialization** in
+  `claude-review.yml` to the working form (quoted single-line `--allowedTools`, or the
+  exact sibling format). **Keep the allowlist CONTENT** (incl. `Bash(gh pr:*)` etc.) —
+  content was never the bug. Manual-merge (edits claude-review.yml → `paths-ignore`
+  skips its own review).
+- **STEP 3 — prove it:** after merge, a NORMAL lib/-only PR should auto-merge
+  hands-off. If it does → auto-merge DONE. If not → the telemetry dumps the denials;
+  read them.
+
+**WATCH-POINT:** the loop-prevention guards check `github-actions[bot]` as the
+push-back author; with the OIDC App token the push-back may author as a different bot
+login. If a fix-push ever loops, update **both** guards (job `if:` + check-author step)
+to the App's actual login.
+
+---
+
+## REMAINING TAIL (all lower-risk, none blocking)
+
+- **`plan: auto-merge-format-fix`** — STEP 1/2/3 above. **THE next thing.**
+- **`plan: security-jsyaml`** — `js-yaml@3.14.2` old major in the tree (`pnpm why` →
+  scoped override or accept-with-reason; root: an unused `react-spring`→metro native chain).
+- **`plan: security-md`** — add `SECURITY.md` (root file → its own PR; untrusted mode).
+- **`plan: prod-seo`** — typed `app/robots.ts` / `app/sitemap.ts` (static versions work today).
+- **`plan: lighthouse-ci`** — `lighthouse.yml` (low priority).
+- **`plan: semgrep-purity`** — enforce no React/DOM in `lib/services` + `lib/slices`.
+- **`plan: nvmrc`** — add `.nvmrc` (22) to match `engines` + the fleet (trivial).
+- **OUT-OF-REPO — `plan: pr-pipeline-enroll`** — add `cao825/v0-word-archipelago` to
+  the `REPOS` array in `/Users/craigoleyagent/Scripts/pr-pipeline.sh` (operator
+  action; the array is `craigoley`-owned).
+
+---
+
+## PROCESS NOTES (what worked — keep doing)
+
+- **Recon-first + falsify-before-claiming** caught every latent bug as a ratchet
+  (the #16 override pairing, the log-injection, the 6 auto-merge hypotheses). Keep it.
+- **Add telemetry BEFORE changing filter logic** — the #40 execution-dump is what
+  finally cracked auto-merge after 5 inference-driven misses.
+- **"Match the siblings" is sound ONLY against VERIFIED-working sibling runs** —
+  confirm a sibling actually succeeds before treating its config as ground truth
+  (the #43 lesson: a sibling config was assumed broken when its runs were green).
+
+## Explicitly NOT proposed (done / N-A — do not create)
+- ❌ scanners, `ci.yml`, branch protection, lint, deterministic tests, CLAUDE.md,
+  constants, productionization, canonical domain — **done**.
+- ❌ "add strict TS" / "enforce build types" — done (#9 / #17 / #18).
+- ❌ Three.js purity, procedural assets, synthesized audio, game-loop / pool /
+  timestep, joystick parity, visual-PR draft-gate — **N-A for this stack** (see CLAUDE.md).
+- ❌ "kill dead `pnpm.overrides`" — it's LIVE.
