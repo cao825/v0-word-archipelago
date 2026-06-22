@@ -67,12 +67,14 @@ This is a **turn-based Redux + DOM** game: no `<canvas>`, no WebGL, no
   **advisory**.
 - **`dependency-review.yml`** — `Dependency review (non-blocking)` on PRs —
   **advisory** (`continue-on-error`).
-- **`claude-review.yml`** — the auto-merge driver. SHA-pinned; trust gate
+- **`claude-review.yml`** — the auto-merge driver. Pins `claude-code-action@d5726de0`
+  (the siblings' last-known-good commit, #47 — see below); trust gate
   (`head.repo.full_name == github.repository`; OWNER/MEMBER for `@claude` comments);
   TOCTOU-guarded untrusted checkout (`ref: <pr-sha>`); `paths-ignore` skips its own
   edits. Uses the **OIDC Claude App token** (no `github_token`, #42) → trusted mode.
   Has a Fix + Merge prompt, an **is_error fail-safe**, and **failure telemetry** (dump
-  + `claude-execution-output` artifact, #40/#42).
+  + `claude-execution-output` artifact, #40/#42). NOTE: #45 removed the pre-action
+  pnpm/Node/install steps, so a fix-PUSH lacks pnpm (`plan: review-pnpm-readd`).
 
 **Branch protection on `main`** (REST, #38; corrected #40):
 required status checks = `["verify", "Analyze (javascript-typescript)", "Vercel"]`
@@ -81,20 +83,24 @@ required status checks = `["verify", "Analyze (javascript-typescript)", "Vercel"
 is **not** required (a flaky-action day = merge-by-hand, not lockout). Auto-merge is
 enabled on the repo.
 
-**Auto-merge status:** the protection + gates + fail-safes + telemetry all work, but
-**hands-off auto-merge does not yet fire** — a confirmed `claude_args` YAML
-serialization bug shreds the space-containing `--allowedTools` Bash patterns (full
-analysis + the one-PR fix in [`plan.md`](./plan.md) → "AUTO-MERGE SAGA"). Until then,
-PRs merge by hand via the `enforce_admins: false` escape hatch.
+**Auto-merge status: CONFIRMED WORKING (#47 / #48).** The thrash was a stale
+`claude-code-action` SHA (`@2fee1551`, Claude Code 2.1.185) carrying a `claude_args`
+whitespace-split regression that shredded the space-containing `--allowedTools` Bash
+patterns. #47 pinned the siblings' last-known-good `@d5726de0` (2.1.177, 8 commits
+earlier); #48 (lib/-only) then auto-merged hands-off — `permission_denials_count=0`,
+allowlist intact, 14 turns, `mergedBy=app/claude`. **Watch-point:** this is a
+DOWNGRADE — a forward-bump must re-verify `denials=0` first (full analysis + the
+ruled-out list in [`plan.md`](./plan.md) → "AUTO-MERGE SAGA").
 
 ---
 
 ## D. Caveats (equal weight)
-1. **Auto-merge root cause is CONFIRMED, the fix is NOT yet applied** — see plan.md;
-   verify the sibling format diff before the fix PR.
+1. **Auto-merge is RESOLVED + CONFIRMED (#47/#48)** — root cause was the stale action
+   SHA (not the earlier YAML/#844 claim, which was falsified). The one live caveat is
+   the forward-bump watch-point: never blind-bump the action; re-verify `denials=0`.
 2. **Purity is a grep spot-check**, not an exhaustive audit (`plan: semgrep-purity`
-   would enforce it). `Math.random` in `lib/utils/islandGenerator.ts`
-   (`assignMultipliers`) is a determinism leak, outside the React/DOM purity rule.
+   would enforce it). The former `Math.random` determinism leak in
+   `lib/utils/islandGenerator.ts` (`assignMultipliers`) is now hour-seeded (#48).
 3. **The `js-yaml@3` alert** root-causes (INFERRED via `pnpm why`) to an unused
    `react-spring` → metro native chain — trimming it is a runtime-dep decision.
 4. **`pr-pipeline.sh` enrollment** is out-of-repo (a `craigoley`-owned Scripts file);
