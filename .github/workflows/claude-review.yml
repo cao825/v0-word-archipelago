@@ -182,33 +182,21 @@ jobs:
           git checkout -B "$BRANCH"
           git branch --set-upstream-to="origin/$BRANCH" "$BRANCH" 2>/dev/null || true
 
-      # --- Stack setup (word-archipelago divergence from the Vite/npm siblings) ---
-      # This repo is Next.js + pnpm (lockfileVersion 9.0), not Vite + npm. Set up
-      # pnpm, then Node 22 (matches package.json `engines.node: 22.x`) with the
-      # pnpm cache, so Claude can run `npx tsc --noEmit` and `pnpm test` during
-      # review. Both setup actions are SHA-pinned like the rest of the workflow.
-      - name: Set up pnpm
-        if: steps.check-author.outputs.skip != 'true'
-        # No `version:` here on purpose — pnpm/action-setup reads the pinned
-        # version from package.json `packageManager` (pnpm@10.34.4), the single
-        # source of truth shared with local Corepack. An explicit `version:` that
-        # disagrees with packageManager errors on newer action-setup.
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
-
-      - name: Set up Node
-        if: steps.check-author.outputs.skip != 'true'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
-        with:
-          node-version: 22
-          cache: pnpm
-
-      # Install must succeed: the Fix Phase runs tsc/test/lint against these deps,
-      # and a broken install should FAIL the run (never hollow-green). Install is
-      # clean on main today — the `verify` CI job (ci.yml) proves `pnpm install
-      # --frozen-lockfile` works — so this gates rather than swallowing errors.
-      - name: Install dependencies
-        if: steps.check-author.outputs.skip != 'true'
-        run: pnpm install --frozen-lockfile
+      # --- NO pre-action environment setup (EXPERIMENT — isolate the thrash cause) ---
+      # Deliberately NO "Set up pnpm / Set up Node / Install dependencies" before the
+      # action. Those three steps were the ONLY structural difference from the WORKING
+      # sibling (rogue-descent), whose job goes checkout → re-attach → action directly
+      # and merges with permission_denials_count=0 on a byte-identical claude_args.
+      # Ours (with the pre-action setup) splits the space-containing Bash allowlist
+      # patterns and denies gh pr / npx tsc / pnpm test|lint → thrash. Removing the
+      # setup matches the sibling's clean init to isolate that as the cause; the
+      # telemetry on the next NORMAL PR judges (expect denials → 0).
+      #
+      # DEFERRED (follow-up, only if this confirms the cause): the Fix Phase's
+      # `pnpm test` / `pnpm lint` need pnpm + installed deps. If a fix-push must
+      # verify the gates, re-add pnpm/Node setup + install AFTER the action
+      # (Fix-Phase-only), never before it. The review → merge happy path needs none
+      # of it (read diff via gh pr / Read, comment via mcp, merge via gh pr).
 
       # HANDS-OFF FIX + MERGE (PR6): the gates (npx tsc --noEmit, pnpm test, pnpm
       # lint) are green on main and the `verify` CI check enforces them, so the
