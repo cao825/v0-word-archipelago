@@ -31,8 +31,8 @@ export const THEME_CONFIGS: Record<GameTheme, ThemeConfig> = {
   },
 } as const
 
-// Simple getter functions - no caching needed
-export const getThemeGradient = (theme: GameTheme): string =>
-  THEME_CONFIGS[theme]?.gradient || THEME_CONFIGS.tropical.gradient
+// Simple getter functions - no caching needed. THEME_CONFIGS is a complete
+// Record<GameTheme, ThemeConfig>, so the lookup can't miss — no fallback needed.
+export const getThemeGradient = (theme: GameTheme): string => THEME_CONFIGS[theme].gradient
 
-export const getThemeName = (theme: GameTheme): string => THEME_CONFIGS[theme]?.name || THEME_CONFIGS.tropical.name
+export const getThemeName = (theme: GameTheme): string => THEME_CONFIGS[theme].name
