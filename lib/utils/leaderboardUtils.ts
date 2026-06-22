@@ -1,4 +1,10 @@
 // Types for leaderboard entries
+import {
+  MAX_LEADERBOARD_ENTRIES,
+  LEADERBOARD_DISPLAY_LIMIT,
+  LEADERBOARD_SUBMISSION_COOLDOWN_MS,
+} from "../constants"
+
 export interface LeaderboardEntry {
   playerInitials: string
   score: number
@@ -7,8 +13,6 @@ export interface LeaderboardEntry {
   wordsFound: number
 }
 
-// Maximum number of entries to store locally (as fallback)
-const MAX_ENTRIES = 1000
 const LEADERBOARD_STORAGE_KEY = "wordArchipelago_leaderboard"
 
 // Get leaderboard entries from localStorage (fallback)
@@ -119,7 +123,7 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
 
     if (lastSubmission) {
       const lastTime = Number.parseInt(lastSubmission, 10)
-      if (now - lastTime < 5000) {
+      if (now - lastTime < LEADERBOARD_SUBMISSION_COOLDOWN_MS) {
         console.warn("Rate limit exceeded for leaderboard submission")
         return false
       }
@@ -131,7 +135,7 @@ export function addLeaderboardEntry(entry: LeaderboardEntry): boolean {
     // Add to local storage first
     const entries = getLocalLeaderboardEntries()
     entries.push(entry)
-    const sortedEntries = entries.sort((a, b) => b.score - a.score).slice(0, MAX_ENTRIES)
+    const sortedEntries = entries.sort((a, b) => b.score - a.score).slice(0, MAX_LEADERBOARD_ENTRIES)
     localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(sortedEntries))
 
     // Submit to API
@@ -213,7 +217,7 @@ export function getHourlyLeaderboard(): LeaderboardEntry[] {
     const hourlyEntries = entries
       .filter((entry) => entry.timestamp >= currentHourStartTime)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
+      .slice(0, LEADERBOARD_DISPLAY_LIMIT)
 
     return hourlyEntries
   } catch (error) {
@@ -252,7 +256,7 @@ export function getDailyLeaderboard(): LeaderboardEntry[] {
     const dailyEntries = entries
       .filter((entry) => entry.timestamp >= dayAgo)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
+      .slice(0, LEADERBOARD_DISPLAY_LIMIT)
 
     return dailyEntries
   } catch (error) {
@@ -285,7 +289,7 @@ export async function fetchAllTimeLeaderboard(): Promise<LeaderboardEntry[]> {
 export function getAllTimeLeaderboard(): LeaderboardEntry[] {
   try {
     const entries = getLocalLeaderboardEntries()
-    const allTimeEntries = entries.sort((a, b) => b.score - a.score).slice(0, 10)
+    const allTimeEntries = entries.sort((a, b) => b.score - a.score).slice(0, LEADERBOARD_DISPLAY_LIMIT)
 
     return allTimeEntries
   } catch (error) {
