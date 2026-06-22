@@ -1,0 +1,57 @@
+name: Lighthouse (web performance audit)
+
+# An ADVISORY Lighthouse signal so the SEO / accessibility / best-practices /
+# performance scores don't silently regress as the markup/meta/asset layer evolves.
+#
+# NON-BLOCKING: the lighthouserc assertions are all "warn" (never "error"), the audit
+# step is continue-on-error, and this workflow is NOT in branch-protection required
+# checks (the 4 required are verify / Analyze / Vercel / Semgrep arch-invariants). A
+# dipped score surfaces in the PR's Actions log + the temporary-public-storage report
+# link; it never fails the build. Thresholds are STACK-APPROPRIATE, floored just below
+# the measured baseline (local LH 13, desktop, median of 3: perf 97, a11y 100,
+# best-practices 100, seo 100) — far above the WebGL siblings' perf floor, because this
+# is a light DOM word game, not a three.js canvas.
+#
+# Run target — unlike the static-export siblings (`collect.staticDistDir = ./dist`),
+# this app has Next.js API routes, so there is no servable static dist. The lighthouserc
+# instead boots the real prod server (`startServerCommand: pnpm start` → `next start`)
+# and audits http://localhost:3000 — self-contained + deterministic (no dependence on a
+# Vercel preview URL / deploy timing). Each PR is measured on its OWN built output. The
+# DESKTOP preset is used for a stable CI signal (mobile-emulated CPU throttling is noisy
+# run-to-run).
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 8 * * *' # nightly (08:00 UTC) — trend line, independent of PRs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse audit (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The prod build that `next start` (lighthouserc startServerCommand) will serve.
+      - run: pnpm build
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18  # v12.6.2
+        continue-on-error: true # non-blocking: a dipped score warns, never fails the build
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

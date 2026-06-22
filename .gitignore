@@ -45,3 +45,6 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+
+# Lighthouse CI local output
+.lighthouseci/

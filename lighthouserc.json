@@ -1,0 +1,30 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "pnpm start",
+      "startServerReadyPattern": "Ready in",
+      "startServerReadyTimeout": 60000,
+      "url": ["http://localhost:3000/"],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "//": "WARN only — never error. Floors set BELOW the measured desktop baseline",
+      "//2": "(local LH 13, median of 3: perf 97, a11y 100, best-practices 100, seo 100)",
+      "//3": "so current wordisles.com passes with margin and only a real regression warns.",
+      "//4": "perf is floored at 0.85 (not the siblings' 0.55 — they ship a WebGL canvas;",
+      "//5": "this is a light DOM word game that scores high). Nothing here gates the merge.",
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.85 }],
+        "categories:accessibility": ["warn", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.95 }],
+        "categories:seo": ["warn", { "minScore": 0.95 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}
