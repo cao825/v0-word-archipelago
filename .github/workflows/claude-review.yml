@@ -198,37 +198,27 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # ADVISORY-MODE caveat: this repo does not install cleanly today — a clean
-      # `pnpm install` exits non-zero on ERR_PNPM_IGNORED_BUILDS (sharp,
-      # unrs-resolver), and `--frozen-lockfile` will also fail if the lockfile
-      # drifts. `continue-on-error: true` lets the review still post even when
-      # install fails, so a red dependency state never blocks the advisory review.
-      # TODO(PR6): drop `continue-on-error` (make install required) once Track 1
-      # fixes the ignored-builds gate and the lockfile is clean.
-      - name: Install dependencies (advisory; non-blocking)
+      # Install must succeed: the Fix Phase runs tsc/test/lint against these deps,
+      # and a broken install should FAIL the run (never hollow-green). Install is
+      # clean on main today — the `verify` CI job (ci.yml) proves `pnpm install
+      # --frozen-lockfile` works — so this gates rather than swallowing errors.
+      - name: Install dependencies
         if: steps.check-author.outputs.skip != 'true'
-        continue-on-error: true
         run: pnpm install --frozen-lockfile
 
-      # ADVISORY MODE (PR1): this step posts review COMMENTS ONLY. No auto-merge,
-      # no auto-fix push, no gating. word-archipelago does not typecheck yet
-      # (~25 known `tsc` errors masked by `next.config.mjs` ignoreBuildErrors)
-      # and the jest harness can't run (ts-jest missing), so a red tsc/test is
-      # EXPECTED and must NOT block — the prompt below forbids merge/approve/push.
-      # TODO(PR6): re-enable the hands-off auto-merge (restore a Fix + Merge phase:
-      # iterate to green, then `gh pr merge <n> --squash --delete-branch`) once
-      # Track 1 makes `npx tsc --noEmit` and `pnpm test` green.
-      #
-      # --allowedTools (below) is reduced to match this advisory intent: Read +
-      # the read-only checks the prompt runs (npx tsc, pnpm test) + the inline-
-      # comment tool to post findings. The full fleet workflow (neon-drift /
-      # rogue-descent siblings) additionally grants Edit, Write, Bash(git:*),
-      # Bash(gh pr:*), Bash(gh api:*) for its Fix + Merge phases. This fork has no
-      # such phases, so granting those write/git/merge tools only let the reviewer
-      # ATTEMPT denied actions and thrash to the 50-turn cap (PR #34: error_max_turns,
-      # 28 permission denials). TODO(PR6): restore those tools alongside the Fix +
-      # Merge phase (plan: enforce-review).
-      - uses: anthropics/claude-code-action@2fee15510437d71399d9139ed60433470484a8fb  # v1
+      # HANDS-OFF FIX + MERGE (PR6): the gates (npx tsc --noEmit, pnpm test, pnpm
+      # lint) are green on main and the `verify` CI check enforces them, so the
+      # reviewer now fixes-to-green and merges. --allowedTools (below) grants the
+      # write/git tools the Fix + Merge phases use (Edit, Write, Bash(git:*),
+      # Bash(gh pr:*), Bash(pnpm lint:*)) — tools and prompt are RE-ALIGNED (the
+      # #35 advisory fork removed both; this restores both together, never tools
+      # without the matching prompt phase). The is_error fail-safe step after this
+      # one fails the check if the action errors, so a broken run is never
+      # hollow-green or a silent no-merge. Branch protection requires only the
+      # deterministic checks (verify/Analyze/scan-pr/Dependency review/Vercel), NOT
+      # this job — a flaky-action day means merge-by-hand, not repo-lockout.
+      - id: claude
+        uses: anthropics/claude-code-action@2fee15510437d71399d9139ed60433470484a8fb  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
           # OAuth via Craig's Max subscription — same auth ClawApp uses.
@@ -246,22 +236,17 @@ jobs:
 
             You are the code reviewer for Word Archipelago (package name
             `word-isles`), a word-puzzle game built with Next.js (App Router) +
-            React 19 + Redux Toolkit, using pnpm, and deployed to Vercel. Your
-            job in THIS PR is to review the pull request and post findings.
+            React 19 + Redux Toolkit, using pnpm, and deployed to Vercel. Your job
+            in THIS PR is to review it, fix what you safely can, and — if it meets
+            the bar — merge it hands-off.
 
-            ## ADVISORY MODE — read first
+            ## Gates are green — keep them green
 
-            This is an ADVISORY review. You MUST:
-            - Post findings as inline review comments only.
-            - NOT approve, NOT merge, NOT commit, NOT push any changes.
-
-            This repo does NOT typecheck cleanly yet: there are ~25 known
-            `tsc --noEmit` errors currently masked by `typescript.ignoreBuildErrors`
-            in next.config.mjs, and the jest harness cannot run yet (ts-jest is
-            missing). You MAY run `npx tsc --noEmit` and `pnpm test` to inform
-            your review, but their failure is EXPECTED and pre-existing — do NOT
-            report the pre-existing failures as findings, and do NOT treat a red
-            tsc/test as a reason to block. Review only what THIS PR changes.
+            All three gates are GREEN on main and the required `verify` CI check
+            enforces them on every PR: `npx tsc --noEmit` (0 errors), `pnpm test`
+            (90/90), `pnpm lint` (0 problems). Any code you push MUST keep all
+            three green — if a fix breaks one, the `verify` check goes red and the
+            PR will not merge. Run all three yourself before pushing (see Fix Phase).
 
             ## Review Phase
 
@@ -299,13 +284,65 @@ jobs:
             - Test code that intentionally exercises edge cases
             - Pre-existing tsc/test failures unrelated to this PR's diff
 
-            ## Wrap-up
+            ## Fix Phase
 
-            Post a brief summary comment noting what you reviewed and the findings
-            you raised. Do NOT approve, merge, commit, or push. If the PR has
-            fundamental issues, explain them in the summary and tag @craigoley.
+            If you find issues you can safely fix:
+            1. Fix them directly in the code on the PR branch.
+            2. Before committing, verify the change keeps ALL THREE gates green:
+               - `npx tsc --noEmit` — clean.
+               - `pnpm test` — full suite green.
+               - `pnpm lint` — 0 problems.
+               If any fails, iterate until all three pass — do NOT push code that
+               would turn the required `verify` check red.
+            3. Commit with a clear message and push to the PR branch.
+            4. Re-review your own fixes to confirm they're correct.
+
+            ## Merge Phase
+
+            After review (and any fixes), if the PR meets quality standards:
+            1. Post a brief summary comment noting what you reviewed and any fixes.
+            2. Approve the PR.
+            3. Enable auto-merge with:
+               `gh pr merge <number> --squash --delete-branch --auto`
+               `--auto` is REQUIRED here: main has branch protection, so the merge
+               is queued and GitHub completes it once the required checks
+               (verify, Analyze, scan-pr / osv-scan, Dependency review, Vercel)
+               pass. If you pushed fixes, those checks re-run on your commit first.
+
+            If the PR has fundamental issues that can't be auto-fixed (wrong
+            approach, needs architectural discussion, missing tests for complex new
+            features), post a detailed comment explaining the concerns, do NOT
+            enable auto-merge, and tag @craigoley so I see it.
 
           claude_args: |
             --model claude-opus-4-6
             --max-turns 50
-            --allowedTools Read,Bash(npx tsc:*),Bash(pnpm test:*),mcp__github_inline_comment__create_inline_comment
+            --allowedTools Edit,Write,Read,Bash(git:*),Bash(gh pr:*),Bash(npx tsc:*),Bash(pnpm test:*),Bash(pnpm lint:*),mcp__github_inline_comment__create_inline_comment
+
+      # is_error FAIL-SAFE (hardening beyond the sibling baseline — siblings have
+      # none). The action can exit 0 yet have errored internally (the documented
+      # error_max_turns / error_during_execution / broken-install modes). Left
+      # unchecked that is a HOLLOW-GREEN run or a SILENT no-merge. Parse the
+      # execution log's final result message and fail the job unless is_error is
+      # explicitly false — any error, or a missing/malformed result, fails LOUDLY.
+      # review-and-merge is NOT a required check, so this red never locks the repo;
+      # it just surfaces a broken run so it gets a manual look (admin escape hatch).
+      - name: Fail the check if the action errored (no hollow-green / no silent no-merge)
+        if: steps.check-author.outputs.skip != 'true'
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          if [[ -z "$EXEC_FILE" || ! -f "$EXEC_FILE" ]]; then
+            echo "::error::claude-code-action produced no execution_file — treating as a failed run."
+            exit 1
+          fi
+          # The execution log is a JSON array of SDK messages; the final
+          # {type:"result"} entry carries is_error + subtype (success,
+          # error_max_turns, error_during_execution, ...).
+          IS_ERROR=$(jq -r '[.[] | select(.type=="result")] | last | .is_error' "$EXEC_FILE" 2>/dev/null)
+          SUBTYPE=$(jq -r '[.[] | select(.type=="result")] | last | .subtype // "unknown"' "$EXEC_FILE" 2>/dev/null)
+          echo "claude-code-action result: is_error=$IS_ERROR subtype=$SUBTYPE"
+          if [[ "$IS_ERROR" != "false" ]]; then
+            echo "::error::claude-code-action did not complete cleanly (is_error=$IS_ERROR, subtype=$SUBTYPE) — failing the check."
+            exit 1
+          fi
