@@ -38,5 +38,18 @@ export const TRIPLE_MULTIPLIER_CHANCE = 0.05
 export const MAX_LEADERBOARD_ENTRIES = 1000
 /** Number of entries shown in a leaderboard view (top N). */
 export const LEADERBOARD_DISPLAY_LIMIT = 10
-/** Cooldown between leaderboard submissions, in milliseconds. */
+/** Cooldown between leaderboard submissions, in milliseconds (client-side UX hint). */
 export const LEADERBOARD_SUBMISSION_COOLDOWN_MS = 5000
+/**
+ * Server-side maximum accepted score. A generous ceiling that rejects only the absurd:
+ * a loose theoretical best game (120s, up to ~60 words, a 16-island word = 160 base,
+ * ×3 multiplier, plus escalating combo bonuses) tops out around ~170k, so 1,000,000 is
+ * ~6× headroom — it never rejects a real game but blocks junk like 999,999,999.
+ */
+export const MAX_LEADERBOARD_SCORE = 1_000_000
+/** Max accepted value for the words_found / objectives_completed metadata counters. */
+export const MAX_LEADERBOARD_COUNTER = 1000
+/** Server-side rate limit on leaderboard writes: max writes per window, per client IP. */
+export const LEADERBOARD_RATE_LIMIT = 10
+/** Rate-limit window (seconds) for {@link LEADERBOARD_RATE_LIMIT}. */
+export const LEADERBOARD_RATE_WINDOW_SECONDS = 60
