@@ -46,11 +46,18 @@ This is a **turn-based Redux + DOM** game: no `<canvas>`, no WebGL, no
 - **Lint:** `pnpm lint` → `eslint` (flat `eslint.config.mjs`; `next lint` removed in
   Next 16). **0 errors / 0 warnings** (#22 set up, #34 triaged the 26 findings to 0).
 - **Build:** `next build` succeeds; Vercel green on main HEAD.
-- **Security:** ~64 → ~1 Dependabot alerts. Critical `shell-quote` cleared (#16);
+- **Security:** ~64 → **0** Dependabot alerts. Critical `shell-quote` cleared (#16);
   real CVEs cleared via exact `pnpm.overrides` (**15 entries**, LIVE) + the dependency
   batch (#24–#33); the last alert (js-yaml@3.14.2, ≤ 4.1.1 vulnerable) cleared by
   forcing 4.2.0 (#51) → **0 open alerts**. Code scanning (CodeQL) + secret scanning +
   push protection: **ON** (repo public).
+- **RSC / App-Router Server-Function CVE class — checked 2026-06-22, not exposed.**
+  `next@16.2.9` (latest published) + `react@19.2.7`. Max patched floor across all `next`
+  advisories in the GitHub DB = **16.2.6** (May-2026 batch) < our 16.2.9; `react 19.2.7
+  ≥ 19.2.6` (Dec-2025 RSC RCE floor); `react-server-dom-*` is vendored in `next` (patched
+  by the 16.2.9 we run). `app/api/leaderboard` is a **plain Route Handler** — no `use
+  server` Server Functions in the app, so the RSC Server-Function RCE path is unexposed.
+  Dependabot 0-open is genuine (the `next` RSC/middleware GHSAs are all `fixed`).
 
 ---
 
