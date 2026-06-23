@@ -27,6 +27,17 @@ the saga below for the root cause and the forward-bump watch-point.
   (#51, detail below). CodeQL **caught a REAL log-injection** vuln in
   `app/api/leaderboard/route.ts` which we fixed (#20 added scanners, #21 sanitized
   input, CWE-117). Secret scanning + push protection **ON** (repo is public).
+- **RSC / App-Router Server-Function CVE class — checked 2026-06-22, NOT exposed.**
+  On `next@16.2.9` (the latest published) + `react`/`react-dom@19.2.7`. The whole
+  Dec-2025 → May-2026 advisory wave is cleared: the **max patched floor across every
+  `next` advisory in the GitHub DB is 16.2.6** (May-2026 middleware-bypass batch,
+  GHSA-26hh) — we're above it; `react 19.2.7 ≥ 19.2.6` clears the Dec-2025 RSC RCE
+  (CVE-2025-55182); `react-server-dom-*` is **vendored inside `next`** (the May release
+  bundles the patched RSC — no separate bump needed). Surface scope: `app/api/leaderboard`
+  is a **plain Route Handler** (manual `request.json()` + validation), **no `use server`
+  Server Functions anywhere** → the RSC Server-Function RCE path isn't exposed.
+  Dependabot 0 open is genuine (the 5 `next` RSC/App-Router/middleware GHSAs are all
+  `fixed`). Re-check when a `next` advisory posts a floor `> 16.2.9`.
 - **Scanners live:** `codeql.yml`, `osv-scanner.yml`, `dependency-review.yml` (#20),
   reporting to the Security tab.
 - **Productionization:** metadata / manifest / viewport / OG (#14); canonical domain
