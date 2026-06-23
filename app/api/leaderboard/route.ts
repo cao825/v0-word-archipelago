@@ -1,6 +1,39 @@
 import { NextResponse } from "next/server"
+import { Ratelimit } from "@upstash/ratelimit"
 import { redis, LEADERBOARD_KEY, LEADERBOARD_DATA_KEY, type LeaderboardRecord } from "@/lib/redis/client"
 import type { LeaderboardEntry } from "@/lib/utils/leaderboardUtils"
+import { validateLeaderboardSubmission } from "@/lib/services/leaderboardValidation"
+import { LEADERBOARD_RATE_LIMIT, LEADERBOARD_RATE_WINDOW_SECONDS } from "@/lib/constants"
+
+// Redis-backed sliding-window rate limit (R2). MUST be Redis-backed: this runs on Vercel
+// serverless, where in-memory counters do NOT persist across invocations, so a per-process
+// counter would be useless. Keyed by client IP. Module-level singleton (reused across warm
+// invocations); the @upstash/ratelimit slidingWindow is atomic (no INCR/EXPIRE race).
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(LEADERBOARD_RATE_LIMIT, `${LEADERBOARD_RATE_WINDOW_SECONDS} s`),
+  prefix: "ratelimit:leaderboard",
+  analytics: false,
+})
+
+// On Vercel the client IP arrives via x-forwarded-for (first hop) / x-real-ip.
+function getClientIp(request: Request): string {
+  const xff = request.headers.get("x-forwarded-for")
+  if (xff) return xff.split(",")[0].trim()
+  return request.headers.get("x-real-ip") ?? "unknown"
+}
+
+// Returns true if the write is ALLOWED. Fails OPEN on a Redis error — a rate-limit
+// backend hiccup must not block legitimate score submissions (logged, not surfaced).
+async function isWithinRateLimit(ip: string): Promise<boolean> {
+  try {
+    const { success } = await ratelimit.limit(ip)
+    return success
+  } catch (err) {
+    console.error("Leaderboard rate-limit check failed; failing open:", err)
+    return true
+  }
+}
 
 // Neutralize log injection (CWE-117): strip CR/LF/line-separators and other
 // control chars from attacker-controlled values before they reach a log sink,
@@ -80,35 +113,37 @@ export async function POST(request: Request) {
 
     console.log("Received leaderboard submission:", sanitizeForLog(JSON.stringify(body)))
 
-    // Validate the request body
-    if (!body.player_initials || typeof body.score !== "number") {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    // R1 + R3 — strict, credential-free validation (pure; rejects rather than truncates).
+    const result = validateLeaderboardSubmission(body)
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+    const submission = result.value
+
+    // R2 — server-side rate limit (Redis-backed), keyed by client IP. Done after the
+    // cheap validation so malformed floods are rejected without consuming a slot.
+    const allowed = await isWithinRateLimit(getClientIp(request))
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many submissions, please slow down." }, { status: 429 })
     }
 
-    if (body.score <= 0) {
-      return NextResponse.json({ error: "Score must be greater than 0" }, { status: 400 })
-    }
-
-    // Format the initials
-    const formattedInitials = body.player_initials.toUpperCase().substring(0, 3)
-
-    // Create the record
+    // Create the record from the validated, normalized submission.
     const entryId = generateEntryId()
     const record: LeaderboardRecord = {
-      player_initials: formattedInitials,
-      score: body.score,
-      words_found: body.words_found || 0,
-      objectives_completed: body.objectives_completed || 0,
-      timestamp: body.timestamp || new Date().toISOString(),
+      player_initials: submission.player_initials,
+      score: submission.score,
+      words_found: submission.words_found,
+      objectives_completed: submission.objectives_completed,
+      timestamp: submission.timestamp ?? new Date().toISOString(),
     }
 
     // Add to sorted set (score as the score, entryId as the member)
-    await redis.zadd(LEADERBOARD_KEY, { score: body.score, member: entryId })
+    await redis.zadd(LEADERBOARD_KEY, { score: submission.score, member: entryId })
 
     // Store entry data in hash
     await redis.hset(LEADERBOARD_DATA_KEY, { [entryId]: JSON.stringify(record) })
 
-    console.log("Successfully added leaderboard entry for:", sanitizeForLog(formattedInitials))
+    console.log("Successfully added leaderboard entry for:", sanitizeForLog(submission.player_initials))
     return NextResponse.json({ success: true, message: "Leaderboard entry added successfully" })
   } catch (error) {
     console.error("Error in leaderboard API:", error)
