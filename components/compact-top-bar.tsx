@@ -167,7 +167,7 @@ export default function CompactTopBar({
             {/* Score display with bonus words that won't wrap */}
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="flex items-baseline shrink-0">
-                <span className="text-xl font-medium text-white tabular-nums tracking-tight">{score}</span>
+                <span data-testid="score-value" className="text-xl font-medium text-white tabular-nums tracking-tight">{score}</span>
                 <span className="text-xs text-white/60 ml-1">pts</span>
               </div>
 
