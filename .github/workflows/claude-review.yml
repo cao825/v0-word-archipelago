@@ -217,7 +217,7 @@ jobs:
         # → denials → thrash. NOTE this is a DOWNGRADE: @d5726de0 (2.1.177) is the
         # last-known-good; the bug is a regression in the newer release. A future
         # forward-bump must re-verify denials=0 before adopting.
-        uses: anthropics/claude-code-action@d5726de019ec4498aa667642bc3a80fca83aa102  # v1
+        uses: anthropics/claude-code-action@a92e7c70a4da9793dc164451d829089dc057a464  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
           # Anthropic model auth (OAuth via Craig's Max subscription) — same auth
@@ -359,7 +359,7 @@ jobs:
       - name: Upload claude-code-action execution log
         if: always() && steps.check-author.outputs.skip != 'true'
         continue-on-error: true
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: claude-execution-output
           path: ${{ steps.claude.outputs.execution_file }}
