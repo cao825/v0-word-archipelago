@@ -110,6 +110,7 @@ export default function GameOverModal({
   useEffect(() => {
     // Only show score submission if score is greater than 0 and not already submitted
     if (score > 0 && !scoreSubmitted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time reveal gated by (score > 0 && !scoreSubmitted): fires at most once when the modal opens with a qualifying score; the guard prevents a re-render loop.
       setShowScoreSubmission(true)
     }
   }, [score, scoreSubmitted])

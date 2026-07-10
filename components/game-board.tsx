@@ -266,6 +266,7 @@ export default function GameBoard() {
       const newWord = currentWordRef.current
 
       if (foundWords.length === 1) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Fires a transient achievement toast in reaction to the `successfulSubmission` Redux flag (an event, not derived state); gated by the flag so it runs once per submission.
         onShowMiniAchievement("First Word Found!")
       }
 
@@ -285,7 +286,6 @@ export default function GameBoard() {
       prevCompletedObjectivesCountRef.current !== completedObjectivesCount
     ) {
       onShowMiniAchievement("All Objectives Completed!")
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time latch: the guard (!allObjectivesNotificationShown) makes this fire at most once and prevents a re-render loop; it intentionally records that the "all objectives" achievement was shown.
       setAllObjectivesNotificationShown(true)
     }
 
