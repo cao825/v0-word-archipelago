@@ -1,7 +1,6 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { useEffect, useState } from "react"
 
 interface LiveWordDisplayProps {
   currentWord: string
@@ -16,13 +15,9 @@ export default function LiveWordDisplay({
   invalidSubmission,
   duplicateSubmission,
 }: LiveWordDisplayProps) {
-  // Add local state to ensure the component re-renders when currentWord changes
-  const [displayWord, setDisplayWord] = useState(currentWord)
-
-  // Update local state whenever currentWord changes
-  useEffect(() => {
-    setDisplayWord(currentWord)
-  }, [currentWord])
+  // `displayWord` is derived directly from the `currentWord` prop — no local
+  // state/effect mirror needed (the prop change already re-renders the component).
+  const displayWord = currentWord
 
   // Determine text color based on validity
   const getTextColor = () => {

@@ -128,6 +128,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
 
         setTimeout(() => {
           setRetryCount((prev) => prev + 1)
+          // eslint-disable-next-line react-hooks/immutability -- Intentional self-referential retry: the callback re-invokes itself on the exponential-backoff timer; `retryCount` in the deps array gives it a fresh identity each attempt.
           refreshLeaderboards()
         }, backoffTime)
       } else {
@@ -160,9 +161,11 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
   )
 
   // Export the submitScore function so it can be used by other components
+  // eslint-disable-next-line react-hooks/immutability -- Intentional cross-component bridge: publishes the imperative handle on `window` so sibling components can trigger a submit without prop-drilling.
   ;(window as any).submitLeaderboardScore = submitScore
 
   // Export the refresh function so it can be called from elsewhere
+  // eslint-disable-next-line react-hooks/immutability -- Intentional cross-component bridge: publishes the imperative refresh handle on `window` (same pattern as submitLeaderboardScore above).
   ;(window as any).refreshLeaderboardDisplay = refreshLeaderboards
 
   // Reset scroll position when changing tabs
@@ -223,6 +226,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
     if (mostRecentEntry) {
       // Set the tab based on which leaderboard contains the most recent entry
       if (hourlyEntry && hourlyEntry.timestamp === mostRecentEntry.timestamp) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time tab selection gated by `initialTabSetRef` (set below), so this focuses the highlighted entry's tab exactly once per `highlightInitials` change rather than looping.
         setActiveTab("hourly")
       } else if (dailyEntry && dailyEntry.timestamp === mostRecentEntry.timestamp) {
         setActiveTab("daily")
@@ -419,6 +423,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
               <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
             </button>
           </div>
+          {/* eslint-disable-next-line react-hooks/refs -- renderLeaderboard reads scroll refs to auto-center a freshly-highlighted entry; the ref access is gated by `initialScrollCompletedRef` and runs inside a callback ref, not to drive rendering. */}
           {renderLeaderboard(hourlyLeaderboard, hourlyLoading, hourlyContainerRef, "hourly")}
         </TabsContent>
         <TabsContent value="daily" className="mt-2 w-full">
@@ -433,6 +438,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
               <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
             </button>
           </div>
+          {/* eslint-disable-next-line react-hooks/refs -- renderLeaderboard reads scroll refs to auto-center a freshly-highlighted entry (see hourly tab above). */}
           {renderLeaderboard(dailyLeaderboard, dailyLoading, dailyContainerRef, "daily")}
         </TabsContent>
         <TabsContent value="alltime" className="mt-2 h-full flex flex-col w-full">
@@ -447,6 +453,7 @@ export default function LeaderboardDisplay({ highlightInitials }: LeaderboardDis
               <span className="text-[10px]">({lastRefreshed.toLocaleTimeString()})</span>
             </button>
           </div>
+          {/* eslint-disable-next-line react-hooks/refs -- renderLeaderboard reads scroll refs to auto-center a freshly-highlighted entry (see hourly tab above). */}
           {renderLeaderboard(allTimeLeaderboard, allTimeLoading, allTimeContainerRef, "alltime")}
         </TabsContent>
       </Tabs>
