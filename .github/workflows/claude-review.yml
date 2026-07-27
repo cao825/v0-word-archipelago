@@ -157,7 +157,7 @@ jobs:
       #      AND, for comments, an `@claude` body — only the owner can fire it.
       #   2. `ref:` is the resolved-at-trigger-time head SHA, not the mutable
       #      branch ref, so a force-push after the trust check can't swap it out.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         if: steps.check-author.outputs.skip != 'true'
         with:
           # SHA-pinned (immutable). NOT `head.ref` — branch refs are mutable and
@@ -217,7 +217,7 @@ jobs:
         # → denials → thrash. NOTE this is a DOWNGRADE: @d5726de0 (2.1.177) is the
         # last-known-good; the bug is a regression in the newer release. A future
         # forward-bump must re-verify denials=0 before adopting.
-        uses: anthropics/claude-code-action@af0559ee4f514d1ef21826982bed13f7edc3c35e  # v1
+        uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
           # Anthropic model auth (OAuth via Craig's Max subscription) — same auth
