@@ -198,25 +198,28 @@ jobs:
 
       # HANDS-OFF FIX + MERGE (PR6): the gates (npx tsc --noEmit, pnpm test, pnpm
       # lint) are green on main and the `verify` CI check enforces them, so the
-      # reviewer now fixes-to-green and merges. --allowedTools (below) MATCHES the
-      # working sibling list (neon-drift / rogue-descent), pnpm-adapted: Edit,
-      # Write, Bash(git:*), Bash(gh pr:*), Bash(gh api:*), Bash(pnpm lint:*). The
-      # `gh api` grant is load-bearing — the action's review/merge flow calls the
-      # GitHub API under the hood; #38 dropped it and the reviewer thrashed to the
-      # turn cap on denied gh-api calls (PR #39: error_max_turns, 42 denials, no
-      # merge). The failure-dump + is_error steps after this one capture the actual
+      # reviewer now fixes-to-green and merges. --allowedTools (below) is the sibling
+      # list (neon-drift / rogue-descent), pnpm-adapted and then flattened to
+      # whitespace-free patterns: Edit, Write, Read, Bash(git:*), Bash(gh:*),
+      # Bash(npx:*), Bash(pnpm:*). The `gh` grant is load-bearing — the action's
+      # review/merge flow calls the GitHub API under the hood; #38 dropped it and the
+      # reviewer thrashed to the turn cap on denied gh-api calls (PR #39:
+      # error_max_turns, 42 denials, no merge). The failure-dump + is_error steps capture the actual
       # denied tools and fail the check on any error, so a broken run is never
       # hollow-green or a silent no-merge. Branch protection requires only the
       # deterministic checks (verify / Analyze / Vercel), NOT this job — a
       # flaky-action day means merge-by-hand, not repo-lockout.
       - id: claude
-        # Pinned to the commit the WORKING siblings (rogue-descent + neon-drift) use,
-        # which runs with permission_denials_count=0 and auto-merges. Our previous pin
-        # (@2fee1551, Claude Code 2.1.185) had a claude_args whitespace-split bug
-        # (issue #844) that shredded the space-containing --allowedTools Bash patterns
-        # → denials → thrash. NOTE this is a DOWNGRADE: @d5726de0 (2.1.177) is the
-        # last-known-good; the bug is a regression in the newer release. A future
-        # forward-bump must re-verify denials=0 before adopting.
+        # The claude_args whitespace-split bug (issue #844) is PRESENT in this pin and
+        # in every pin Dependabot has moved us through (#61 → #64 → #67 → #71 → #74).
+        # The old fix was to pin BACKWARD to @d5726de0 and hope nothing bumped it; that
+        # failed — Dependabot walked the pin forward five times and the reviewer has
+        # been dead ever since (see the --allowedTools comment below for the evidence).
+        #
+        # The fix is now in the ARGUMENT SHAPE, not the pin: every --allowedTools
+        # pattern below is whitespace-free, so the split is a no-op and the bug cannot
+        # bite regardless of which version Dependabot lands on. This pin is therefore
+        # free to float forward.
         uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
@@ -318,10 +321,31 @@ jobs:
             features), post a detailed comment explaining the concerns, do NOT
             enable auto-merge, and tag @craigoley so I see it.
 
+          # EVERY --allowedTools PATTERN BELOW MUST BE WHITESPACE-FREE. Do not
+          # "restore" the more granular `Bash(gh pr:*)` / `Bash(pnpm test:*)` forms —
+          # they are what broke this job. claude-code-action splits claude_args on
+          # whitespace (issue #844) with no quoting, so any pattern containing a
+          # space is torn into fragments. Observed in run 30552819715 (2026-07-30),
+          # the parsed array was:
+          #   "Bash(git:*)", "Bash(gh", "pr:*)", "api:*)", "Bash(npx", "tsc:*)",
+          #   "Bash(pnpm", "test:*)", "lint:*)"
+          # Only the space-free `Bash(git:*)` survived intact — which is exactly why
+          # git worked while every gh/npx/pnpm call was denied, and the run burned all
+          # 50 turns retrying blocked commands (subtype=error_max_turns, ~$1.17/run,
+          # merged nothing). It had failed that way on every run since at least the
+          # @af0559ee pin.
+          #
+          # NOTE: these comments sit OUTSIDE the `claude_args: |` block on purpose.
+          # A literal block scalar has no comment syntax — a `#` line inside it is
+          # passed to the CLI as an argument.
+          #
+          # Coarser scopes are not a meaningful widening: `Bash(gh api:*)` was already
+          # granted, and `gh api` can drive the whole GitHub API with the job's token,
+          # so `Bash(gh:*)` adds essentially no new authority.
           claude_args: |
             --model claude-opus-4-6
             --max-turns 50
-            --allowedTools Edit,Write,Read,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(npx tsc:*),Bash(pnpm test:*),Bash(pnpm lint:*),mcp__github_inline_comment__create_inline_comment
+            --allowedTools Edit,Write,Read,Bash(git:*),Bash(gh:*),Bash(npx:*),Bash(pnpm:*),mcp__github_inline_comment__create_inline_comment
 
       # FAILURE TELEMETRY: the execution_file is ephemeral on the runner and the
       # streamed log does NOT contain the per-denial tool names (only a count), so
@@ -340,8 +364,15 @@ jobs:
             exit 0
           fi
           echo "::group::result summary"
+          # Report the denials COUNT FIELD and the ACTUAL ARRAY LENGTH separately.
+          # They disagree: on 2026-07-30 (run 30552819715) this line printed
+          # permission_denials_count=0 while `.permission_denials` held 20+ entries,
+          # because this action version does not emit the scalar field at all and the
+          # old `// 0` fallback silently rendered "no denials". That false all-clear is
+          # why a fully-denied reviewer looked merely "flaky" for weeks. Never collapse
+          # these two back into one number.
           jq -r '[.[] | select(.type=="result")] | last
-                 | "subtype=\(.subtype)  is_error=\(.is_error)  num_turns=\(.num_turns)  permission_denials_count=\(.permission_denials_count // 0)  cost_usd=\(.total_cost_usd // 0)"' "$FILE" 2>/dev/null || echo "(could not parse result message)"
+                 | "subtype=\(.subtype)  is_error=\(.is_error)  num_turns=\(.num_turns)  denials_field=\(.permission_denials_count // "ABSENT")  denials_actual=\((.permission_denials // []) | length)  cost_usd=\(.total_cost_usd // 0)"' "$FILE" 2>/dev/null || echo "(could not parse result message)"
           echo "::endgroup::"
           echo "::group::permission denials (actual denied tool calls)"
           # Structured permission_denials array, if this action version emits one.
