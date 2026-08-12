@@ -24,7 +24,7 @@ jobs:
   # to pnpm unchanged from the npm siblings.
   scan-pr:
     if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.3.8
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.5.0
     permissions:
       security-events: write
       contents: read
@@ -38,7 +38,7 @@ jobs:
   # Security > Code Scanning so findings sit alongside CodeQL.
   scan-full:
     if: github.event_name != 'pull_request'
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
     permissions:
       security-events: write
       contents: read
