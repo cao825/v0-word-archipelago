@@ -220,7 +220,7 @@ jobs:
         # pattern below is whitespace-free, so the split is a no-op and the bug cannot
         # bite regardless of which version Dependabot lands on. This pin is therefore
         # free to float forward.
-        uses: anthropics/claude-code-action@1623c36729ac1cd5895198cded705a287de7db79  # v1
+        uses: anthropics/claude-code-action@9d7150bc8a3dae8149739a88019d192b579ad90c  # v1
         if: steps.check-author.outputs.skip != 'true'
         with:
           # Anthropic model auth (OAuth via Craig's Max subscription) — same auth
