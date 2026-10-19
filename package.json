@@ -40,8 +40,8 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.64.0",
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -51,10 +51,10 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.6.1",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.4.0",
+    "eslint-config-next": "^16.4.2",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
-    "postcss": "^8.5.29",
+    "postcss": "^8.5.30",
     "tailwindcss": "^4.3.3",
     "typescript": "^6"
   },
@@ -70,7 +70,7 @@
       "form-data": "4.0.6",
       "ajv": "6.14.0",
       "yaml": "2.8.3",
-      "postcss": "8.5.29",
+      "postcss": "8.5.30",
       "@babel/core": "7.29.6",
       "@tootallnate/once": "2.0.1",
       "picomatch@2": "2.3.2",
